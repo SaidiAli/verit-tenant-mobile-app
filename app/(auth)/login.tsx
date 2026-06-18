@@ -19,6 +19,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useAuth } from '../../hooks/useAuth';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
+import { useRouter } from 'expo-router';
 
 const loginSchema = z.object({
   userName: z.string().min(1, 'Username is required'),
@@ -30,6 +31,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
+  const router = useRouter();
 
   // Prevent the Android hardware back button from navigating away from login
   useFocusEffect(
@@ -168,6 +170,16 @@ export default function LoginScreen() {
                       </Text>
                     )}
                   </View>
+
+                  {/* Forgot Password */}
+                  <TouchableOpacity
+                    onPress={() => router.push('/(auth)/forgot-password')}
+                    className="self-end"
+                  >
+                    <Text className="text-[#524768] text-sm font-medium">
+                      Forgot Password?
+                    </Text>
+                  </TouchableOpacity>
 
                   {/* Sign In Button */}
                   <TouchableOpacity

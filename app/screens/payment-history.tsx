@@ -13,6 +13,7 @@ import { paymentApi } from '../../lib/api';
 import { formatUGX } from '../../lib/currency';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
 import { formatDateShort } from '@/lib/utils';
+import { PAYMENT_TYPE_LABELS } from '../../types';
 
 export default function PaymentHistoryScreen() {
   const { selectedLeaseId } = useLease();
@@ -106,8 +107,15 @@ export default function PaymentHistoryScreen() {
                             <View className="flex-row justify-between items-start">
                               <View className="flex-1 space-y-1">
                                 <Text className="font-medium text-gray-800">
-                                  Rent Payment {payment.dueDate ? `(${formatDateShort(payment.dueDate)})` : ''}
+                                  {PAYMENT_TYPE_LABELS[payment.paymentType ?? 'rent']} {payment.dueDate ? `(${formatDateShort(payment.dueDate)})` : ''}
                                 </Text>
+                                {payment.paymentType && payment.paymentType !== 'rent' && (
+                                  <View className="mt-1 self-start rounded-full bg-blue-100 px-2 py-0.5">
+                                    <Text className="text-xs text-blue-700">
+                                      {PAYMENT_TYPE_LABELS[payment.paymentType]}
+                                    </Text>
+                                  </View>
+                                )}
                                 <Text className="text-sm text-gray-600">
                                   {payment.periodCovered ? (
                                     <Text>Period: {payment.periodCovered}</Text>
@@ -125,6 +133,11 @@ export default function PaymentHistoryScreen() {
                                     </Text>
                                   )}
                                 </Text>
+                                {payment.gateway && (
+                                  <Text className="text-xs text-gray-400">
+                                    via {payment.gateway === 'yo' ? 'Yo! Payments' : 'IoTec'}
+                                  </Text>
+                                )}
                                 {isLate && (
                                   <Text className="text-sm text-yellow-600 font-medium">
                                     Late Payment

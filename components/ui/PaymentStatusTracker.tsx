@@ -87,10 +87,10 @@ export function PaymentStatusTracker({
       };
     }
 
-    if (!status || status.status === 'Pending') {
+    if (!status || status.paymentStatus === 'pending') {
       const message = elapsed > 30
         ? 'Payment is taking longer than usual. Please keep this screen open.'
-        : 'Please confirm the payment on your mobile money app and wait...';
+        : 'Please complete the payment on your mobile device and wait...';
 
       return {
         icon: 'hourglass-empty' as const,
@@ -101,7 +101,7 @@ export function PaymentStatusTracker({
       };
     }
 
-    if (status.status === 'Success') {
+    if (status.paymentStatus === 'completed') {
       return {
         icon: 'check-circle' as const,
         color: '#10B981',
@@ -111,12 +111,12 @@ export function PaymentStatusTracker({
       };
     }
 
-    if (status.status === 'Failed') {
+    if (status.paymentStatus === 'failed') {
       return {
         icon: 'cancel' as const,
         color: '#EF4444',
         title: 'Payment Failed',
-        message: status.statusMessage || 'Your payment could not be processed.',
+        message: status.message || 'Your payment could not be processed.',
         showRetry: true,
       };
     }
@@ -159,7 +159,7 @@ export function PaymentStatusTracker({
             </View>
 
             {/* Pulsing animation for pending status */}
-            {status?.status === 'Pending' && isPolling && (
+            {status?.paymentStatus === 'pending' && isPolling && (
               <View className="absolute inset-0">
                 <LoadingSpinner size="large" message="" className="my-0" />
               </View>
@@ -193,11 +193,20 @@ export function PaymentStatusTracker({
                 </Text>
               </View>
 
-              {status.vendorTransactionId && (
+              {status.gatewayReference && (
                 <View className="flex-row justify-between items-center py-1">
-                  <Text className="text-gray-600 text-sm">Reference:</Text>
+                  <Text className="text-gray-600 text-sm">Gateway Ref:</Text>
                   <Text className="text-gray-800 text-sm font-mono">
-                    {status.vendorTransactionId}
+                    {status.gatewayReference}
+                  </Text>
+                </View>
+              )}
+
+              {status.mnoReference && (
+                <View className="flex-row justify-between items-center py-1">
+                  <Text className="text-gray-600 text-sm">MNO Ref:</Text>
+                  <Text className="text-gray-800 text-sm font-mono">
+                    {status.mnoReference}
                   </Text>
                 </View>
               )}

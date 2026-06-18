@@ -10,6 +10,7 @@ import { secureStorage } from '../../lib/storage';
 import { formatUGX } from '../../lib/currency';
 import { File, Paths } from 'expo-file-system';
 import { formatDateShort, formatSchedulePeriod } from '@/lib/utils';
+import { PAYMENT_TYPE_LABELS } from '../../types';
 
 interface PaymentReceiptModalProps {
   visible: boolean;
@@ -59,6 +60,7 @@ Verit - Payment Receipt
 
 Receipt #: ${receipt.receiptNumber}
 Amount: ${formatUGX(receipt.amount)}
+Payment Type: ${PAYMENT_TYPE_LABELS[receipt.paymentType ?? 'rent']}
 Payment Method: ${receipt.paymentMethod}
 Periods: ${receipt.appliedSchedules?.length ? receipt.appliedSchedules.map(s => `#${s.paymentNumber} ${formatSchedulePeriod(s.period)}`).join(', ') : receipt.periodCovered || (receipt.dueDate ? formatDateShort(receipt.dueDate) : 'N/A')}
 Date: ${formatDateShort(receipt.paidDate)}
@@ -171,7 +173,14 @@ Thank you for your payment!
                       </Text>
                     </View>
 
-                    {receipt.appliedSchedules && receipt.appliedSchedules.length > 0 ? (
+                    <View className="flex-row justify-between py-2 border-b border-gray-100">
+                      <Text className="text-gray-500 text-sm">Payment Type</Text>
+                      <Text className="text-gray-800 text-sm font-medium">
+                        {PAYMENT_TYPE_LABELS[receipt.paymentType ?? 'rent']}
+                      </Text>
+                    </View>
+
+                    {(receipt.paymentType ?? 'rent') === 'rent' && receipt.appliedSchedules && receipt.appliedSchedules.length > 0 ? (
                       <View className="space-y-2">
                         <Text className="text-gray-600">Periods Cleared:</Text>
                         {receipt.appliedSchedules.map((schedule, index) => (

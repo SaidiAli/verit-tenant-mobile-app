@@ -59,6 +59,16 @@ export interface Lease {
   payments?: Payment[];
 }
 
+export type PaymentType = 'rent' | 'security_deposit' | 'utility' | 'late_fee' | 'other';
+
+export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
+  rent: 'Rent',
+  security_deposit: 'Security Deposit',
+  utility: 'Utility Fee',
+  late_fee: 'Late Fee',
+  other: 'Other',
+};
+
 export interface Payment {
   id: string;
   leaseId: string;
@@ -70,6 +80,9 @@ export interface Payment {
   transactionId?: string;
   notes?: string;
   periodCovered?: string;
+  paymentType?: PaymentType;
+  gateway?: string;
+  gatewayReference?: string;
   createdAt: string;
   updatedAt: string;
   lease?: Lease;
@@ -260,19 +273,23 @@ export interface PaymentInitiationResponse {
   transactionId: string;
   amount: number;
   status: 'pending' | 'processing';
-  estimatedCompletion: string;
-  iotecReference: string;
+  gateway: 'yo' | 'iotec';
+  gatewayReference: string;
   leaseId: string;
-  statusMessage: string;
+  scheduleId?: string;
+  statusMessage?: string;
 }
 
 export interface PaymentStatusResponse {
   transactionId: string;
-  status: 'Pending' | 'Success' | 'Failed';
-  statusMessage: string;
+  gatewayReference?: string;
+  status: 'pending' | 'succeeded' | 'failed' | 'indeterminate';
+  paymentStatus: 'pending' | 'completed' | 'failed';
+  message: string;
   amount: number;
+  mnoReference?: string;
+  gateway: string;
   processedAt?: string;
-  vendorTransactionId?: string;
 }
 
 export interface PaymentReceipt {
@@ -281,6 +298,7 @@ export interface PaymentReceipt {
   transactionId: string;
   amount: number;
   currency: 'UGX';
+  paymentType?: PaymentType;
   paymentMethod: string;
   paidDate: string;
   tenant: {

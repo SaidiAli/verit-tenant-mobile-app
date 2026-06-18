@@ -202,7 +202,7 @@ export default function PaymentsScreen() {
     setPaymentFlow(prev => ({
       ...prev,
       step: 'failed',
-      error: status.statusMessage || 'Payment failed',
+      error: status.message || 'Payment failed',
       isLoading: false
     }));
   }, []);

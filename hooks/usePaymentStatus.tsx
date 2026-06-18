@@ -47,7 +47,7 @@ export function usePaymentStatus({
     enabled: isPolling && !!transactionId,
     // In TanStack Query v4 the refetchInterval callback receives (data, query)
     refetchInterval: (data: PaymentStatusResponse | undefined) => {
-      if (data?.status === 'Success' || data?.status === 'Failed' || !isPolling) return false;
+      if (data?.paymentStatus === 'completed' || data?.paymentStatus === 'failed' || !isPolling) return false;
       return pollingInterval;
     },
     retry: false,
@@ -55,14 +55,14 @@ export function usePaymentStatus({
 
   // Fire success/failed callbacks when status changes
   useEffect(() => {
-    if (status?.status === 'Success') {
+    if (status?.paymentStatus === 'completed') {
       onSuccessRef.current?.(status);
       setIsPolling(false);
-    } else if (status?.status === 'Failed') {
+    } else if (status?.paymentStatus === 'failed') {
       onFailedRef.current?.(status);
       setIsPolling(false);
     }
-  }, [status?.status]);
+  }, [status?.paymentStatus]);
 
   // Surface query errors to the onError callback
   useEffect(() => {

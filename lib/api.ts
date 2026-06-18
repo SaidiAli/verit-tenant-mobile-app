@@ -166,6 +166,53 @@ export const authApi = {
       throw new Error(error.message || 'Failed to change password');
     }
   },
+
+  forgotPassword: async (email: string): Promise<void> => {
+    try {
+      const response = await api.post<ApiResponse<{ message: string }>>('/auth/forgot-password', { email });
+
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Failed to send reset code');
+      }
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.error || 'Invalid email address');
+      } else if (error.response?.status === 404) {
+        throw new Error('No account found with this email');
+      }
+      throw new Error(error.message || 'Failed to send reset code');
+    }
+  },
+
+  verifyOtp: async (email: string, otp: string): Promise<void> => {
+    try {
+      const response = await api.post<ApiResponse<{ message: string }>>('/auth/verify-otp', { email, otp });
+
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Invalid verification code');
+      }
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.error || 'Invalid verification code');
+      }
+      throw new Error(error.message || 'Failed to verify code');
+    }
+  },
+
+  resetPassword: async (email: string, otp: string, newPassword: string): Promise<void> => {
+    try {
+      const response = await api.post<ApiResponse<{ message: string }>>('/auth/reset-password', { email, otp, newPassword });
+
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Failed to reset password');
+      }
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.error || 'Invalid password data');
+      }
+      throw new Error(error.message || 'Failed to reset password');
+    }
+  },
 };
 
 // Payment API functions
