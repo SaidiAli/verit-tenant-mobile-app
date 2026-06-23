@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from './Card';
 import { LoadingSpinner } from './LoadingSpinner';
 import { usePaymentStatus } from '../../hooks/usePaymentStatus';
+import { usePaymentSocket } from '../../hooks/usePaymentSocket';
 import { PaymentStatusResponse } from '../../types';
 import { formatUGX } from '../../lib/currency';
 
@@ -28,17 +29,29 @@ export function PaymentStatusTracker({
   const [elapsed, setElapsed] = React.useState(0);
   const timerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { status, isPolling, error, startPolling, stopPolling } = usePaymentStatus({
+  const { status, isPolling, error, startPolling, stopPolling, refetch } = usePaymentStatus({
     transactionId,
     onSuccess,
     onFailed,
     onError: (error) => {
-      if (error.includes('timeout') || error.includes('timed out')) {
+      // Match only the overall-polling-timeout message ("...timed out..."), not a
+      // single slow status request, whose axios message is "timeout of 15000ms
+      // exceeded" — that must not prematurely fail the whole payment.
+      if (error.includes('timed out')) {
         onTimeout();
       }
     },
     pollingInterval: 5000,
     maxPollingDuration: 120000,
+  });
+
+  // Realtime nudge: when the backend pushes a status change for this payment,
+  // immediately re-check the authoritative /status endpoint instead of waiting
+  // for the next 5s poll. Polling stays as the fallback if the socket is down.
+  usePaymentSocket(transactionId, () => {
+    refetch().catch(() => {
+      /* ignore — the poller will retry */
+    });
   });
 
   useEffect(() => {

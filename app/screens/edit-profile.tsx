@@ -43,8 +43,8 @@ export default function EditProfileScreen() {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    if (formData.phone && !/^\+?[\d\s\-\(\)]+$/.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
+    if (formData.phone && !/^(\+?256|0)[0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) {
+      newErrors.phone = 'Enter a valid Ugandan phone (+256XXXXXXXXX or 0XXXXXXXXX)';
     }
 
     setErrors(newErrors);
@@ -53,7 +53,7 @@ export default function EditProfileScreen() {
 
   const handleSave = () => {
     if (!validateForm()) return;
-    saveProfile(formData);
+    saveProfile({ ...formData, phone: formData.phone.replace(/\s/g, '') });
   };
 
   const handleCancel = () => {

@@ -390,6 +390,49 @@ export interface TenantPropertyInfo {
   }>;
 }
 
+// Settings types (matches verit-server /api/settings tenant surface)
+export interface SettingsProfile {
+  id: string;
+  userName?: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  avatarUrl?: string | null;
+  role: string;
+}
+
+export interface NotificationSettings {
+  notifyEmail: boolean;
+  notifySms: boolean;
+  notifyWhatsapp: boolean;
+  notifyPush: boolean;
+  quietHoursStart: string | null;
+  quietHoursEnd: string | null;
+}
+
+export type PreferenceLanguage = 'en' | 'sw' | 'lg';
+
+export interface PreferenceSettings {
+  language: PreferenceLanguage;
+  timezone: string;
+}
+
+export type MobileMoneyProviderId = 'mtn' | 'airtel' | 'm-sente';
+
+export interface PaymentPreferences {
+  mobileMoneyPhone: string | null;
+  mobileMoneyProvider: MobileMoneyProviderId | null;
+  reminderDaysBefore: number;
+}
+
+export interface TenantSettings {
+  profile: SettingsProfile;
+  notifications: NotificationSettings;
+  preferences: PreferenceSettings;
+  paymentPreferences: PaymentPreferences | null;
+}
+
 export interface PaymentScheduleItem {
   id: string;
   leaseId: string;

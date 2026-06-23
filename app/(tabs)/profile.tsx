@@ -1,15 +1,13 @@
-import { ScrollView, View, Text, TouchableOpacity, Switch, Alert, Linking } from 'react-native';
+import { ScrollView, View, Text, TouchableOpacity, Alert, Linking } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
-import { useSettings } from '../../hooks/useSettings';
 import { Card } from '../../components/ui/Card';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
 import Constants from "expo-constants";
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
-  const { settings, updateSetting } = useSettings();
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -22,6 +20,10 @@ export default function ProfileScreen() {
 
   const handleChangePassword = () => {
     router.push('/screens/change-password');
+  };
+
+  const handleSettings = () => {
+    router.push('/screens/settings' as any);
   };
 
   const handleContactSupport = async () => {
@@ -200,33 +202,19 @@ export default function ProfileScreen() {
                   </View>
                   <MaterialIcons name="chevron-right" size={20} color="#6B7280" />
                 </TouchableOpacity>
-              </View>
-            </Card>
 
-            {/* Preferences */}
-            <Card className="mb-4">
-              <View className="space-y-3">
-                <Text className="text-lg font-semibold text-gray-800">
-                  Preferences
-                </Text>
-
-                <View className="flex-row justify-between items-center py-2">
+                <TouchableOpacity
+                  className="flex-row justify-between items-center py-2 px-2 rounded-md"
+                  onPress={handleSettings}
+                >
                   <View className="flex-row items-center gap-2">
-                    <MaterialIcons name="notifications" size={20} color="#6B7280" />
-                    <View>
-                      <Text className="font-medium text-gray-800">
-                        Push Notifications
-                      </Text>
-                    </View>
+                    <MaterialIcons name="settings" size={20} color="#6B7280" />
+                    <Text className="font-medium text-gray-800">
+                      Settings
+                    </Text>
                   </View>
-                  <Switch
-                    value={settings.pushNotifications}
-                    disabled
-                    onValueChange={(value) => updateSetting('pushNotifications', value)}
-                    trackColor={{ false: '#E5E7EB', true: '#524768' }}
-                    thumbColor={settings.pushNotifications ? '#ffffff' : '#9CA3AF'}
-                  />
-                </View>
+                  <MaterialIcons name="chevron-right" size={20} color="#6B7280" />
+                </TouchableOpacity>
               </View>
             </Card>
 

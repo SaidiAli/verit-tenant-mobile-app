@@ -85,11 +85,15 @@ export function usePaymentStatus({
     return () => clearTimeout(timer);
   }, [isPolling, maxPollingDuration]);
 
+  // NB: deliberately not keyed on `isPolling`. A stable identity (per
+  // transactionId) is what lets consumers call this from an effect without the
+  // effect re-running every time polling toggles. setIsPolling(true) is
+  // idempotent, so the previous `if (isPolling) return` guard was unnecessary.
   const startPolling = useCallback(() => {
-    if (isPolling || !transactionId) return;
+    if (!transactionId) return;
     setTimeoutError(null);
     setIsPolling(true);
-  }, [isPolling, transactionId]);
+  }, [transactionId]);
 
   const stopPolling = useCallback(() => {
     setIsPolling(false);

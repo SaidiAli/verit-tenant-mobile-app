@@ -14,12 +14,17 @@ import {
   PaymentScheduleItem,
   LeaseApiResponse,
   TenantDashboardData,
-  TenantPropertyInfo
+  TenantPropertyInfo,
+  TenantSettings,
+  SettingsProfile,
+  NotificationSettings,
+  PreferenceSettings,
+  PaymentPreferences
 } from '../types';
 
 import * as Sentry from '@sentry/react-native';
 
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.verit.tech/api';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://verit-server-730073184196.europe-west1.run.app/api';
 
 // Create axios instance
 const api = axios.create({
@@ -131,7 +136,8 @@ export const authApi = {
 
   updateUser: async (userData: UpdateUserRequest): Promise<User> => {
     try {
-      const response = await api.put<ApiResponse<User>>('/users/profile', userData);
+      // Unified settings surface (server: PUT /api/settings/profile)
+      const response = await api.put<ApiResponse<User>>('/settings/profile', userData);
 
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error || 'Failed to update profile');
@@ -151,12 +157,14 @@ export const authApi = {
 
   changePassword: async (passwordData: ChangePasswordRequest): Promise<void> => {
     try {
-      const response = await api.put<ApiResponse<{ message: string }>>('/auth/change-password', passwordData);
+      // Unified settings surface (server: PUT /api/settings/security)
+      const response = await api.put<ApiResponse<{ message: string }>>('/settings/security', passwordData);
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to change password');
       }
     } catch (error: any) {
+      // Server returns 400 "Current password is incorrect" for a wrong current password
       if (error.response?.status === 400) {
         throw new Error(error.response.data?.error || 'Invalid password data');
       } else if (error.response?.status === 401) {
@@ -494,6 +502,106 @@ export const tenantApi = {
   getAllLeases: async (): Promise<LeaseApiResponse[]> => {
     const response = await api.get<ApiResponse<LeaseApiResponse[]>>('/tenant/leases');
     return response.data.data || [];
+  },
+};
+
+// Settings API functions (unified /api/settings surface — tenant is always self-scoped)
+export const settingsApi = {
+  /**
+   * Aggregated tenant settings (profile, notifications, preferences, paymentPreferences)
+   */
+  get: async (): Promise<TenantSettings> => {
+    const response = await api.get<ApiResponse<TenantSettings>>('/settings');
+    if (!response.data.success || !response.data.data) {
+      throw new Error(response.data.error || 'Failed to load settings');
+    }
+    return response.data.data;
+  },
+
+  updateProfile: async (data: Partial<Pick<SettingsProfile, 'firstName' | 'lastName' | 'email' | 'phone' | 'avatarUrl'>>): Promise<SettingsProfile> => {
+    try {
+      const response = await api.put<ApiResponse<SettingsProfile>>('/settings/profile', data);
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error || 'Failed to update profile');
+      }
+      return response.data.data;
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.error || 'Invalid profile data');
+      } else if (error.response?.status === 409) {
+        throw new Error('Email already exists');
+      }
+      throw new Error(error.message || 'Failed to update profile');
+    }
+  },
+
+  updateSecurity: async (data: ChangePasswordRequest): Promise<void> => {
+    try {
+      const response = await api.put<ApiResponse<{ message: string }>>('/settings/security', data);
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Failed to update password');
+      }
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.error || 'Current password is incorrect');
+      } else if (error.response?.status === 401) {
+        throw new Error('Current password is incorrect');
+      }
+      throw new Error(error.message || 'Failed to update password');
+    }
+  },
+
+  updateNotifications: async (data: Partial<NotificationSettings>): Promise<NotificationSettings> => {
+    try {
+      const response = await api.put<ApiResponse<NotificationSettings>>('/settings/notifications', data);
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error || 'Failed to update notifications');
+      }
+      return response.data.data;
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.error || 'Invalid notification settings');
+      }
+      throw new Error(error.message || 'Failed to update notifications');
+    }
+  },
+
+  updatePreferences: async (data: Partial<PreferenceSettings>): Promise<PreferenceSettings> => {
+    try {
+      const response = await api.put<ApiResponse<PreferenceSettings>>('/settings/preferences', data);
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error || 'Failed to update preferences');
+      }
+      return response.data.data;
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.error || 'Invalid preferences');
+      }
+      throw new Error(error.message || 'Failed to update preferences');
+    }
+  },
+
+  getPaymentPrefs: async (): Promise<PaymentPreferences | null> => {
+    const response = await api.get<ApiResponse<PaymentPreferences | null>>('/settings/payment-preferences');
+    if (!response.data.success) {
+      throw new Error(response.data.error || 'Failed to load payment preferences');
+    }
+    return response.data.data ?? null;
+  },
+
+  updatePaymentPrefs: async (data: Partial<PaymentPreferences>): Promise<PaymentPreferences> => {
+    try {
+      const response = await api.put<ApiResponse<PaymentPreferences>>('/settings/payment-preferences', data);
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error || 'Failed to update payment preferences');
+      }
+      return response.data.data;
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.error || 'Invalid payment preferences');
+      }
+      throw new Error(error.message || 'Failed to update payment preferences');
+    }
   },
 };
 

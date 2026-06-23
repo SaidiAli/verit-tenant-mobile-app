@@ -185,7 +185,7 @@ export default function LoginScreen() {
                   <TouchableOpacity
                     onPress={handleSubmit(onSubmit)}
                     disabled={isLoading}
-                    className={`w-full py-3 rounded-md mt-6 ${isLoading ? 'bg-gray-400' : 'bg-[#524768] active:bg-[#254B3C]'
+                    className={`w-full py-3 rounded-md mt-6 ${isLoading ? 'bg-gray-400' : 'bg-[#524768]'
                       }`}
                   >
                     <View className="flex-row justify-center items-center">

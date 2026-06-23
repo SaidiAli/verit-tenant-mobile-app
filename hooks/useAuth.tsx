@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { User } from '../types';
 import { secureStorage } from '../lib/storage';
 import { authApi } from '../lib/api';
+import { resetSocket } from '../lib/socket';
 
 interface UpdateUserRequest {
   firstName?: string;
@@ -94,8 +95,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const logout = async () => {
+    // Do the credential-clearing first so a future throw in socket teardown
+    // can't leave the user half-logged-out.
     await secureStorage.clear();
     setUser(null);
+    resetSocket();
     router.replace('/(auth)/login');
   };
 

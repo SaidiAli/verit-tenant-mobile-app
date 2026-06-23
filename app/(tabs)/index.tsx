@@ -176,7 +176,7 @@ export default function DashboardScreen() {
                       )}
                     </View>
                     <TouchableOpacity
-                      className="bg-[#524768] px-4 py-2 rounded-md active:bg-[#254B3C]"
+                      className="bg-[#524768] px-4 py-2 rounded-md"
                       onPress={() => router.push('/payments')}
                     >
                       <Text className="text-white font-medium">

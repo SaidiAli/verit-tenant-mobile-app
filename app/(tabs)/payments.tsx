@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, RefreshControl, Alert, ActivityIndicator } from 'react-native';
+import { ScrollView, View, Text, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,7 @@ import { PaymentModal } from '../../components/ui/PaymentModal';
 import { PaymentConfirmationModal } from '../../components/ui/PaymentConfirmationModal';
 import { PaymentStatusTracker } from '../../components/ui/PaymentStatusTracker';
 import { useAuth } from '../../hooks/useAuth';
+import { useServerSettings } from '../../hooks/useServerSettings';
 import { useLease } from '../../hooks/LeaseContext';
 import { paymentApi } from '../../lib/api';
 import { ErrorView } from '../../components/ui/ErrorView';
@@ -21,6 +22,7 @@ import { formatDateShort } from '@/lib/utils';
 export default function PaymentsScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { settings } = useServerSettings();
   const { selectedLeaseId } = useLease();
 
   // Payment flow states
@@ -113,29 +115,35 @@ export default function PaymentsScreen() {
     try {
       setPaymentFlow(prev => ({ ...prev, amount, isLoading: true, error: undefined }));
 
-      const phoneNumber = user?.phone;
+      // Prefer the tenant's saved payment preferences; fall back to the profile
+      // phone with phone-prefix provider detection when they're unset.
+      const prefs = settings?.paymentPreferences;
+      const phoneNumber = prefs?.mobileMoneyPhone || user?.phone;
 
       if (!phoneNumber) {
         throw new Error('Phone number not found. Please update your profile.');
       }
 
       const normalizedPhone = normalizePhoneNumber(phoneNumber);
-      const provider = getMobileMoneyProvider(normalizedPhone);
+      const provider = prefs?.mobileMoneyProvider || getMobileMoneyProvider(normalizedPhone);
 
       if (provider === 'unknown') {
         throw new Error('Unsupported phone number. Please use MTN or Airtel mobile money.');
       }
 
-      const providerName = provider === 'mtn' ? 'MTN MoMo' : 'Airtel Money';
+      const providerName =
+        provider === 'mtn' ? 'MTN MoMo' : provider === 'airtel' ? 'Airtel Money' : 'M-Sente';
+      const providerColor =
+        provider === 'mtn' ? '#FFCB05' : provider === 'airtel' ? '#E51A1A' : '#524768';
 
       setPaymentFlow(prev => ({
         ...prev,
         phoneNumber: normalizedPhone,
         paymentMethod: {
-          id: provider,
+          id: provider as any,
           name: provider,
           displayName: providerName,
-          color: provider === 'mtn' ? '#FFCB05' : '#E51A1A',
+          color: providerColor,
           icon: 'phone-android',
           prefixes: [],
         },
@@ -147,7 +155,7 @@ export default function PaymentsScreen() {
       Alert.alert('Error', err.message || 'Failed to proceed with payment');
       setPaymentFlow(prev => ({ ...prev, isLoading: false, error: err.message }));
     }
-  }, [balance, user?.phone, selectedLeaseId]);
+  }, [balance, user?.phone, settings?.paymentPreferences, selectedLeaseId]);
 
   const handlePaymentConfirm = useCallback(async (confirmedPhoneNumber?: string) => {
     const { amount, phoneNumber, paymentMethod } = paymentFlow;
@@ -270,14 +278,27 @@ export default function PaymentsScreen() {
               Payments
             </Text>
 
-            {/* Processing indicator */}
+            {/* Processing tracker — polls the verified status endpoint and is
+                nudged by realtime payment:updated events; drives the flow to
+                success/failed/timeout. Falls back to a spinner if we somehow
+                reach 'processing' without an initiated payment in hand. */}
             {paymentFlow.step === 'processing' && (
-              <Card className="mb-6">
-                <View className="items-center py-8 space-y-4">
-                  <ActivityIndicator size="large" color="#4F46E5" />
-                  <Text className="text-gray-600 text-base font-medium">Processing payment...</Text>
-                </View>
-              </Card>
+              currentPayment ? (
+                <PaymentStatusTracker
+                  transactionId={currentPayment.transactionId}
+                  amount={currentPayment.amount}
+                  onSuccess={handlePaymentSuccess}
+                  onFailed={handlePaymentFailed}
+                  onTimeout={handlePaymentTimeout}
+                  className="mb-6"
+                />
+              ) : (
+                <Card className="mb-6">
+                  <View className="items-center py-8">
+                    <LoadingSpinner size="large" message="Processing payment..." className="my-0" />
+                  </View>
+                </Card>
+              )
             )}
 
             {/* Success/Failure Messages */}
@@ -367,7 +388,7 @@ export default function PaymentsScreen() {
                   </View>
 
                   <TouchableOpacity
-                    className="bg-[#524768] py-3 rounded-md items-center flex-row justify-center space-x-2 active:bg-[#254B3C] mt-8"
+                    className="bg-[#524768] py-3 rounded-md items-center flex-row justify-center space-x-2 mt-8"
                     onPress={handlePayNow}
                     disabled={paymentFlow.step !== 'idle'}
                   >

@@ -139,6 +139,22 @@ export default Sentry.wrap(function RootLayout() {
                     }}
                   />
                   <Stack.Screen
+                    name="screens/settings"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="screens/notifications-settings"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="screens/preferences-settings"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="screens/payment-preferences"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
                     name="screens/edit-profile"
                     options={{ headerShown: false }}
                   />
