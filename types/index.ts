@@ -88,21 +88,101 @@ export interface Payment {
   lease?: Lease;
 }
 
+// Mirrors the server's maintenance status / priority enums.
+export type MaintenancePriority = 'low' | 'medium' | 'high' | 'urgent';
+export type MaintenanceStatus =
+  | 'submitted'
+  | 'assigned'
+  | 'scheduled'
+  | 'in_progress'
+  | 'on_hold'
+  | 'completed'
+  | 'cancelled';
+
 export interface MaintenanceRequest {
   id: string;
   unitId: string;
   tenantId: string;
   title: string;
-  description: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'submitted' | 'in_progress' | 'completed' | 'cancelled';
+  description: string | null;
+  priority: MaintenancePriority;
+  category: string; // slug → landlord-managed maintenance categories
+  status: MaintenanceStatus;
+  vendorId: string | null;
+  dueDate: string | null;
+  scheduledDate: string | null;
+  assignedAt: string | null;
+  // Money is returned as decimal strings; parseFloat before display.
+  estimatedCost: string | null;
+  actualCost: string | null;
   submittedAt: string;
-  completedAt?: string;
-  notes?: string;
+  completedAt: string | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
-  unit?: Unit;
-  tenant?: User;
+}
+
+// Minimal shapes for the joined rows the server returns alongside a request.
+export interface MaintenanceVendor {
+  id: string;
+  name: string;
+  companyName: string | null;
+  phone: string;
+}
+
+export interface MaintenanceUnitInfo {
+  id: string;
+  unitNumber: string;
+}
+
+export interface MaintenancePropertyInfo {
+  id: string;
+  name: string;
+  address?: string;
+}
+
+export interface MaintenancePhoto {
+  id: string;
+  maintenanceRequestId: string;
+  url: string;
+  uploadedBy: string | null;
+  createdAt: string;
+}
+
+// GET /api/maintenance (tenant) — one row per request.
+export interface MaintenanceListItem {
+  maintenanceRequest: MaintenanceRequest;
+  unit: MaintenanceUnitInfo | null;
+  property: MaintenancePropertyInfo | null;
+  vendor: MaintenanceVendor | null;
+}
+
+// GET /api/maintenance/:id — list item plus its photos.
+export interface MaintenanceRequestDetail extends MaintenanceListItem {
+  photos: MaintenancePhoto[];
+}
+
+// GET /api/tenant/maintenance-categories — landlord-managed list.
+export interface MaintenanceCategory {
+  slug: string;
+  label: string;
+}
+
+// A photo picked on-device, ready to append to multipart/form-data.
+export interface MaintenancePhotoUpload {
+  uri: string;
+  name: string;
+  type: string;
+}
+
+// Create form payload (client side). `unitId` is derived server-side from the
+// tenant's active lease, so it is intentionally omitted here.
+export interface CreateMaintenanceRequestInput {
+  title: string;
+  description?: string;
+  priority?: MaintenancePriority;
+  category?: string; // slug
+  photos?: MaintenancePhotoUpload[];
 }
 
 // API Response types

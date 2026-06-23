@@ -19,12 +19,32 @@ import {
   SettingsProfile,
   NotificationSettings,
   PreferenceSettings,
-  PaymentPreferences
+  PaymentPreferences,
+  MaintenanceRequest,
+  MaintenanceListItem,
+  MaintenanceRequestDetail,
+  MaintenanceCategory,
+  MaintenancePhoto,
+  MaintenancePhotoUpload,
+  CreateMaintenanceRequestInput
 } from '../types';
 
 import * as Sentry from '@sentry/react-native';
 
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://verit-server-730073184196.europe-west1.run.app/api';
+// `EXPO_PUBLIC_API_URL` is inlined into the bundle at build time (it is not read
+// at runtime). If it is missing — e.g. the bundle was built without a `.env`, or
+// the var wasn't exported to EAS — every request would otherwise silently fall
+// back to a relative URL and `lib/socket.ts` would crash on `undefined.replace`.
+// Fail loudly here instead so the cause is obvious.
+const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL;
+if (!apiBaseUrl) {
+  throw new Error(
+    'EXPO_PUBLIC_API_URL is not set. Add it to .env.local (e.g. http://<your-lan-ip>:4000/api) ' +
+      'and restart the bundler with `npx expo start -c`. For EAS builds, set it in eas.json / build env.',
+  );
+}
+
+export const API_BASE_URL: string = apiBaseUrl;
 
 // Create axios instance
 const api = axios.create({
@@ -471,14 +491,130 @@ export const tenantApi = {
     return paymentApi.initiate(paymentData);
   },
 
-  getMaintenanceRequests: async () => {
-    const response = await api.get('/maintenance');
-    return response.data;
+  /**
+   * List the tenant's own maintenance requests. The server branches on role and
+   * returns one row per request: `{ maintenanceRequest, unit, property, vendor }`.
+   */
+  getMaintenanceRequests: async (): Promise<MaintenanceListItem[]> => {
+    try {
+      const response = await api.get<ApiResponse<MaintenanceListItem[]>>('/maintenance');
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Failed to load maintenance requests');
+      }
+      return response.data.data || [];
+    } catch (error: any) {
+      if (error.response?.status === 404) return [];
+      throw new Error(error.message || 'Failed to load maintenance requests');
+    }
   },
 
-  createMaintenanceRequest: async (requestData: any) => {
-    const response = await api.post('/maintenance', requestData);
-    return response.data;
+  /**
+   * A single request with its photos: `{ maintenanceRequest, unit, property, vendor, photos }`.
+   */
+  getMaintenanceRequest: async (id: string): Promise<MaintenanceRequestDetail> => {
+    try {
+      const response = await api.get<ApiResponse<MaintenanceRequestDetail>>(`/maintenance/${id}`);
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error || 'Failed to load maintenance request');
+      }
+      return response.data.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error('Maintenance request not found');
+      }
+      throw new Error(error.message || 'Failed to load maintenance request');
+    }
+  },
+
+  /**
+   * Submit a maintenance request. When photos are attached we send
+   * multipart/form-data (up to 10 photos under the repeated `document` field);
+   * otherwise a plain JSON body. `unitId` is derived server-side from the
+   * tenant's active lease. Tenants cannot set status/cost/vendor/schedule.
+   */
+  createMaintenanceRequest: async (form: CreateMaintenanceRequestInput): Promise<MaintenanceRequest> => {
+    try {
+      const { photos, ...fields } = form;
+      let response;
+
+      if (photos && photos.length > 0) {
+        const data = new FormData();
+        data.append('title', fields.title);
+        if (fields.description) data.append('description', fields.description);
+        if (fields.priority) data.append('priority', fields.priority);
+        if (fields.category) data.append('category', fields.category);
+        // React Native FormData file parts: { uri, name, type }. Append each
+        // photo under the same `document` field name the server's multer expects.
+        photos.forEach((photo) => {
+          data.append('document', {
+            uri: photo.uri,
+            name: photo.name,
+            type: photo.type,
+          } as any);
+        });
+        response = await api.post<ApiResponse<MaintenanceRequest>>('/maintenance', data, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } else {
+        response = await api.post<ApiResponse<MaintenanceRequest>>('/maintenance', fields);
+      }
+
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error || response.data.message || 'Failed to submit request');
+      }
+      return response.data.data;
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        // The server puts the generic label in `error` ("Validation failed") and
+        // the field-level reason in `message` — prefer the latter so the tenant
+        // sees which field is wrong.
+        throw new Error(error.response.data?.message || error.response.data?.error || 'Invalid request details');
+      }
+      throw new Error(error.message || 'Failed to submit maintenance request');
+    }
+  },
+
+  /**
+   * Attach an additional photo to an existing request (multipart, field `document`).
+   */
+  addMaintenancePhoto: async (id: string, file: MaintenancePhotoUpload): Promise<MaintenancePhoto> => {
+    try {
+      const data = new FormData();
+      data.append('document', {
+        uri: file.uri,
+        name: file.name,
+        type: file.type,
+      } as any);
+      const response = await api.post<ApiResponse<MaintenancePhoto>>(`/maintenance/${id}/photos`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.error || 'Failed to upload photo');
+      }
+      return response.data.data;
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.error || 'Invalid photo');
+      }
+      throw new Error(error.message || 'Failed to upload photo');
+    }
+  },
+
+  /**
+   * Landlord-managed maintenance categories for the tenant's landlord (resolved
+   * from the active lease). Each item is `{ slug, label }`.
+   */
+  getMaintenanceCategories: async (): Promise<MaintenanceCategory[]> => {
+    try {
+      const response = await api.get<ApiResponse<MaintenanceCategory[]>>('/tenant/maintenance-categories');
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Failed to load categories');
+      }
+      return response.data.data || [];
+    } catch (error: any) {
+      if (error.response?.status === 404) return [];
+      throw new Error(error.message || 'Failed to load categories');
+    }
   },
 
   getPropertyInfo: async (leaseId?: string): Promise<TenantPropertyInfo> => {

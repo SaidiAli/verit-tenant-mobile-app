@@ -190,6 +190,20 @@ export default Sentry.wrap(function RootLayout() {
                       headerTitleStyle: { fontWeight: 'bold' }
                     }}
                   />
+                  <Stack.Screen
+                    name="screens/maintenance-requests"
+                    options={{
+                      headerShown: true,
+                      title: 'Maintenance Requests',
+                      headerStyle: { backgroundColor: '#524768' },
+                      headerTintColor: 'white',
+                      headerTitleStyle: { fontWeight: 'bold' }
+                    }}
+                  />
+                  <Stack.Screen
+                    name="screens/create-maintenance-request"
+                    options={{ headerShown: false }}
+                  />
                 </Stack>
                 <StatusBar style="light" backgroundColor="#524768" />
               </ThemeProvider>

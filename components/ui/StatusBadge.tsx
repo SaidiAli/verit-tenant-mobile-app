@@ -45,18 +45,42 @@ export function getPaymentStatusBadge(status: string) {
   }
 }
 
-// Helper functions for maintenance status badges
+// Helper functions for maintenance status badges. Labels mirror the server's
+// `humanMaintenanceStatus` (submitted / assigned to a technician / scheduled /
+// in progress / on hold / completed / cancelled).
 export function getMaintenanceStatusBadge(status: string) {
   switch (status) {
     case 'completed':
       return { status: 'success' as const, text: 'Completed' };
     case 'in_progress':
       return { status: 'warning' as const, text: 'In Progress' };
+    case 'scheduled':
+      return { status: 'info' as const, text: 'Scheduled' };
+    case 'assigned':
+      return { status: 'info' as const, text: 'Assigned to a technician' };
+    case 'on_hold':
+      return { status: 'warning' as const, text: 'On Hold' };
     case 'submitted':
       return { status: 'info' as const, text: 'Submitted' };
     case 'cancelled':
       return { status: 'error' as const, text: 'Cancelled' };
     default:
       return { status: 'info' as const, text: 'Unknown' };
+  }
+}
+
+// Priority chip styling for maintenance requests.
+export function getMaintenancePriorityBadge(priority: string) {
+  switch (priority) {
+    case 'urgent':
+      return { status: 'error' as const, text: 'Urgent' };
+    case 'high':
+      return { status: 'warning' as const, text: 'High' };
+    case 'medium':
+      return { status: 'info' as const, text: 'Medium' };
+    case 'low':
+      return { status: 'success' as const, text: 'Low' };
+    default:
+      return { status: 'info' as const, text: priority };
   }
 }
