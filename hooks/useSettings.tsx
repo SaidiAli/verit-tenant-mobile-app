@@ -5,7 +5,6 @@ interface AppSettings {
   pushNotifications: boolean;
   autoPayment: boolean;
   biometricAuth: boolean;
-  darkMode: boolean;
 }
 
 interface SettingsContextType {
@@ -19,7 +18,6 @@ const defaultSettings: AppSettings = {
   pushNotifications: true,
   autoPayment: false,
   biometricAuth: false,
-  darkMode: false,
 };
 
 const SETTINGS_KEY = 'app_settings';

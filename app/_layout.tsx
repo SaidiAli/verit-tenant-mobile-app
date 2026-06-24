@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -16,7 +16,6 @@ import {
   NunitoSans_800ExtraBold,
 } from '@expo-google-fonts/nunito-sans';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider } from '@/hooks/useAuth';
 import { SettingsProvider } from '@/hooks/useSettings';
 import { LeaseProvider } from '@/hooks/LeaseContext';
@@ -68,7 +67,6 @@ export const unstable_settings = {
 };
 
 export default Sentry.wrap(function RootLayout() {
-  const colorScheme = useColorScheme();
   const [fontsLoaded] = useFonts({
     NunitoSans_300Light,
     NunitoSans_400Regular,
@@ -98,12 +96,12 @@ export default Sentry.wrap(function RootLayout() {
 
   return (
     <ErrorBoundary>
-    <GluestackUIProvider mode="light">
+    <GluestackUIProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <SettingsProvider>
             <LeaseProvider>
-              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <ThemeProvider value={DefaultTheme}>
                 <Stack screenOptions={{ headerShown: false }}>
                   <Stack.Screen name="(auth)" options={{ headerShown: false }} />
                   <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
