@@ -18,7 +18,7 @@ export default function IndexScreen() {
   }, [isAuthenticated, isLoading, router]);
 
   return (
-    <View className="flex-1 bg-[#524768] justify-center items-center">
+    <View className="flex-1 bg-brand justify-center items-center">
       <ActivityIndicator size="large" color="white" />
     </View>
   );

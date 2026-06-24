@@ -144,7 +144,7 @@ export default function PaymentHistoryScreen() {
                                   </Text>
                                 )}
                                 {payment.status === 'completed' && (
-                                  <Text className="text-xs text-[#524768] font-medium">
+                                  <Text className="text-xs text-brand font-medium">
                                     Tap to view receipt
                                   </Text>
                                 )}

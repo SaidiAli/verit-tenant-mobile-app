@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import React from 'react';
 import { SafeAreaView, SafeAreaViewProps } from 'react-native-safe-area-context';
 import { ViewStyle, View } from 'react-native';
@@ -11,7 +12,7 @@ interface SafeAreaWrapperProps extends SafeAreaViewProps {
 
 export function SafeAreaWrapper({
     children,
-    backgroundColor = '#524768',
+    backgroundColor = BRAND_COLOR,
     style,
     edges = ['top'],
     edgeConfig = 'all',

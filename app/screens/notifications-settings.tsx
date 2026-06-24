@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import { ScrollView, View, Text, TouchableOpacity, Switch, TextInput, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
@@ -32,7 +33,7 @@ function ChannelRow({ icon, label, description, value, onValueChange, disabled }
         value={value}
         disabled={disabled}
         onValueChange={onValueChange}
-        trackColor={{ false: '#E5E7EB', true: '#524768' }}
+        trackColor={{ false: '#E5E7EB', true: BRAND_COLOR }}
         thumbColor={value ? '#ffffff' : '#9CA3AF'}
       />
     </View>
@@ -230,7 +231,7 @@ export default function NotificationsSettingsScreen() {
                     setErrors({});
                   }}
                 >
-                  <Text className="text-[#524768] font-medium text-sm">Clear quiet hours</Text>
+                  <Text className="text-brand font-medium text-sm">Clear quiet hours</Text>
                 </TouchableOpacity>
               ) : null}
             </Card>
@@ -239,7 +240,7 @@ export default function NotificationsSettingsScreen() {
             <TouchableOpacity
               onPress={handleSave}
               disabled={updateNotifications.isPending}
-              className={`py-4 rounded-md mt-2 ${updateNotifications.isPending ? 'bg-gray-300' : 'bg-[#524768]'
+              className={`py-4 rounded-md mt-2 ${updateNotifications.isPending ? 'bg-gray-300' : 'bg-brand'
                 }`}
             >
               <Text className="text-white font-semibold text-center text-lg">

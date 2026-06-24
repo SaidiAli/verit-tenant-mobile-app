@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import { ScrollView, View, Text, TouchableOpacity, Linking, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from '../../components/ui/Card';
@@ -168,11 +169,11 @@ export default function PropertyScreen() {
                 </Text>
 
                 <TouchableOpacity
-                  className="border border-[#524768] py-3 rounded-md flex-row items-center justify-center space-x-2 active:bg-[#524768]/10"
+                  className="border border-brand py-3 rounded-md flex-row items-center justify-center space-x-2 active:bg-brand/10"
                   onPress={handleSubmitMaintenance}
                 >
-                  <MaterialIcons name="build" size={20} color="#524768" />
-                  <Text className="text-[#524768] font-medium">
+                  <MaterialIcons name="build" size={20} color={BRAND_COLOR} />
+                  <Text className="text-brand font-medium">
                     Submit New Request
                   </Text>
                 </TouchableOpacity>

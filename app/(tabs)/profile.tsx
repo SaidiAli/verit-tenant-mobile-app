@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import { ScrollView, View, Text, TouchableOpacity, Alert, Linking } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -92,7 +93,7 @@ export default function ProfileScreen() {
             {/* User Info Card */}
             <Card className="mb-4">
               <View className="space-y-4 items-center">
-                <View className="w-20 h-20 bg-[#524768] rounded-full items-center justify-center">
+                <View className="w-20 h-20 bg-brand rounded-full items-center justify-center">
                   <Text className="text-white font-bold text-xl">
                     {user.firstName?.charAt(0) ?? ''}{user.lastName?.charAt(0) ?? ''}
                   </Text>
@@ -114,8 +115,8 @@ export default function ProfileScreen() {
                   className="flex-row items-center gap-2 px-4 py-2 rounded-md"
                   onPress={handleEditProfile}
                 >
-                  <MaterialIcons name="edit" size={16} color="#524768" />
-                  <Text className="text-[#524768] font-medium text-sm">
+                  <MaterialIcons name="edit" size={16} color={BRAND_COLOR} />
+                  <Text className="text-brand font-medium text-sm">
                     Edit Profile
                   </Text>
                 </TouchableOpacity>

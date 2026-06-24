@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import { ScrollView, View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
@@ -68,14 +69,14 @@ export default function PreferencesSettingsScreen() {
                     <TouchableOpacity
                       key={lang.value}
                       onPress={() => setLanguage(lang.value)}
-                      className={`flex-row justify-between items-center px-3 py-3 rounded-md border ${selected ? 'border-[#524768] bg-[#524768]/5' : 'border-gray-300 bg-white'
+                      className={`flex-row justify-between items-center px-3 py-3 rounded-md border ${selected ? 'border-brand bg-brand/5' : 'border-gray-300 bg-white'
                         }`}
                     >
-                      <Text className={`font-medium ${selected ? 'text-[#524768]' : 'text-gray-800'}`}>
+                      <Text className={`font-medium ${selected ? 'text-brand' : 'text-gray-800'}`}>
                         {lang.label}
                       </Text>
                       {selected ? (
-                        <MaterialIcons name="check-circle" size={20} color="#524768" />
+                        <MaterialIcons name="check-circle" size={20} color={BRAND_COLOR} />
                       ) : (
                         <MaterialIcons name="radio-button-unchecked" size={20} color="#9CA3AF" />
                       )}
@@ -95,14 +96,14 @@ export default function PreferencesSettingsScreen() {
                     <TouchableOpacity
                       key={tz}
                       onPress={() => setTimezone(tz)}
-                      className={`flex-row justify-between items-center px-3 py-3 rounded-md border ${selected ? 'border-[#524768] bg-[#524768]/5' : 'border-gray-300 bg-white'
+                      className={`flex-row justify-between items-center px-3 py-3 rounded-md border ${selected ? 'border-brand bg-brand/5' : 'border-gray-300 bg-white'
                         }`}
                     >
-                      <Text className={`font-medium ${selected ? 'text-[#524768]' : 'text-gray-800'}`}>
+                      <Text className={`font-medium ${selected ? 'text-brand' : 'text-gray-800'}`}>
                         {tz.replace('Africa/', '').replace('_', ' ')}
                       </Text>
                       {selected ? (
-                        <MaterialIcons name="check-circle" size={20} color="#524768" />
+                        <MaterialIcons name="check-circle" size={20} color={BRAND_COLOR} />
                       ) : (
                         <MaterialIcons name="radio-button-unchecked" size={20} color="#9CA3AF" />
                       )}
@@ -116,7 +117,7 @@ export default function PreferencesSettingsScreen() {
             <TouchableOpacity
               onPress={save}
               disabled={updatePreferences.isPending}
-              className={`py-4 rounded-md mt-2 ${updatePreferences.isPending ? 'bg-gray-300' : 'bg-[#524768]'
+              className={`py-4 rounded-md mt-2 ${updatePreferences.isPending ? 'bg-gray-300' : 'bg-brand'
                 }`}
             >
               <Text className="text-white font-semibold text-center text-lg">

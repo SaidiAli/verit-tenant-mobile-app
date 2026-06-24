@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import React, { useState, useCallback } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -134,7 +135,7 @@ export default function PaymentsScreen() {
       const providerName =
         provider === 'mtn' ? 'MTN MoMo' : provider === 'airtel' ? 'Airtel Money' : 'M-Sente';
       const providerColor =
-        provider === 'mtn' ? '#FFCB05' : provider === 'airtel' ? '#E51A1A' : '#524768';
+        provider === 'mtn' ? '#FFCB05' : provider === 'airtel' ? '#E51A1A' : BRAND_COLOR;
 
       setPaymentFlow(prev => ({
         ...prev,
@@ -366,7 +367,7 @@ export default function PaymentsScreen() {
                   </View>
 
                   <View className="space-y-2">
-                    <Text className="text-3xl font-bold text-[#524768]">
+                    <Text className="text-3xl font-bold text-brand">
                       {formatUGX(balance.outstandingBalance)}
                     </Text>
                     <View className="flex-row justify-between">
@@ -388,7 +389,7 @@ export default function PaymentsScreen() {
                   </View>
 
                   <TouchableOpacity
-                    className="bg-[#524768] py-3 rounded-md items-center flex-row justify-center space-x-2 mt-8"
+                    className="bg-brand py-3 rounded-md items-center flex-row justify-center space-x-2 mt-8"
                     onPress={handlePayNow}
                     disabled={paymentFlow.step !== 'idle'}
                   >
@@ -447,8 +448,8 @@ export default function PaymentsScreen() {
               <Card className="mb-4">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-3">
-                    <View className="w-10 h-10 bg-[#524768]/10 rounded-full items-center justify-center">
-                      <MaterialIcons name="event-note" size={24} color="#524768" />
+                    <View className="w-10 h-10 bg-brand/10 rounded-full items-center justify-center">
+                      <MaterialIcons name="event-note" size={24} color={BRAND_COLOR} />
                     </View>
                     <View>
                       <Text className="text-lg font-semibold text-gray-800">
@@ -472,8 +473,8 @@ export default function PaymentsScreen() {
               <Card className="mb-6">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-3">
-                    <View className="w-10 h-10 bg-[#524768]/10 rounded-full items-center justify-center">
-                      <MaterialIcons name="receipt-long" size={24} color="#524768" />
+                    <View className="w-10 h-10 bg-brand/10 rounded-full items-center justify-center">
+                      <MaterialIcons name="receipt-long" size={24} color={BRAND_COLOR} />
                     </View>
                     <View>
                       <Text className="text-lg font-semibold text-gray-800">

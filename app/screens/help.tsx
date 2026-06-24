@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import { ScrollView, View, Text, TouchableOpacity, Linking } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from '../../components/ui/Card';
@@ -44,7 +45,7 @@ const quickActions = [
     title: 'Office Hours',
     description: 'View property management hours',
     icon: 'schedule',
-    color: '#524768',
+    color: BRAND_COLOR,
   },
   {
     id: '3',
@@ -118,8 +119,8 @@ export default function HelpScreen() {
                       className="flex-row items-center gap-3"
                       onPress={() => handleTopicPress(topic.id)}
                     >
-                      <View className="w-10 h-10 bg-[#524768]/10 rounded-full items-center justify-center">
-                        <MaterialIcons name={topic.icon as any} size={20} color="#524768" />
+                      <View className="w-10 h-10 bg-brand/10 rounded-full items-center justify-center">
+                        <MaterialIcons name={topic.icon as any} size={20} color={BRAND_COLOR} />
                       </View>
                       <View className="flex-1">
                         <Text className="font-medium text-gray-800">
@@ -153,7 +154,7 @@ export default function HelpScreen() {
                 </View>
 
                 <TouchableOpacity
-                  className="bg-[#524768] px-6 py-3 rounded-md"
+                  className="bg-brand px-6 py-3 rounded-md"
                   onPress={handleContactSupport}
                 >
                   <Text className="text-white font-medium">
@@ -183,8 +184,8 @@ export default function HelpScreen() {
                   className="flex-row items-center space-x-2 mt-3"
                   onPress={openWebsite}
                 >
-                  <MaterialIcons name="language" size={16} color="#524768" />
-                  <Text className="text-[#524768] text-sm font-medium">
+                  <MaterialIcons name="language" size={16} color={BRAND_COLOR} />
+                  <Text className="text-brand text-sm font-medium">
                     Visit Our Website
                   </Text>
                 </TouchableOpacity>

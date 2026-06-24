@@ -242,11 +242,11 @@ export function PaymentStatusTracker({
               disabled={isPolling}
               className={`px-6 py-2 rounded-md border ${isPolling
                   ? 'border-gray-300 bg-gray-100'
-                  : 'border-[#524768] bg-white active:bg-[#524768]/10'
+                  : 'border-brand bg-white active:bg-brand/10'
                 }`}
             >
               <Text
-                className={`font-medium ${isPolling ? 'text-gray-400' : 'text-[#524768]'
+                className={`font-medium ${isPolling ? 'text-gray-400' : 'text-brand'
                   }`}
               >
                 {isPolling ? 'Checking...' : 'Check Status'}
@@ -265,7 +265,7 @@ export function PaymentStatusTracker({
               </View>
               <View className="w-full bg-gray-200 rounded-full h-2">
                 <View
-                  className="bg-[#524768] h-2 rounded-full transition-all duration-1000"
+                  className="bg-brand h-2 rounded-full transition-all duration-1000"
                   style={{
                     width: `${Math.min((elapsed / 120) * 100, 95)}%` // 120 seconds = 2 minutes
                   }}

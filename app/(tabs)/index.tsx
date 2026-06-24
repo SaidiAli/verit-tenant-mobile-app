@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import {
   ScrollView,
   View,
@@ -166,7 +167,7 @@ export default function DashboardScreen() {
                       )}
                     </View>
                     <TouchableOpacity
-                      className="bg-[#524768] px-4 py-2 rounded-md"
+                      className="bg-brand px-4 py-2 rounded-md"
                       onPress={() => router.push("/payments")}
                     >
                       <Text className="text-white font-medium">Pay Now</Text>
@@ -186,8 +187,8 @@ export default function DashboardScreen() {
               <Card className="mb-4">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-3">
-                    <View className="w-10 h-10 bg-[#524768]/10 rounded-full items-center justify-center">
-                      <MaterialIcons name="build" size={24} color="#524768" />
+                    <View className="w-10 h-10 bg-brand/10 rounded-full items-center justify-center">
+                      <MaterialIcons name="build" size={24} color={BRAND_COLOR} />
                     </View>
                     <View>
                       <Text className="text-lg font-semibold text-gray-800">
@@ -217,7 +218,7 @@ export default function DashboardScreen() {
                   <TouchableOpacity
                     onPress={() => router.push("/screens/payment-history")}
                   >
-                    <Text className="text-[#524768] text-sm">View All</Text>
+                    <Text className="text-brand text-sm">View All</Text>
                   </TouchableOpacity>
                 </View>
                 {!dashboardData?.payments.recentPayments ||

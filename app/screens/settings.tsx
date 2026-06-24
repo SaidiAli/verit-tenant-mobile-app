@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import { ScrollView, View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -73,7 +74,7 @@ export default function SettingsScreen() {
                     onPress={() => router.push(section.route as any)}
                   >
                     <View className="flex-row items-center gap-3 flex-1">
-                      <MaterialIcons name={section.icon} size={22} color="#524768" />
+                      <MaterialIcons name={section.icon} size={22} color={BRAND_COLOR} />
                       <View className="flex-1">
                         <Text className="font-medium text-gray-800">{section.label}</Text>
                         <Text className="text-sm text-gray-500">{section.description}</Text>

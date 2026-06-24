@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import { useState } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, Linking, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -260,7 +261,7 @@ export default function LeaseScreen() {
                 <View className="space-y-2">
                   <View className="flex-row justify-between">
                     <Text className="text-gray-600">Monthly Rent:</Text>
-                    <Text className="text-lg font-bold text-[#524768]">
+                    <Text className="text-lg font-bold text-brand">
                       UGX {lease.monthlyRent.toLocaleString()}
                     </Text>
                   </View>
@@ -297,10 +298,10 @@ export default function LeaseScreen() {
                       >
                         <Text className="text-gray-600">Email:</Text>
                         <View className="flex-row items-center space-x-2">
-                          <Text className="font-medium text-[#524768]">
+                          <Text className="font-medium text-brand">
                             {landlord.email}
                           </Text>
-                          <MaterialIcons name="email" size={16} color="#524768" />
+                          <MaterialIcons name="email" size={16} color={BRAND_COLOR} />
                         </View>
                       </TouchableOpacity>
                     )}
@@ -312,8 +313,8 @@ export default function LeaseScreen() {
                       >
                         <Text className="text-gray-600">Phone:</Text>
                         <View className="flex-row items-center gap-2">
-                          <MaterialIcons name="phone" size={16} color="#524768" />
-                          <Text className="font-medium text-[#524768]">
+                          <MaterialIcons name="phone" size={16} color={BRAND_COLOR} />
+                          <Text className="font-medium text-brand">
                             {landlord.phone}
                           </Text>
                         </View>
@@ -338,7 +339,7 @@ export default function LeaseScreen() {
                 <TouchableOpacity
                   onPress={handleDownloadStatement}
                   disabled={isDownloading}
-                  className="bg-[#524768] py-3 mt-4 rounded-md items-center flex-row justify-center"
+                  className="bg-brand py-3 mt-4 rounded-md items-center flex-row justify-center"
                 >
                   <MaterialIcons name="file-download" size={20} color="white" />
                   <Text className="text-white font-semibold ml-2">

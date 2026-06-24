@@ -181,7 +181,7 @@ export function PaymentConfirmationModal({
                                 disabled={isLoading || derivedProvider === 'Unknown Provider'}
                                 className={`py-3 rounded-md items-center ${isLoading || derivedProvider === 'Unknown Provider'
                                     ? 'bg-gray-300'
-                                    : 'bg-[#524768]'
+                                    : 'bg-brand'
                                     }`}
                             >
                                 <Text className="text-white font-semibold text-lg">

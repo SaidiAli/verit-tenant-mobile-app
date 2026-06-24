@@ -74,7 +74,7 @@ export default function MaintenanceRequestsScreen() {
           <View className="px-4 pt-6 pb-4">
             {/* New request button */}
             <TouchableOpacity
-              className="bg-[#524768] py-3 rounded-md items-center flex-row justify-center gap-2 mb-6"
+              className="bg-brand py-3 rounded-md items-center flex-row justify-center gap-2 mb-6"
               onPress={() => router.push('/screens/create-maintenance-request' as any)}
             >
               <MaterialIcons name="add" size={20} color="white" />

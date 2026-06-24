@@ -10,16 +10,16 @@
 
 /* Verit tenant app CSS variables */
 :root {
-  --color-primary-50: #F0F8F5;
-  --color-primary-100: #DCEDDF;
-  --color-primary-200: #B6D9BC;
-  --color-primary-300: #8BC596;
-  --color-primary-400: #5F9F6F;
+  --color-primary-50: #F0EEF5;
+  --color-primary-100: #D9D5E3;
+  --color-primary-200: #B3ABC7;
+  --color-primary-300: #8D82AB;
+  --color-primary-400: #67588F;
   --color-primary-500: #524768;
-  --color-primary-600: #254B3C;
-  --color-primary-700: #1E3C2F;
-  --color-primary-800: #162D23;
-  --color-primary-900: #0F1E18;
+  --color-primary-600: #423953;
+  --color-primary-700: #312B3E;
+  --color-primary-800: #211D2A;
+  --color-primary-900: #100E15;
 
   --color-success-500: #10B981;
   --color-error-500: #EF4444;

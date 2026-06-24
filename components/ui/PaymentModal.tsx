@@ -106,7 +106,7 @@ export function PaymentModal({
                 <Text className="text-lg font-semibold text-gray-800">
                   Outstanding Balance
                 </Text>
-                <Text className="text-3xl font-bold text-[#524768]">
+                <Text className="text-3xl font-bold text-brand">
                   {formatUGX(balance.outstandingBalance)}
                 </Text>
                 <View className="flex-row justify-between text-sm text-gray-600">
@@ -163,7 +163,7 @@ export function PaymentModal({
               disabled={!amount || isLoading || !!error}
               className={`py-3 rounded-md items-center ${(!amount || isLoading || !!error)
                 ? 'bg-gray-300'
-                : 'bg-[#524768]'
+                : 'bg-brand'
                 }`}
             >
               {isLoading ? (

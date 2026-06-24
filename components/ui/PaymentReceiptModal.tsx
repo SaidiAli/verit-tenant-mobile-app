@@ -127,7 +127,7 @@ Thank you for your payment!
               </Text>
               <TouchableOpacity
                 onPress={() => refetch()}
-                className="bg-[#524768] px-6 py-3 rounded-md mt-4"
+                className="bg-brand px-6 py-3 rounded-md mt-4"
               >
                 <Text className="text-white font-semibold">Retry</Text>
               </TouchableOpacity>
@@ -139,7 +139,7 @@ Thank you for your payment!
               <View className="space-y-6 p-2">
                 {/* Company Header */}
                 <View className="items-center py-4 border-b border-gray-200">
-                  <Text className="text-2xl font-bold text-[#524768]">
+                  <Text className="text-2xl font-bold text-brand">
                     {receipt.companyInfo.name}
                   </Text>
                   <Text className="text-gray-600">{receipt.companyInfo.address}</Text>
@@ -152,7 +152,7 @@ Thank you for your payment!
                     <Text className="text-xl font-bold text-gray-800">
                       PAYMENT RECEIPT
                     </Text>
-                    <Text className="text-lg font-semibold text-[#524768] mt-1">
+                    <Text className="text-lg font-semibold text-brand mt-1">
                       ID: {receipt.transactionId}
                     </Text>
                   </View>
@@ -286,7 +286,7 @@ Thank you for your payment!
               <TouchableOpacity
                 onPress={handleDownloadPdf}
                 disabled={isDownloading}
-                className="flex-1 bg-[#524768] py-3 rounded-md items-center flex-row justify-center"
+                className="flex-1 bg-brand py-3 rounded-md items-center flex-row justify-center"
               >
                 <MaterialIcons name="file-download" size={20} color="white" />
                 <Text className="text-white font-semibold ml-1">

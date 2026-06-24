@@ -82,7 +82,7 @@ export default function EditProfileScreen() {
             {/* Profile Photo Section */}
             <Card className="mb-4">
               <View className="items-center space-y-4">
-                <View className="w-24 h-24 bg-[#524768] rounded-full items-center justify-center">
+                <View className="w-24 h-24 bg-brand rounded-full items-center justify-center">
                   <Text className="text-white font-bold text-2xl">
                     {formData.firstName?.charAt(0) ?? ''}{formData.lastName?.charAt(0) ?? ''}
                   </Text>
@@ -203,7 +203,7 @@ export default function EditProfileScreen() {
               <TouchableOpacity
                 onPress={handleSave}
                 disabled={isPending}
-                className={`py-4 rounded-md ${isPending ? 'bg-gray-300' : 'bg-[#524768]'
+                className={`py-4 rounded-md ${isPending ? 'bg-gray-300' : 'bg-brand'
                   }`}
               >
                 <Text className="text-white font-semibold text-center text-lg">

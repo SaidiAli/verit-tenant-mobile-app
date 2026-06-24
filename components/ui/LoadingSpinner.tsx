@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import { View, Text, ActivityIndicator } from 'react-native';
 
 interface LoadingSpinnerProps {
@@ -13,7 +14,7 @@ export function LoadingSpinner({
 }: LoadingSpinnerProps) {
   return (
     <View className={`flex-1 justify-center items-center ${className}`}>
-      <ActivityIndicator size={size} color="#524768" className="mb-4" />
+      <ActivityIndicator size={size} color={BRAND_COLOR} className="mb-4" />
       {message && (
         <Text className="text-gray-600 text-center">{message}</Text>
       )}

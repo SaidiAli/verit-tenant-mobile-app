@@ -173,6 +173,9 @@ module.exports = {
           info: 'rgb(var(--color-indicator-info)/<alpha-value>)',
           error: 'rgb(var(--color-indicator-error)/<alpha-value>)',
         },
+        brand: {
+          DEFAULT: '#524768',
+        },
       },
       fontFamily: {
         sans: ['NunitoSans_400Regular'],
@@ -184,11 +187,7 @@ module.exports = {
         'nunito-semibold': ['NunitoSans_600SemiBold'],
         'nunito-bold': ['NunitoSans_700Bold'],
         'nunito-extrabold': ['NunitoSans_800ExtraBold'],
-        jakarta: ['var(--font-plus-jakarta-sans)'],
-        roboto: ['var(--font-roboto)'],
-        code: ['var(--font-source-code-pro)'],
-        inter: ['var(--font-inter)'],
-        'space-mono': ['var(--font-space-mono)'],
+
       },
       fontWeight: {
         extrablack: '950',

@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import { View, Text, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useState } from 'react';
@@ -65,7 +66,7 @@ export function LeaseSwitcher() {
                                 <TouchableOpacity
                                     onPress={() => handleSelectLease(item.id)}
                                     className={`p-4 rounded-xl mb-3 border ${selectedLease?.id === item.id
-                                        ? 'border-[#524768] bg-[#524768]/5'
+                                        ? 'border-brand bg-brand/5'
                                         : 'border-gray-200'
                                         }`}
                                 >
@@ -87,7 +88,7 @@ export function LeaseSwitcher() {
                                             <StatusBadge status={item.status === 'active' ? 'success' : 'info'} text={item.status} />
                                             {selectedLease?.id === item.id && (
                                                 <View className="mt-2">
-                                                    <MaterialIcons name="check-circle" size={20} color="#524768" />
+                                                    <MaterialIcons name="check-circle" size={20} color={BRAND_COLOR} />
                                                 </View>
                                             )}
                                         </View>

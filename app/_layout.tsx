@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -111,7 +112,7 @@ export default Sentry.wrap(function RootLayout() {
                     options={{
                       headerShown: true,
                       title: 'Lease Information',
-                      headerStyle: { backgroundColor: '#524768' },
+                      headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
                       headerTitleStyle: { fontWeight: 'bold' }
                     }}
@@ -121,7 +122,7 @@ export default Sentry.wrap(function RootLayout() {
                     options={{
                       headerShown: true,
                       title: 'Property Information',
-                      headerStyle: { backgroundColor: '#524768' },
+                      headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
                       headerTitleStyle: { fontWeight: 'bold' }
                     }}
@@ -131,7 +132,7 @@ export default Sentry.wrap(function RootLayout() {
                     options={{
                       headerShown: true,
                       title: 'Help & Resources',
-                      headerStyle: { backgroundColor: '#524768' },
+                      headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
                       headerTitleStyle: { fontWeight: 'bold' }
                     }}
@@ -173,7 +174,7 @@ export default Sentry.wrap(function RootLayout() {
                     options={{
                       headerShown: true,
                       title: 'Payment History',
-                      headerStyle: { backgroundColor: '#524768' },
+                      headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
                       headerTitleStyle: { fontWeight: 'bold' }
                     }}
@@ -183,7 +184,7 @@ export default Sentry.wrap(function RootLayout() {
                     options={{
                       headerShown: true,
                       title: 'Payment Schedule',
-                      headerStyle: { backgroundColor: '#524768' },
+                      headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
                       headerTitleStyle: { fontWeight: 'bold' }
                     }}
@@ -193,7 +194,7 @@ export default Sentry.wrap(function RootLayout() {
                     options={{
                       headerShown: true,
                       title: 'Maintenance Requests',
-                      headerStyle: { backgroundColor: '#524768' },
+                      headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
                       headerTitleStyle: { fontWeight: 'bold' }
                     }}
@@ -203,7 +204,7 @@ export default Sentry.wrap(function RootLayout() {
                     options={{ headerShown: false }}
                   />
                 </Stack>
-                <StatusBar style="light" backgroundColor="#524768" />
+                <StatusBar style="light" backgroundColor={BRAND_COLOR} />
               </ThemeProvider>
             </LeaseProvider>
           </SettingsProvider>

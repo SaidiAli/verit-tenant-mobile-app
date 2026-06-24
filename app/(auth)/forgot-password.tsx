@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import { useState } from 'react';
 import {
   View,
@@ -114,8 +115,8 @@ export default function ForgotPasswordScreen() {
             <View className="items-center w-full max-w-sm mx-auto">
               {/* Header */}
               <View className="mb-8 items-center">
-                <View className="w-16 h-16 bg-[#524768]/10 rounded-full items-center justify-center mb-4">
-                  <MaterialIcons name="lock-reset" size={32} color="#524768" />
+                <View className="w-16 h-16 bg-brand/10 rounded-full items-center justify-center mb-4">
+                  <MaterialIcons name="lock-reset" size={32} color={BRAND_COLOR} />
                 </View>
                 <Text className="text-2xl font-semibold text-gray-800 text-center">
                   {step === 'email' && 'Reset Password'}
@@ -162,7 +163,7 @@ export default function ForgotPasswordScreen() {
                   <TouchableOpacity
                     onPress={handleSendCode}
                     disabled={isLoading}
-                    className={`w-full py-3 rounded-md ${isLoading ? 'bg-gray-400' : 'bg-[#524768]'}`}
+                    className={`w-full py-3 rounded-md ${isLoading ? 'bg-gray-400' : 'bg-brand'}`}
                   >
                     <View className="flex-row justify-center items-center">
                       {isLoading && <ActivityIndicator color="white" size="small" className="mr-2" />}
@@ -205,7 +206,7 @@ export default function ForgotPasswordScreen() {
                   <TouchableOpacity
                     onPress={handleVerifyOtp}
                     disabled={isLoading}
-                    className={`w-full py-3 rounded-md ${isLoading ? 'bg-gray-400' : 'bg-[#524768]'}`}
+                    className={`w-full py-3 rounded-md ${isLoading ? 'bg-gray-400' : 'bg-brand'}`}
                   >
                     <View className="flex-row justify-center items-center">
                       {isLoading && <ActivityIndicator color="white" size="small" className="mr-2" />}
@@ -220,7 +221,7 @@ export default function ForgotPasswordScreen() {
                     disabled={isLoading}
                     className="items-center py-2"
                   >
-                    <Text className="text-[#524768] text-sm font-medium">
+                    <Text className="text-brand text-sm font-medium">
                       Resend Code
                     </Text>
                   </TouchableOpacity>
@@ -274,7 +275,7 @@ export default function ForgotPasswordScreen() {
                   <TouchableOpacity
                     onPress={handleResetPassword}
                     disabled={isLoading}
-                    className={`w-full py-3 rounded-md ${isLoading ? 'bg-gray-400' : 'bg-[#524768]'}`}
+                    className={`w-full py-3 rounded-md ${isLoading ? 'bg-gray-400' : 'bg-brand'}`}
                   >
                     <View className="flex-row justify-center items-center">
                       {isLoading && <ActivityIndicator color="white" size="small" className="mr-2" />}
@@ -297,7 +298,7 @@ export default function ForgotPasswordScreen() {
                   </Text>
                   <TouchableOpacity
                     onPress={handleBackToLogin}
-                    className="w-full py-3 rounded-md bg-[#524768]"
+                    className="w-full py-3 rounded-md bg-brand"
                   >
                     <Text className="text-white font-medium text-center">
                       Back to Sign In
@@ -314,7 +315,7 @@ export default function ForgotPasswordScreen() {
                 >
                   <Text className="text-gray-500 text-sm">
                     Remember your password?{' '}
-                    <Text className="text-[#524768] font-medium">Sign In</Text>
+                    <Text className="text-brand font-medium">Sign In</Text>
                   </Text>
                 </TouchableOpacity>
               )}

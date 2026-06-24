@@ -129,10 +129,10 @@ export default function PaymentPreferencesScreen() {
                         setProvider(p.value);
                         if (errors.provider) setErrors((e) => ({ ...e, provider: '' }));
                       }}
-                      className={`flex-1 py-3 rounded-md border items-center ${selected ? 'border-[#524768] bg-[#524768]/5' : 'border-gray-300 bg-white'
+                      className={`flex-1 py-3 rounded-md border items-center ${selected ? 'border-brand bg-brand/5' : 'border-gray-300 bg-white'
                         }`}
                     >
-                      <Text className={`font-medium ${selected ? 'text-[#524768]' : 'text-gray-700'}`}>
+                      <Text className={`font-medium ${selected ? 'text-brand' : 'text-gray-700'}`}>
                         {p.label}
                       </Text>
                     </TouchableOpacity>
@@ -155,7 +155,7 @@ export default function PaymentPreferencesScreen() {
                 <TouchableOpacity
                   onPress={() => adjustReminder(-1)}
                   disabled={reminderDays <= REMINDER_MIN}
-                  className={`w-12 h-12 rounded-md items-center justify-center ${reminderDays <= REMINDER_MIN ? 'bg-gray-200' : 'bg-[#524768]'
+                  className={`w-12 h-12 rounded-md items-center justify-center ${reminderDays <= REMINDER_MIN ? 'bg-gray-200' : 'bg-brand'
                     }`}
                 >
                   <MaterialIcons name="remove" size={24} color="#ffffff" />
@@ -171,7 +171,7 @@ export default function PaymentPreferencesScreen() {
                 <TouchableOpacity
                   onPress={() => adjustReminder(1)}
                   disabled={reminderDays >= REMINDER_MAX}
-                  className={`w-12 h-12 rounded-md items-center justify-center ${reminderDays >= REMINDER_MAX ? 'bg-gray-200' : 'bg-[#524768]'
+                  className={`w-12 h-12 rounded-md items-center justify-center ${reminderDays >= REMINDER_MAX ? 'bg-gray-200' : 'bg-brand'
                     }`}
                 >
                   <MaterialIcons name="add" size={24} color="#ffffff" />
@@ -183,7 +183,7 @@ export default function PaymentPreferencesScreen() {
             <TouchableOpacity
               onPress={save}
               disabled={updatePaymentPrefs.isPending}
-              className={`py-4 rounded-md mt-2 ${updatePaymentPrefs.isPending ? 'bg-gray-300' : 'bg-[#524768]'
+              className={`py-4 rounded-md mt-2 ${updatePaymentPrefs.isPending ? 'bg-gray-300' : 'bg-brand'
                 }`}
             >
               <Text className="text-white font-semibold text-center text-lg">

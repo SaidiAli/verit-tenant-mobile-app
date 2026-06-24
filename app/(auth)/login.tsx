@@ -176,7 +176,7 @@ export default function LoginScreen() {
                     onPress={() => router.push('/(auth)/forgot-password')}
                     className="self-end"
                   >
-                    <Text className="text-[#524768] text-sm font-medium">
+                    <Text className="text-brand text-sm font-medium">
                       Forgot Password?
                     </Text>
                   </TouchableOpacity>
@@ -185,7 +185,7 @@ export default function LoginScreen() {
                   <TouchableOpacity
                     onPress={handleSubmit(onSubmit)}
                     disabled={isLoading}
-                    className={`w-full py-3 rounded-md mt-6 ${isLoading ? 'bg-gray-400' : 'bg-[#524768]'
+                    className={`w-full py-3 rounded-md mt-6 ${isLoading ? 'bg-gray-400' : 'bg-brand'
                       }`}
                   >
                     <View className="flex-row justify-center items-center">

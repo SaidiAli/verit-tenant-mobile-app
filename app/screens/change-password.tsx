@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import { ScrollView, View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useState } from 'react';
@@ -119,7 +120,7 @@ export default function ChangePasswordScreen() {
             {/* Security Notice */}
             <Card className="mb-4">
               <View className="flex-row items-start gap-3">
-                <MaterialIcons name="security" size={24} color="#524768" />
+                <MaterialIcons name="security" size={24} color={BRAND_COLOR} />
                 <View className="flex-1">
                   <Text className="font-semibold text-gray-800 mb-1">
                     Security Notice
@@ -287,7 +288,7 @@ export default function ChangePasswordScreen() {
               <TouchableOpacity
                 onPress={handleChangePassword}
                 disabled={isPending}
-                className={`py-4 rounded-md ${isPending ? 'bg-gray-300' : 'bg-[#524768]'
+                className={`py-4 rounded-md ${isPending ? 'bg-gray-300' : 'bg-brand'
                   }`}
               >
                 <Text className="text-white font-semibold text-center text-lg">

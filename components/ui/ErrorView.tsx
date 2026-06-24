@@ -41,7 +41,7 @@ export function ErrorView({
                 <TouchableOpacity
                     onPress={onRetry}
                     disabled={isRetrying}
-                    className={`px-6 py-3 rounded-md mt-2 ${isRetrying ? 'bg-gray-400' : 'bg-[#524768]'
+                    className={`px-6 py-3 rounded-md mt-2 ${isRetrying ? 'bg-gray-400' : 'bg-brand'
                         }`}
                 >
                     <Text className="text-white font-semibold">

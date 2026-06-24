@@ -1,3 +1,4 @@
+import { BRAND_COLOR } from '@/constants/theme';
 import { useState } from 'react';
 import {
   ScrollView,
@@ -178,7 +179,7 @@ export default function CreateMaintenanceRequestScreen() {
                       key={p.value}
                       onPress={() => setForm((prev) => ({ ...prev, priority: p.value }))}
                       className={`px-4 py-2 rounded-full border ${
-                        selected ? 'bg-[#524768] border-[#524768]' : 'bg-white border-gray-300'
+                        selected ? 'bg-brand border-brand' : 'bg-white border-gray-300'
                       }`}
                     >
                       <Text className={selected ? 'text-white font-medium' : 'text-gray-700'}>
@@ -200,8 +201,8 @@ export default function CreateMaintenanceRequestScreen() {
                   onPress={pickPhotos}
                   className="flex-row items-center gap-1 px-3 py-2 rounded-md bg-gray-100"
                 >
-                  <MaterialIcons name="add-a-photo" size={18} color="#524768" />
-                  <Text className="text-[#524768] font-medium text-sm">Add</Text>
+                  <MaterialIcons name="add-a-photo" size={18} color={BRAND_COLOR} />
+                  <Text className="text-brand font-medium text-sm">Add</Text>
                 </TouchableOpacity>
               </View>
 
@@ -235,7 +236,7 @@ export default function CreateMaintenanceRequestScreen() {
               <TouchableOpacity
                 onPress={handleSubmit}
                 disabled={isPending}
-                className={`py-4 rounded-md ${isPending ? 'bg-gray-300' : 'bg-[#524768]'}`}
+                className={`py-4 rounded-md ${isPending ? 'bg-gray-300' : 'bg-brand'}`}
               >
                 <Text className="text-white font-semibold text-center text-lg">
                   {isPending ? 'Submitting...' : 'Submit Request'}
