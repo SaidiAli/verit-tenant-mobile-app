@@ -6,10 +6,22 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "verit",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aptusagency.verit",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "tel",
+          "telprompt",
+          "mailto",
+          "tel",
+          "telprompt",
+          "mailto"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +30,10 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.aptusagency.verit_dev"
+      "package": "com.aptusagency.verit_dev",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -32,10 +47,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#524768",
-          "dark": {
-            "backgroundColor": "#524768"
-          }
+          "backgroundColor": "#524768"
         }
       ],
       "expo-secure-store",

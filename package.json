@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "build:apk": "eas build -p android --profile preview",
-    "prebuild": "npx expo export --platform android && echo \"Bundle OK\" || echo \"Bundle FAILED\""
+    "build:ios": "eas build -p ios --profile preview",
+    "prebuild": "npx expo export --platform android && npx expo export --platform ios && echo \"Bundle OK\" || { echo \"Bundle FAILED\"; exit 1; }"
   },
   "dependencies": {
     "@expo-google-fonts/nunito-sans": "^0.4.2",
@@ -65,7 +66,6 @@
     "@types/react": "~19.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
-    "expo-dev-client": "~6.0.20",
     "typescript": "~5.9.2"
   },
   "private": true
