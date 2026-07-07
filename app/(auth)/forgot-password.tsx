@@ -27,6 +27,9 @@ export default function ForgotPasswordScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set when the server returns 429 (too many failed OTP attempts). Requesting a
+  // fresh code clears the lockout server-side, so we steer the user to resend.
+  const [lockedOut, setLockedOut] = useState(false);
 
   const validateEmail = () => {
     if (!email.trim()) {
@@ -63,6 +66,9 @@ export default function ForgotPasswordScreen() {
     setIsLoading(true);
     try {
       await authApi.forgotPassword(email);
+      // A fresh code clears any prior lockout server-side.
+      setLockedOut(false);
+      setOtp('');
       setStep('otp');
     } catch (err: any) {
       setError(err.message || 'Failed to send reset code');
@@ -81,6 +87,10 @@ export default function ForgotPasswordScreen() {
       await authApi.verifyOtp(email, otp);
       setStep('password');
     } catch (err: any) {
+      if (err.status === 429) {
+        // Locked out — this code is dead; only a new one works.
+        setLockedOut(true);
+      }
       setError(err.message || 'Invalid verification code');
     } finally {
       setIsLoading(false);
@@ -196,17 +206,24 @@ export default function ForgotPasswordScreen() {
                     />
                   </View>
 
-                  {error && (
+                  {lockedOut ? (
+                    <View className="flex-row items-start space-x-2 bg-amber-50 px-3 py-2 rounded-md">
+                      <MaterialIcons name="lock-clock" size={16} color="#B45309" />
+                      <Text className="text-amber-700 text-sm flex-1">
+                        Too many incorrect attempts. This code is no longer valid — request a new one to try again.
+                      </Text>
+                    </View>
+                  ) : error ? (
                     <View className="flex-row items-center space-x-2 bg-red-50 px-3 py-2 rounded-md">
                       <MaterialIcons name="error" size={16} color="#EF4444" />
                       <Text className="text-red-600 text-sm flex-1">{error}</Text>
                     </View>
-                  )}
+                  ) : null}
 
                   <TouchableOpacity
                     onPress={handleVerifyOtp}
-                    disabled={isLoading}
-                    className={`w-full py-3 rounded-md ${isLoading ? 'bg-gray-400' : 'bg-brand'}`}
+                    disabled={isLoading || lockedOut}
+                    className={`w-full py-3 rounded-md ${isLoading || lockedOut ? 'bg-gray-400' : 'bg-brand'}`}
                   >
                     <View className="flex-row justify-center items-center">
                       {isLoading && <ActivityIndicator color="white" size="small" className="mr-2" />}
@@ -219,9 +236,9 @@ export default function ForgotPasswordScreen() {
                   <TouchableOpacity
                     onPress={handleSendCode}
                     disabled={isLoading}
-                    className="items-center py-2"
+                    className={lockedOut ? 'w-full py-3 rounded-md bg-brand' : 'items-center py-2'}
                   >
-                    <Text className="text-brand text-sm font-medium">
+                    <Text className={lockedOut ? 'text-white font-medium text-center' : 'text-brand text-sm font-medium text-center'}>
                       Resend Code
                     </Text>
                   </TouchableOpacity>

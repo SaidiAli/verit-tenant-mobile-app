@@ -220,7 +220,17 @@ export const authApi = {
         throw new Error(response.data.error || 'Invalid verification code');
       }
     } catch (error: any) {
-      if (error.response?.status === 400) {
+      const status = error.response?.status;
+      if (status === 429) {
+        // Too many failed attempts — the current code is now dead; only a fresh
+        // one works. Tag the error so the screen can steer the user to resend.
+        const err = new Error(
+          error.response.data?.error || 'Too many failed attempts. Please request a new code.',
+        );
+        (err as any).status = 429;
+        throw err;
+      }
+      if (status === 400) {
         throw new Error(error.response.data?.error || 'Invalid verification code');
       }
       throw new Error(error.message || 'Failed to verify code');
