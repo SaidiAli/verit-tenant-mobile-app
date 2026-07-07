@@ -1,21 +1,32 @@
-import { BRAND_COLOR } from '@/constants/theme';
-import { ScrollView, View, Text, TouchableOpacity, Linking, Alert } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Card } from '../../components/ui/Card';
-import { StatusBadge, getMaintenanceStatusBadge } from '../../components/ui/StatusBadge';
-import { useQuery } from '@tanstack/react-query';
-import { tenantApi } from '../../lib/api';
-import { useLease } from '../../hooks/LeaseContext';
-import { LeaseSwitcher } from '../../components/ui/LeaseSwitcher';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
+import { BRAND_COLOR } from "@/constants/theme";
+import {
+  ScrollView,
+  View,
+  Text,
+  TouchableOpacity,
+  Linking,
+  Alert,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { Card } from "../../components/ui/Card";
+
+import { useQuery } from "@tanstack/react-query";
+import { tenantApi } from "../../lib/api";
+import { useLease } from "../../hooks/LeaseContext";
+import { LeaseSwitcher } from "../../components/ui/LeaseSwitcher";
+import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
 
 export default function PropertyScreen() {
   const { selectedLeaseId } = useLease();
 
   // Fetch property information
-  const { data: propertyInfo, isLoading: isPropertyLoading, error: propertyError } = useQuery({
-    queryKey: ['tenant-property', selectedLeaseId],
+  const {
+    data: propertyInfo,
+    isLoading: isPropertyLoading,
+    error: propertyError,
+  } = useQuery({
+    queryKey: ["tenant-property", selectedLeaseId],
     queryFn: () => tenantApi.getPropertyInfo(selectedLeaseId || undefined),
     enabled: !!selectedLeaseId,
   });
@@ -27,15 +38,18 @@ export default function PropertyScreen() {
         if (supported) {
           return Linking.openURL(phoneUrl);
         } else {
-          Alert.alert('Error', 'Unable to make phone calls on this device');
+          Alert.alert("Error", "Unable to make phone calls on this device");
         }
       })
-      .catch((err) => Alert.alert('Error', 'Failed to initiate phone call'));
+      .catch((err) => Alert.alert("Error", "Failed to initiate phone call"));
   };
 
   const handleSubmitMaintenance = () => {
     // Navigate to maintenance form or show modal
-    Alert.alert('Maintenance', 'Feature to submit maintenance request coming soon.');
+    Alert.alert(
+      "Maintenance",
+      "Feature to submit maintenance request coming soon.",
+    );
   };
 
   const isLoading = isPropertyLoading;
@@ -57,10 +71,12 @@ export default function PropertyScreen() {
           Unable to Load Property Information
         </Text>
         <Text className="text-gray-600 mt-2 text-center">
-          {propertyError ? 'Failed to fetch property data.' : 'No property information found for this lease.'}
+          {propertyError
+            ? "Failed to fetch property data."
+            : "No property information found for this lease."}
         </Text>
         <LoadingSpinner className="mt-4" />
-        {/* Helper to allow easy retry by switching lease if needed, though LeaseSwitcher is in header usually. 
+        {/* Helper to allow easy retry by switching lease if needed, though LeaseSwitcher is in header usually.
             Here we might need a go back or retry button if it persists.
         */}
       </View>
@@ -90,9 +106,15 @@ export default function PropertyScreen() {
                 </Text>
 
                 <View className="flex-row items-start space-x-2">
-                  <MaterialIcons name="location-on" size={16} color="#6B7280" style={{ marginTop: 2 }} />
+                  <MaterialIcons
+                    name="location-on"
+                    size={16}
+                    color="#6B7280"
+                    style={{ marginTop: 2 }}
+                  />
                   <Text className="text-gray-600 text-sm flex-1">
-                    {property.address}, {property.city}, {property.state} {property.zipCode}
+                    {property.address}, {property.city}, {property.state}{" "}
+                    {property.zipCode}
                   </Text>
                 </View>
 
@@ -156,7 +178,6 @@ export default function PropertyScreen() {
               </Card>
             )}
 
-
             {/* Maintenance Request Form */}
             <Card className="mb-4">
               <View className="gap-3">
@@ -165,7 +186,8 @@ export default function PropertyScreen() {
                 </Text>
 
                 <Text className="text-gray-600 text-sm">
-                  Need something fixed? Submit a maintenance request and we'll get it taken care of.
+                  Need something fixed? Submit a maintenance request and
+                  we&apos;ll get it taken care of.
                 </Text>
 
                 <TouchableOpacity

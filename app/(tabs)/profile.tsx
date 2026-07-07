@@ -1,10 +1,17 @@
-import { BRAND_COLOR } from '@/constants/theme';
-import { ScrollView, View, Text, TouchableOpacity, Alert, Linking } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useAuth } from '../../hooks/useAuth';
-import { Card } from '../../components/ui/Card';
-import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
+import { BRAND_COLOR } from "@/constants/theme";
+import {
+  ScrollView,
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  Linking,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useAuth } from "../../hooks/useAuth";
+import { Card } from "../../components/ui/Card";
+import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
 import Constants from "expo-constants";
 
 export default function ProfileScreen() {
@@ -16,20 +23,20 @@ export default function ProfileScreen() {
   };
 
   const handleEditProfile = () => {
-    router.push('/screens/edit-profile');
+    router.push("/screens/edit-profile");
   };
 
   const handleChangePassword = () => {
-    router.push('/screens/change-password');
+    router.push("/screens/change-password");
   };
 
   const handleSettings = () => {
-    router.push('/screens/settings' as any);
+    router.push("/screens/settings" as any);
   };
 
   const handleContactSupport = async () => {
-    const supportEmail = 'support@verit.tech';
-    const subject = 'Support Request - Verit App';
+    const supportEmail = "support@verit.tech";
+    const subject = "Support Request - Verit App";
     const mailtoUrl = `mailto:${supportEmail}?subject=${encodeURIComponent(subject)}`;
 
     try {
@@ -38,38 +45,38 @@ export default function ProfileScreen() {
         await Linking.openURL(mailtoUrl);
       } else {
         Alert.alert(
-          'Email Support',
+          "Email Support",
           `Please send an email to ${supportEmail} for support.`,
-          [{ text: 'OK' }]
+          [{ text: "OK" }],
         );
       }
-    } catch (error) {
+    } catch {
       Alert.alert(
-        'Contact Support',
+        "Contact Support",
         `Email: ${supportEmail}\nPhone: +256 700 123 456`,
-        [{ text: 'OK' }]
+        [{ text: "OK" }],
       );
     }
   };
 
   const handleTermsOfService = () => {
-    router.push('/screens/terms-of-service');
+    router.push("/screens/terms-of-service");
   };
 
   const handlePrivacyPolicy = () => {
-    router.push('/screens/privacy-policy');
+    router.push("/screens/privacy-policy");
   };
 
   const handleNavigateToLease = () => {
-    router.push('/screens/lease');
+    router.push("/screens/lease");
   };
 
   const handleNavigateToProperty = () => {
-    router.push('/screens/property');
+    router.push("/screens/property");
   };
 
   const handleNavigateToHelp = () => {
-    router.push('/screens/help');
+    router.push("/screens/help");
   };
 
   if (!user) {
@@ -95,7 +102,8 @@ export default function ProfileScreen() {
               <View className="space-y-4 items-center">
                 <View className="w-20 h-20 bg-brand rounded-full items-center justify-center">
                   <Text className="text-white font-bold text-xl">
-                    {user.firstName?.charAt(0) ?? ''}{user.lastName?.charAt(0) ?? ''}
+                    {user.firstName?.charAt(0) ?? ""}
+                    {user.lastName?.charAt(0) ?? ""}
                   </Text>
                 </View>
 
@@ -104,10 +112,10 @@ export default function ProfileScreen() {
                     {user.firstName} {user.lastName}
                   </Text>
                   <Text className="text-gray-600 text-sm">
-                    {user.phone ? user.phone : 'No Phone number'}
+                    {user.phone ? user.phone : "No Phone number"}
                   </Text>
                   <Text className="text-gray-600 text-sm">
-                    {user.email ? user.email : 'No email'}
+                    {user.email ? user.email : "No email"}
                   </Text>
                 </View>
 
@@ -135,12 +143,20 @@ export default function ProfileScreen() {
                   onPress={handleNavigateToLease}
                 >
                   <View className="flex-row items-center gap-2">
-                    <MaterialIcons name="description" size={20} color="#6B7280" />
+                    <MaterialIcons
+                      name="description"
+                      size={20}
+                      color="#6B7280"
+                    />
                     <Text className="font-medium text-gray-800">
                       Lease Information
                     </Text>
                   </View>
-                  <MaterialIcons name="chevron-right" size={20} color="#6B7280" />
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={20}
+                    color="#6B7280"
+                  />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -153,7 +169,11 @@ export default function ProfileScreen() {
                       Property Information
                     </Text>
                   </View>
-                  <MaterialIcons name="chevron-right" size={20} color="#6B7280" />
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={20}
+                    color="#6B7280"
+                  />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -161,12 +181,20 @@ export default function ProfileScreen() {
                   onPress={handleNavigateToHelp}
                 >
                   <View className="flex-row items-center gap-2">
-                    <MaterialIcons name="help-outline" size={20} color="#6B7280" />
+                    <MaterialIcons
+                      name="help-outline"
+                      size={20}
+                      color="#6B7280"
+                    />
                     <Text className="font-medium text-gray-800">
                       Help & Resources
                     </Text>
                   </View>
-                  <MaterialIcons name="chevron-right" size={20} color="#6B7280" />
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={20}
+                    color="#6B7280"
+                  />
                 </TouchableOpacity>
               </View>
             </Card>
@@ -188,7 +216,11 @@ export default function ProfileScreen() {
                       Personal Information
                     </Text>
                   </View>
-                  <MaterialIcons name="chevron-right" size={20} color="#6B7280" />
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={20}
+                    color="#6B7280"
+                  />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -201,7 +233,11 @@ export default function ProfileScreen() {
                       Change Password
                     </Text>
                   </View>
-                  <MaterialIcons name="chevron-right" size={20} color="#6B7280" />
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={20}
+                    color="#6B7280"
+                  />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -210,11 +246,13 @@ export default function ProfileScreen() {
                 >
                   <View className="flex-row items-center gap-2">
                     <MaterialIcons name="settings" size={20} color="#6B7280" />
-                    <Text className="font-medium text-gray-800">
-                      Settings
-                    </Text>
+                    <Text className="font-medium text-gray-800">Settings</Text>
                   </View>
-                  <MaterialIcons name="chevron-right" size={20} color="#6B7280" />
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={20}
+                    color="#6B7280"
+                  />
                 </TouchableOpacity>
               </View>
             </Card>
@@ -236,7 +274,11 @@ export default function ProfileScreen() {
                       Contact Support
                     </Text>
                   </View>
-                  <MaterialIcons name="chevron-right" size={20} color="#6B7280" />
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={20}
+                    color="#6B7280"
+                  />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -244,12 +286,20 @@ export default function ProfileScreen() {
                   onPress={handleTermsOfService}
                 >
                   <View className="flex-row items-center gap-2">
-                    <MaterialIcons name="description" size={20} color="#6B7280" />
+                    <MaterialIcons
+                      name="description"
+                      size={20}
+                      color="#6B7280"
+                    />
                     <Text className="font-medium text-gray-800">
                       Terms of Service
                     </Text>
                   </View>
-                  <MaterialIcons name="chevron-right" size={20} color="#6B7280" />
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={20}
+                    color="#6B7280"
+                  />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -257,12 +307,20 @@ export default function ProfileScreen() {
                   onPress={handlePrivacyPolicy}
                 >
                   <View className="flex-row items-center gap-2">
-                    <MaterialIcons name="privacy-tip" size={20} color="#6B7280" />
+                    <MaterialIcons
+                      name="privacy-tip"
+                      size={20}
+                      color="#6B7280"
+                    />
                     <Text className="font-medium text-gray-800">
                       Privacy Policy
                     </Text>
                   </View>
-                  <MaterialIcons name="chevron-right" size={20} color="#6B7280" />
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={20}
+                    color="#6B7280"
+                  />
                 </TouchableOpacity>
               </View>
             </Card>
@@ -270,9 +328,7 @@ export default function ProfileScreen() {
             {/* App Info */}
             <Card className="mb-4">
               <View className="space-y-2 items-center">
-                <Text className="text-sm text-gray-500">
-                  Verit Tenant App
-                </Text>
+                <Text className="text-sm text-gray-500">Verit Tenant App</Text>
                 <Text className="text-sm text-gray-500">
                   {Constants.expoConfig?.version}
                 </Text>
@@ -287,9 +343,7 @@ export default function ProfileScreen() {
               >
                 <View className="flex-row items-center space-x-2">
                   <MaterialIcons name="logout" size={20} color="#EF4444" />
-                  <Text className="font-medium text-red-500">
-                    Sign Out
-                  </Text>
+                  <Text className="font-medium text-red-500">Sign Out</Text>
                 </View>
               </TouchableOpacity>
             </Card>

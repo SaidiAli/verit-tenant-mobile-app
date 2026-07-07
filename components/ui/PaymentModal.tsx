@@ -1,10 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import {View,Text,Modal,TouchableOpacity,TextInput,KeyboardAvoidingView,Platform,ScrollView} from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Card } from './Card';
-import { LoadingSpinner } from './LoadingSpinner';
-import { PaymentBalance } from '../../types';
-import {formatUGX,parseUGX,validateUGXAmount,formatNumber} from '../../lib/currency';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { Card } from "./Card";
+import { LoadingSpinner } from "./LoadingSpinner";
+import { PaymentBalance } from "../../types";
+import {
+  formatUGX,
+  parseUGX,
+  validateUGXAmount,
+  formatNumber,
+} from "../../lib/currency";
 
 interface PaymentAmountModalProps {
   visible: boolean;
@@ -19,38 +33,28 @@ export function PaymentModal({
   onClose,
   onConfirm,
   balance,
-  isLoading = false
+  isLoading = false,
 }: PaymentAmountModalProps) {
-  const [amount, setAmount] = useState('');
-  const [selectedSuggestion, setSelectedSuggestion] = useState<number | null>(null);
+  const [amount, setAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
-
 
   useEffect(() => {
     if (visible) {
       // Reset state when modal opens
-      setAmount('');
-      setSelectedSuggestion(null);
+      setAmount("");
       setError(null);
     }
   }, [visible]);
 
   const handleAmountChange = (text: string) => {
     // Remove any non-digit characters except for spaces and commas
-    const cleanText = text.replace(/[^\d,\s]/g, '');
+    const cleanText = text.replace(/[^\d,\s]/g, "");
 
     // Parse the amount
     const numericValue = parseUGX(cleanText);
 
     // Update state
     setAmount(formatNumber(numericValue));
-    setSelectedSuggestion(null);
-    setError(null);
-  };
-
-  const handleSuggestionPress = (suggestionAmount: number) => {
-    setAmount(formatNumber(suggestionAmount));
-    setSelectedSuggestion(suggestionAmount);
     setError(null);
   };
 
@@ -58,13 +62,10 @@ export function PaymentModal({
     const numericAmount = parseUGX(amount);
 
     // Validate amount
-    const validation = validateUGXAmount(
-      numericAmount,
-      10000
-    );
+    const validation = validateUGXAmount(numericAmount, 10000);
 
     if (!validation.isValid) {
-      setError(validation.error || 'Invalid amount');
+      setError(validation.error || "Invalid amount");
       return;
     }
 
@@ -72,7 +73,10 @@ export function PaymentModal({
     onConfirm(numericAmount);
   };
 
-  const remainingBalance = Math.max(0, balance.outstandingBalance - parseUGX(amount));
+  const remainingBalance = Math.max(
+    0,
+    balance.outstandingBalance - parseUGX(amount),
+  );
 
   return (
     <Modal
@@ -82,7 +86,7 @@ export function PaymentModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
         <View className="flex-1 bg-gray-50">
@@ -148,7 +152,8 @@ export function PaymentModal({
                 {amount && !error && (
                   <View className="bg-blue-50 p-3 rounded-md">
                     <Text className="text-blue-800 text-sm">
-                      Remaining balance after payment: {formatUGX(remainingBalance)}
+                      Remaining balance after payment:{" "}
+                      {formatUGX(remainingBalance)}
                     </Text>
                   </View>
                 )}
@@ -161,10 +166,9 @@ export function PaymentModal({
             <TouchableOpacity
               onPress={handleConfirm}
               disabled={!amount || isLoading || !!error}
-              className={`py-3 rounded-md items-center ${(!amount || isLoading || !!error)
-                ? 'bg-gray-300'
-                : 'bg-brand'
-                }`}
+              className={`py-3 rounded-md items-center ${
+                !amount || isLoading || !!error ? "bg-gray-300" : "bg-brand"
+              }`}
             >
               {isLoading ? (
                 <LoadingSpinner size="small" message="" className="my-0" />

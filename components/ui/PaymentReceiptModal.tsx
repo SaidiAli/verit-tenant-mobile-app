@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, ScrollView, Share, Alert } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import * as Sharing from 'expo-sharing';
-import { useQuery } from '@tanstack/react-query';
-import { Card } from './Card';
-import { LoadingSpinner } from './LoadingSpinner';
-import { paymentApi, API_BASE_URL } from '../../lib/api';
-import { secureStorage } from '../../lib/storage';
-import { formatUGX } from '../../lib/currency';
-import { File, Paths } from 'expo-file-system';
-import { formatDateShort, formatSchedulePeriod } from '@/lib/utils';
-import { PAYMENT_TYPE_LABELS } from '../../types';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  Share,
+  Alert,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import * as Sharing from "expo-sharing";
+import { useQuery } from "@tanstack/react-query";
+import { Card } from "./Card";
+import { LoadingSpinner } from "./LoadingSpinner";
+import { paymentApi, API_BASE_URL } from "../../lib/api";
+import { secureStorage } from "../../lib/storage";
+import { formatUGX } from "../../lib/currency";
+import { File, Paths } from "expo-file-system";
+import { formatDateShort, formatSchedulePeriod } from "@/lib/utils";
+import { PAYMENT_TYPE_LABELS } from "../../types";
 
 interface PaymentReceiptModalProps {
   visible: boolean;
@@ -25,8 +33,13 @@ export function PaymentReceiptModal({
 }: PaymentReceiptModalProps) {
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const { data: receipt, isLoading, error, refetch } = useQuery({
-    queryKey: ['payment-receipt', paymentId],
+  const {
+    data: receipt,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["payment-receipt", paymentId],
     queryFn: () => paymentApi.getReceipt(paymentId),
     enabled: visible && !!paymentId,
   });
@@ -37,16 +50,19 @@ export function PaymentReceiptModal({
       const token = await secureStorage.getToken();
       const result = await File.downloadFileAsync(
         `${API_BASE_URL}/exports/payments/${paymentId}/my-receipt.pdf`,
-        new File(Paths.cache, `vrt-${Date.now()}-${paymentId.split('-')[0]}.pdf`),
-        { headers: { Authorization: `Bearer ${token}` } }
+        new File(
+          Paths.cache,
+          `vrt-${Date.now()}-${paymentId.split("-")[0]}.pdf`,
+        ),
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       await Sharing.shareAsync(result.uri, {
-        mimeType: 'application/pdf',
-        dialogTitle: 'Share Receipt PDF',
+        mimeType: "application/pdf",
+        dialogTitle: "Share Receipt PDF",
       });
-    } catch (error: any) {
-      Alert.alert('Error', 'Failed to download receipt PDF');
+    } catch {
+      Alert.alert("Error", "Failed to download receipt PDF");
     } finally {
       setIsDownloading(false);
     }
@@ -60,9 +76,9 @@ Verit - Payment Receipt
 
 Receipt #: ${receipt.receiptNumber}
 Amount: ${formatUGX(receipt.amount)}
-Payment Type: ${PAYMENT_TYPE_LABELS[receipt.paymentType ?? 'rent']}
+Payment Type: ${PAYMENT_TYPE_LABELS[receipt.paymentType ?? "rent"]}
 Payment Method: ${receipt.paymentMethod}
-Periods: ${receipt.appliedSchedules?.length ? receipt.appliedSchedules.map(s => `#${s.paymentNumber} ${formatSchedulePeriod(s.period)}`).join(', ') : receipt.periodCovered || (receipt.dueDate ? formatDateShort(receipt.dueDate) : 'N/A')}
+Periods: ${receipt.appliedSchedules?.length ? receipt.appliedSchedules.map((s) => `#${s.paymentNumber} ${formatSchedulePeriod(s.period)}`).join(", ") : receipt.periodCovered || (receipt.dueDate ? formatDateShort(receipt.dueDate) : "N/A")}
 Date: ${formatDateShort(receipt.paidDate)}
 Transaction ID: ${receipt.transactionId}
 
@@ -77,10 +93,10 @@ Thank you for your payment!
     try {
       await Share.share({
         message: receiptText,
-        title: 'Payment Receipt',
+        title: "Payment Receipt",
       });
-    } catch (err: any) {
-      Alert.alert('Error', 'Failed to share receipt');
+    } catch {
+      Alert.alert("Error", "Failed to share receipt");
     }
   };
 
@@ -112,9 +128,7 @@ Thank you for your payment!
 
         {/* Content */}
         <ScrollView className="flex-1 px-4 pt-6">
-          {isLoading && (
-            <LoadingSpinner message="Loading receipt..." />
-          )}
+          {isLoading && <LoadingSpinner message="Loading receipt..." />}
 
           {!!error && (
             <Card className="items-center py-8">
@@ -123,7 +137,7 @@ Thank you for your payment!
                 Unable to Load Receipt
               </Text>
               <Text className="text-gray-600 mt-2 text-center">
-                {(error as any).message || 'Failed to load receipt'}
+                {(error as any).message || "Failed to load receipt"}
               </Text>
               <TouchableOpacity
                 onPress={() => refetch()}
@@ -142,8 +156,12 @@ Thank you for your payment!
                   <Text className="text-2xl font-bold text-brand">
                     {receipt.companyInfo.name}
                   </Text>
-                  <Text className="text-gray-600">{receipt.companyInfo.address}</Text>
-                  <Text className="text-gray-600">{receipt.companyInfo.phone}</Text>
+                  <Text className="text-gray-600">
+                    {receipt.companyInfo.address}
+                  </Text>
+                  <Text className="text-gray-600">
+                    {receipt.companyInfo.phone}
+                  </Text>
                 </View>
 
                 {/* Receipt Details */}
@@ -169,29 +187,46 @@ Thank you for your payment!
                     <View className="flex-row justify-between">
                       <Text className="text-gray-600">Payment Method:</Text>
                       <Text className="font-medium text-gray-800">
-                        {receipt.paymentMethod === 'mobile_money' ? 'Mobile Money' : receipt.paymentMethod}
+                        {receipt.paymentMethod === "mobile_money"
+                          ? "Mobile Money"
+                          : receipt.paymentMethod}
                       </Text>
                     </View>
 
                     <View className="flex-row justify-between py-2 border-b border-gray-100">
-                      <Text className="text-gray-500 text-sm">Payment Type</Text>
+                      <Text className="text-gray-500 text-sm">
+                        Payment Type
+                      </Text>
                       <Text className="text-gray-800 text-sm font-medium">
-                        {PAYMENT_TYPE_LABELS[receipt.paymentType ?? 'rent']}
+                        {PAYMENT_TYPE_LABELS[receipt.paymentType ?? "rent"]}
                       </Text>
                     </View>
 
-                    {(receipt.paymentType ?? 'rent') === 'rent' && receipt.appliedSchedules && receipt.appliedSchedules.length > 0 ? (
+                    {(receipt.paymentType ?? "rent") === "rent" &&
+                    receipt.appliedSchedules &&
+                    receipt.appliedSchedules.length > 0 ? (
                       <View className="space-y-2">
                         <Text className="text-gray-600">Periods Cleared:</Text>
                         {receipt.appliedSchedules.map((schedule, index) => (
-                          <View key={index} className="bg-gray-50 p-3 rounded-md flex-row justify-between items-center">
+                          <View
+                            key={index}
+                            className="bg-gray-50 p-3 rounded-md flex-row justify-between items-center"
+                          >
                             <View>
-                              <Text className="font-medium text-gray-800">Payment #{schedule.paymentNumber}</Text>
-                              <Text className="text-sm text-gray-500">{formatSchedulePeriod(schedule.period)}</Text>
+                              <Text className="font-medium text-gray-800">
+                                Payment #{schedule.paymentNumber}
+                              </Text>
+                              <Text className="text-sm text-gray-500">
+                                {formatSchedulePeriod(schedule.period)}
+                              </Text>
                             </View>
                             <View className="items-end">
-                              <Text className="font-medium text-gray-800">{formatUGX(schedule.amountApplied)}</Text>
-                              <Text className="text-xs text-gray-500">of {formatUGX(schedule.scheduledAmount)}</Text>
+                              <Text className="font-medium text-gray-800">
+                                {formatUGX(schedule.amountApplied)}
+                              </Text>
+                              <Text className="text-xs text-gray-500">
+                                of {formatUGX(schedule.scheduledAmount)}
+                              </Text>
                             </View>
                           </View>
                         ))}
@@ -199,12 +234,16 @@ Thank you for your payment!
                     ) : receipt.periodCovered ? (
                       <View className="flex-row justify-between">
                         <Text className="text-gray-600">Period Covered:</Text>
-                        <Text className="font-medium text-gray-800">{receipt.periodCovered}</Text>
+                        <Text className="font-medium text-gray-800">
+                          {receipt.periodCovered}
+                        </Text>
                       </View>
                     ) : receipt.dueDate ? (
                       <View className="flex-row justify-between">
                         <Text className="text-gray-600">Payment Period:</Text>
-                        <Text className="font-medium text-gray-800">{formatDateShort(receipt.dueDate)}</Text>
+                        <Text className="font-medium text-gray-800">
+                          {formatDateShort(receipt.dueDate)}
+                        </Text>
                       </View>
                     ) : null}
 
@@ -219,7 +258,9 @@ Thank you for your payment!
                   {/* Tenant Information */}
                   {receipt.tenant && (
                     <View className="space-y-3">
-                      <Text className="font-semibold text-gray-800">Tenant Information</Text>
+                      <Text className="font-semibold text-gray-800">
+                        Tenant Information
+                      </Text>
                       <View className="bg-gray-50 p-3 rounded-md space-y-2">
                         <View className="flex-row justify-between">
                           <Text className="text-gray-600">Name:</Text>
@@ -246,7 +287,9 @@ Thank you for your payment!
                   {/* Lease Information */}
                   {receipt.lease && (
                     <View className="space-y-3">
-                      <Text className="font-semibold text-gray-800">Lease Information</Text>
+                      <Text className="font-semibold text-gray-800">
+                        Lease Information
+                      </Text>
                       <View className="bg-gray-50 p-3 rounded-md space-y-2">
                         <View className="flex-row justify-between">
                           <Text className="text-gray-600">Monthly Rent:</Text>
@@ -257,7 +300,10 @@ Thank you for your payment!
                         <View className="flex-row justify-between">
                           <Text className="text-gray-600">Lease Period:</Text>
                           <Text className="text-gray-800">
-                            {formatDateShort(receipt.lease.startDate)} - {receipt.lease.endDate ? formatDateShort(receipt.lease.endDate) : 'Ongoing'}
+                            {formatDateShort(receipt.lease.startDate)} -{" "}
+                            {receipt.lease.endDate
+                              ? formatDateShort(receipt.lease.endDate)
+                              : "Ongoing"}
                           </Text>
                         </View>
                       </View>
@@ -290,7 +336,7 @@ Thank you for your payment!
               >
                 <MaterialIcons name="file-download" size={20} color="white" />
                 <Text className="text-white font-semibold ml-1">
-                  {isDownloading ? 'Downloading...' : 'Download PDF'}
+                  {isDownloading ? "Downloading..." : "Download PDF"}
                 </Text>
               </TouchableOpacity>
 

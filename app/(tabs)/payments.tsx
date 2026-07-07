@@ -1,24 +1,39 @@
-import { BRAND_COLOR } from '@/constants/theme';
-import React, { useState, useCallback } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, RefreshControl, Alert } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { Card } from '../../components/ui/Card';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { PaymentModal } from '../../components/ui/PaymentModal';
-import { PaymentConfirmationModal } from '../../components/ui/PaymentConfirmationModal';
-import { PaymentStatusTracker } from '../../components/ui/PaymentStatusTracker';
-import { useAuth } from '../../hooks/useAuth';
-import { useServerSettings } from '../../hooks/useServerSettings';
-import { useLease } from '../../hooks/LeaseContext';
-import { paymentApi } from '../../lib/api';
-import { ErrorView } from '../../components/ui/ErrorView';
-import {PaymentInitiationResponse,PaymentStatusResponse,PaymentFlowState} from '../../types';
-import {formatUGX,normalizePhoneNumber,getMobileMoneyProvider} from '../../lib/currency';
-import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
-import { formatDateShort } from '@/lib/utils';
+import { BRAND_COLOR } from "@/constants/theme";
+import React, { useState, useCallback } from "react";
+import {
+  ScrollView,
+  View,
+  Text,
+  TouchableOpacity,
+  RefreshControl,
+  Alert,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Card } from "../../components/ui/Card";
+import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import { PaymentModal } from "../../components/ui/PaymentModal";
+import { PaymentConfirmationModal } from "../../components/ui/PaymentConfirmationModal";
+import { PaymentStatusTracker } from "../../components/ui/PaymentStatusTracker";
+import { useAuth } from "../../hooks/useAuth";
+import { useServerSettings } from "../../hooks/useServerSettings";
+import { useLease } from "../../hooks/LeaseContext";
+import { paymentApi } from "../../lib/api";
+import { ErrorView } from "../../components/ui/ErrorView";
+import {
+  PaymentInitiationResponse,
+  PaymentStatusResponse,
+  PaymentFlowState,
+} from "../../types";
+import {
+  formatUGX,
+  normalizePhoneNumber,
+  getMobileMoneyProvider,
+} from "../../lib/currency";
+import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
+import { formatDateShort } from "@/lib/utils";
 
 export default function PaymentsScreen() {
   const router = useRouter();
@@ -28,9 +43,10 @@ export default function PaymentsScreen() {
 
   // Payment flow states
   const [paymentFlow, setPaymentFlow] = useState<PaymentFlowState>({
-    step: 'idle',
+    step: "idle",
   });
-  const [currentPayment, setCurrentPayment] = useState<PaymentInitiationResponse | null>(null);
+  const [currentPayment, setCurrentPayment] =
+    useState<PaymentInitiationResponse | null>(null);
 
   const {
     data: balance,
@@ -39,7 +55,7 @@ export default function PaymentsScreen() {
     error: balanceError,
     refetch: refetchBalance,
   } = useQuery({
-    queryKey: ['payment-balance', selectedLeaseId],
+    queryKey: ["payment-balance", selectedLeaseId],
     queryFn: () => paymentApi.getBalance(selectedLeaseId!),
     enabled: !!selectedLeaseId,
   });
@@ -49,7 +65,7 @@ export default function PaymentsScreen() {
     isRefetching: isPaymentsRefetching,
     refetch: refetchPayments,
   } = useQuery({
-    queryKey: ['payment-history', selectedLeaseId],
+    queryKey: ["payment-history", selectedLeaseId],
     queryFn: () => paymentApi.getHistory(selectedLeaseId!),
     enabled: !!selectedLeaseId,
   });
@@ -58,30 +74,40 @@ export default function PaymentsScreen() {
     mutationFn: paymentApi.initiate,
     onSuccess: (paymentResponse) => {
       setCurrentPayment(paymentResponse);
-      setPaymentFlow(prev => ({
+      setPaymentFlow((prev) => ({
         ...prev,
         transactionId: paymentResponse.transactionId,
-        step: 'processing',
+        step: "processing",
         isLoading: false,
         error: undefined,
       }));
     },
     onError: (err: any) => {
-      let errorMessage = 'Payment failed. Please try again.';
-      if (err.message?.includes('Network Error') || err.message?.includes('connection')) {
-        errorMessage = 'Connection failed. Please check your internet and try again.';
-      } else if (err.message?.includes('timeout')) {
-        errorMessage = 'Request timed out. Please try again.';
-      } else if (err.message?.includes('Invalid payment data')) {
-        errorMessage = 'Invalid payment information. Please check your details.';
-      } else if (err.message?.includes('Insufficient funds')) {
-        errorMessage = 'Insufficient funds in your mobile money account.';
-      } else if (err.message?.includes('Phone number')) {
-        errorMessage = 'Invalid phone number. Please check your mobile money number.';
+      let errorMessage = "Payment failed. Please try again.";
+      if (
+        err.message?.includes("Network Error") ||
+        err.message?.includes("connection")
+      ) {
+        errorMessage =
+          "Connection failed. Please check your internet and try again.";
+      } else if (err.message?.includes("timeout")) {
+        errorMessage = "Request timed out. Please try again.";
+      } else if (err.message?.includes("Invalid payment data")) {
+        errorMessage =
+          "Invalid payment information. Please check your details.";
+      } else if (err.message?.includes("Insufficient funds")) {
+        errorMessage = "Insufficient funds in your mobile money account.";
+      } else if (err.message?.includes("Phone number")) {
+        errorMessage =
+          "Invalid phone number. Please check your mobile money number.";
       } else if (err.message) {
         errorMessage = err.message;
       }
-      setPaymentFlow(prev => ({ ...prev, error: errorMessage, isLoading: false }));
+      setPaymentFlow((prev) => ({
+        ...prev,
+        error: errorMessage,
+        isLoading: false,
+      }));
     },
   });
 
@@ -99,139 +125,185 @@ export default function PaymentsScreen() {
         refetchBalance();
         refetchPayments();
       }
-    }, [selectedLeaseId])
+    }, [selectedLeaseId, refetchBalance, refetchPayments]),
   );
 
   const handlePayNow = useCallback(() => {
     if (!balance) return;
-    setPaymentFlow({ step: 'amount-selection', isLoading: false });
+    setPaymentFlow({ step: "amount-selection", isLoading: false });
   }, [balance]);
 
-  const handleAmountConfirm = useCallback(async (amount: number) => {
-    if (!balance || !selectedLeaseId) {
-      Alert.alert('Error', 'Payment information not available. Please try again.');
-      return;
-    }
-
-    try {
-      setPaymentFlow(prev => ({ ...prev, amount, isLoading: true, error: undefined }));
-
-      // Prefer the tenant's saved payment preferences; fall back to the profile
-      // phone with phone-prefix provider detection when they're unset.
-      const prefs = settings?.paymentPreferences;
-      const phoneNumber = prefs?.mobileMoneyPhone || user?.phone;
-
-      if (!phoneNumber) {
-        throw new Error('Phone number not found. Please update your profile.');
-      }
-
-      const normalizedPhone = normalizePhoneNumber(phoneNumber);
-      const provider = prefs?.mobileMoneyProvider || getMobileMoneyProvider(normalizedPhone);
-
-      if (provider === 'unknown') {
-        throw new Error('Unsupported phone number. Please use MTN or Airtel mobile money.');
-      }
-
-      const providerName =
-        provider === 'mtn' ? 'MTN MoMo' : provider === 'airtel' ? 'Airtel Money' : 'M-Sente';
-      const providerColor =
-        provider === 'mtn' ? '#FFCB05' : provider === 'airtel' ? '#E51A1A' : BRAND_COLOR;
-
-      setPaymentFlow(prev => ({
-        ...prev,
-        phoneNumber: normalizedPhone,
-        paymentMethod: {
-          id: provider as any,
-          name: provider,
-          displayName: providerName,
-          color: providerColor,
-          icon: 'phone-android',
-          prefixes: [],
-        },
-        step: 'confirmation',
-        isLoading: false,
-        error: undefined,
-      }));
-    } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to proceed with payment');
-      setPaymentFlow(prev => ({ ...prev, isLoading: false, error: err.message }));
-    }
-  }, [balance, user?.phone, settings?.paymentPreferences, selectedLeaseId]);
-
-  const handlePaymentConfirm = useCallback(async (confirmedPhoneNumber?: string) => {
-    const { amount, phoneNumber, paymentMethod } = paymentFlow;
-    const effectivePhoneNumber = confirmedPhoneNumber || phoneNumber;
-
-    if (!balance || !amount || !effectivePhoneNumber || !selectedLeaseId) {
-      Alert.alert('Error', 'Missing payment information. Please try again.');
-      return;
-    }
-
-    let effectiveProviderId = paymentMethod?.id;
-
-    if (confirmedPhoneNumber) {
-      const newProvider = getMobileMoneyProvider(confirmedPhoneNumber);
-      if (newProvider === 'unknown') {
-        Alert.alert('Error', 'Invalid phone number. Please use a valid MTN or Airtel number.');
+  const handleAmountConfirm = useCallback(
+    async (amount: number) => {
+      if (!balance || !selectedLeaseId) {
+        Alert.alert(
+          "Error",
+          "Payment information not available. Please try again.",
+        );
         return;
       }
-      effectiveProviderId = newProvider;
-    }
 
-    if (!effectiveProviderId) {
-      Alert.alert('Error', 'Unknown mobile money provider.');
-      return;
-    }
+      try {
+        setPaymentFlow((prev) => ({
+          ...prev,
+          amount,
+          isLoading: true,
+          error: undefined,
+        }));
 
-    setPaymentFlow(prev => ({ ...prev, isLoading: true, error: undefined }));
+        // Prefer the tenant's saved payment preferences; fall back to the profile
+        // phone with phone-prefix provider detection when they're unset.
+        const prefs = settings?.paymentPreferences;
+        const phoneNumber = prefs?.mobileMoneyPhone || user?.phone;
 
-    initiatePaymentMutation.mutate({
-      leaseId: selectedLeaseId,
-      amount,
-      phoneNumber: effectivePhoneNumber,
-      provider: effectiveProviderId as 'mtn' | 'airtel' | 'm-sente',
-      paymentMethod: 'mobile_money',
-    });
-  }, [balance, paymentFlow, selectedLeaseId, initiatePaymentMutation]);
+        if (!phoneNumber) {
+          throw new Error(
+            "Phone number not found. Please update your profile.",
+          );
+        }
 
-  const handlePaymentSuccess = useCallback((status: PaymentStatusResponse) => {
-    setPaymentFlow(prev => ({
-      ...prev,
-      step: 'success',
-      error: undefined,
-      isLoading: false
-    }));
-    setTimeout(() => {
-      refetchBalance();
-      refetchPayments();
-    }, 1000);
-  }, [refetchBalance, refetchPayments]);
+        const normalizedPhone = normalizePhoneNumber(phoneNumber);
+        const provider =
+          prefs?.mobileMoneyProvider || getMobileMoneyProvider(normalizedPhone);
+
+        if (provider === "unknown") {
+          throw new Error(
+            "Unsupported phone number. Please use MTN or Airtel mobile money.",
+          );
+        }
+
+        const providerName =
+          provider === "mtn"
+            ? "MTN MoMo"
+            : provider === "airtel"
+              ? "Airtel Money"
+              : "M-Sente";
+        const providerColor =
+          provider === "mtn"
+            ? "#FFCB05"
+            : provider === "airtel"
+              ? "#E51A1A"
+              : BRAND_COLOR;
+
+        setPaymentFlow((prev) => ({
+          ...prev,
+          phoneNumber: normalizedPhone,
+          paymentMethod: {
+            id: provider as any,
+            name: provider,
+            displayName: providerName,
+            color: providerColor,
+            icon: "phone-android",
+            prefixes: [],
+          },
+          step: "confirmation",
+          isLoading: false,
+          error: undefined,
+        }));
+      } catch (err: any) {
+        Alert.alert("Error", err.message || "Failed to proceed with payment");
+        setPaymentFlow((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: err.message,
+        }));
+      }
+    },
+    [balance, user?.phone, settings?.paymentPreferences, selectedLeaseId],
+  );
+
+  const handlePaymentConfirm = useCallback(
+    async (confirmedPhoneNumber?: string) => {
+      const { amount, phoneNumber, paymentMethod } = paymentFlow;
+      const effectivePhoneNumber = confirmedPhoneNumber || phoneNumber;
+
+      if (!balance || !amount || !effectivePhoneNumber || !selectedLeaseId) {
+        Alert.alert("Error", "Missing payment information. Please try again.");
+        return;
+      }
+
+      let effectiveProviderId = paymentMethod?.id;
+
+      if (confirmedPhoneNumber) {
+        const newProvider = getMobileMoneyProvider(confirmedPhoneNumber);
+        if (newProvider === "unknown") {
+          Alert.alert(
+            "Error",
+            "Invalid phone number. Please use a valid MTN or Airtel number.",
+          );
+          return;
+        }
+        effectiveProviderId = newProvider;
+      }
+
+      if (!effectiveProviderId) {
+        Alert.alert("Error", "Unknown mobile money provider.");
+        return;
+      }
+
+      setPaymentFlow((prev) => ({
+        ...prev,
+        isLoading: true,
+        error: undefined,
+      }));
+
+      initiatePaymentMutation.mutate({
+        leaseId: selectedLeaseId,
+        amount,
+        phoneNumber: effectivePhoneNumber,
+        provider: effectiveProviderId as "mtn" | "airtel" | "m-sente",
+        paymentMethod: "mobile_money",
+      });
+    },
+    [balance, paymentFlow, selectedLeaseId, initiatePaymentMutation],
+  );
+
+  const handlePaymentSuccess = useCallback(
+    (status: PaymentStatusResponse) => {
+      setPaymentFlow((prev) => ({
+        ...prev,
+        step: "success",
+        error: undefined,
+        isLoading: false,
+      }));
+      setTimeout(() => {
+        refetchBalance();
+        refetchPayments();
+      }, 1000);
+    },
+    [refetchBalance, refetchPayments],
+  );
 
   const handlePaymentFailed = useCallback((status: PaymentStatusResponse) => {
-    setPaymentFlow(prev => ({
+    setPaymentFlow((prev) => ({
       ...prev,
-      step: 'failed',
-      error: status.message || 'Payment failed',
-      isLoading: false
+      step: "failed",
+      error: status.message || "Payment failed",
+      isLoading: false,
     }));
   }, []);
 
   const handlePaymentTimeout = useCallback(() => {
-    setPaymentFlow(prev => ({
+    setPaymentFlow((prev) => ({
       ...prev,
-      step: 'failed',
-      error: 'Payment processing timed out. Please check your payment status or try again.',
-      isLoading: false
+      step: "failed",
+      error:
+        "Payment processing timed out. Please check your payment status or try again.",
+      isLoading: false,
     }));
   }, []);
 
   const closePaymentFlow = useCallback(() => {
-    setPaymentFlow({ step: 'idle', isLoading: false, error: undefined });
+    setPaymentFlow({ step: "idle", isLoading: false, error: undefined });
     setCurrentPayment(null);
   }, []);
 
   const retryPayment = useCallback(() => {
-    setPaymentFlow({ step: 'amount-selection', isLoading: false, error: undefined });
+    setPaymentFlow({
+      step: "amount-selection",
+      isLoading: false,
+      error: undefined,
+    });
     setCurrentPayment(null);
   }, []);
 
@@ -254,7 +326,9 @@ export default function PaymentsScreen() {
     return (
       <ErrorView
         title="Unable to Load Payments"
-        message={(balanceError as any).message || 'Failed to load payment information'}
+        message={
+          (balanceError as any).message || "Failed to load payment information"
+        }
         onRetry={() => refetchBalance()}
       >
         <Text className="text-xs text-gray-500 mt-2 text-center">
@@ -270,7 +344,10 @@ export default function PaymentsScreen() {
         <ScrollView
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+            />
           }
         >
           <View className="px-4 pt-6 pb-4">
@@ -283,8 +360,8 @@ export default function PaymentsScreen() {
                 nudged by realtime payment:updated events; drives the flow to
                 success/failed/timeout. Falls back to a spinner if we somehow
                 reach 'processing' without an initiated payment in hand. */}
-            {paymentFlow.step === 'processing' && (
-              currentPayment ? (
+            {paymentFlow.step === "processing" &&
+              (currentPayment ? (
                 <PaymentStatusTracker
                   transactionId={currentPayment.transactionId}
                   amount={currentPayment.amount}
@@ -296,22 +373,30 @@ export default function PaymentsScreen() {
               ) : (
                 <Card className="mb-6">
                   <View className="items-center py-8">
-                    <LoadingSpinner size="large" message="Processing payment..." className="my-0" />
+                    <LoadingSpinner
+                      size="large"
+                      message="Processing payment..."
+                      className="my-0"
+                    />
                   </View>
                 </Card>
-              )
-            )}
+              ))}
 
             {/* Success/Failure Messages */}
-            {paymentFlow.step === 'success' && currentPayment && (
+            {paymentFlow.step === "success" && currentPayment && (
               <Card className="mb-6 bg-green-50 border-green-200">
                 <View className="items-center space-y-4 py-4">
-                  <MaterialIcons name="check-circle" size={48} color="#10B981" />
+                  <MaterialIcons
+                    name="check-circle"
+                    size={48}
+                    color="#10B981"
+                  />
                   <Text className="text-xl font-bold text-green-800">
                     Payment Successful!
                   </Text>
                   <Text className="text-green-700 text-center">
-                    Your payment of {formatUGX(currentPayment.amount)} has been processed successfully.
+                    Your payment of {formatUGX(currentPayment.amount)} has been
+                    processed successfully.
                   </Text>
                   <TouchableOpacity
                     onPress={closePaymentFlow}
@@ -323,7 +408,7 @@ export default function PaymentsScreen() {
               </Card>
             )}
 
-            {paymentFlow.step === 'failed' && (
+            {paymentFlow.step === "failed" && (
               <Card className="mb-6 bg-red-50 border-red-200">
                 <View className="items-center space-y-4 py-4">
                   <MaterialIcons name="error" size={48} color="#EF4444" />
@@ -331,14 +416,17 @@ export default function PaymentsScreen() {
                     Payment Failed
                   </Text>
                   <Text className="text-red-700 text-center">
-                    {paymentFlow.error || 'Your payment could not be processed.'}
+                    {paymentFlow.error ||
+                      "Your payment could not be processed."}
                   </Text>
                   <View className="flex-row gap-2">
                     <TouchableOpacity
                       onPress={retryPayment}
                       className="bg-red-600 px-6 py-3 rounded-md"
                     >
-                      <Text className="text-white font-semibold">Try Again</Text>
+                      <Text className="text-white font-semibold">
+                        Try Again
+                      </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={closePaymentFlow}
@@ -391,7 +479,7 @@ export default function PaymentsScreen() {
                   <TouchableOpacity
                     className="bg-brand py-3 rounded-md items-center flex-row justify-center space-x-2 mt-8"
                     onPress={handlePayNow}
-                    disabled={paymentFlow.step !== 'idle'}
+                    disabled={paymentFlow.step !== "idle"}
                   >
                     <Text className="text-white font-medium text-lg">
                       Pay Now
@@ -410,7 +498,11 @@ export default function PaymentsScreen() {
 
                 <View className="flex-row items-center justify-between py-2 px-2 mb-2 rounded-md bg-yellow-50 border border-yellow-200">
                   <View className="flex-row items-center gap-2">
-                    <MaterialIcons name="phone-android" size={24} color="#F59E0B" />
+                    <MaterialIcons
+                      name="phone-android"
+                      size={24}
+                      color="#F59E0B"
+                    />
                     <View>
                       <Text className="font-medium text-gray-800">
                         MTN Mobile Money
@@ -425,7 +517,11 @@ export default function PaymentsScreen() {
 
                 <View className="flex-row items-center justify-between py-2 px-2 rounded-md bg-red-50 border border-red-200">
                   <View className="flex-row items-center gap-2">
-                    <MaterialIcons name="phone-android" size={24} color="#E51A1A" />
+                    <MaterialIcons
+                      name="phone-android"
+                      size={24}
+                      color="#E51A1A"
+                    />
                     <View>
                       <Text className="font-medium text-gray-800">
                         Airtel Money
@@ -442,14 +538,18 @@ export default function PaymentsScreen() {
 
             {/* Payment Schedule Link */}
             <TouchableOpacity
-              onPress={() => router.push('/screens/payment-schedule')}
+              onPress={() => router.push("/screens/payment-schedule")}
               activeOpacity={0.7}
             >
               <Card className="mb-4">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-3">
                     <View className="w-10 h-10 bg-brand/10 rounded-full items-center justify-center">
-                      <MaterialIcons name="event-note" size={24} color={BRAND_COLOR} />
+                      <MaterialIcons
+                        name="event-note"
+                        size={24}
+                        color={BRAND_COLOR}
+                      />
                     </View>
                     <View>
                       <Text className="text-lg font-semibold text-gray-800">
@@ -460,21 +560,29 @@ export default function PaymentsScreen() {
                       </Text>
                     </View>
                   </View>
-                  <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={24}
+                    color="#9CA3AF"
+                  />
                 </View>
               </Card>
             </TouchableOpacity>
 
             {/* Payment History Link */}
             <TouchableOpacity
-              onPress={() => router.push('/screens/payment-history')}
+              onPress={() => router.push("/screens/payment-history")}
               activeOpacity={0.7}
             >
               <Card className="mb-6">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-3">
                     <View className="w-10 h-10 bg-brand/10 rounded-full items-center justify-center">
-                      <MaterialIcons name="receipt-long" size={24} color={BRAND_COLOR} />
+                      <MaterialIcons
+                        name="receipt-long"
+                        size={24}
+                        color={BRAND_COLOR}
+                      />
                     </View>
                     <View>
                       <Text className="text-lg font-semibold text-gray-800">
@@ -482,12 +590,16 @@ export default function PaymentsScreen() {
                       </Text>
                       <Text className="text-sm text-gray-500">
                         {payments.length === 0
-                          ? 'No payments yet'
-                          : `${payments.length} payment${payments.length === 1 ? '' : 's'}`}
+                          ? "No payments yet"
+                          : `${payments.length} payment${payments.length === 1 ? "" : "s"}`}
                       </Text>
                     </View>
                   </View>
-                  <MaterialIcons name="chevron-right" size={24} color="#9CA3AF" />
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={24}
+                    color="#9CA3AF"
+                  />
                 </View>
               </Card>
             </TouchableOpacity>
@@ -497,7 +609,7 @@ export default function PaymentsScreen() {
         {/* Payment Amount Modal */}
         {balance && (
           <PaymentModal
-            visible={paymentFlow.step === 'amount-selection'}
+            visible={paymentFlow.step === "amount-selection"}
             onClose={closePaymentFlow}
             onConfirm={handleAmountConfirm}
             balance={balance}
@@ -508,7 +620,7 @@ export default function PaymentsScreen() {
         {/* Payment Confirmation Modal */}
         {paymentFlow.paymentMethod && paymentFlow.phoneNumber && (
           <PaymentConfirmationModal
-            visible={paymentFlow.step === 'confirmation'}
+            visible={paymentFlow.step === "confirmation"}
             onClose={closePaymentFlow}
             onConfirm={handlePaymentConfirm}
             amount={paymentFlow.amount || 0}

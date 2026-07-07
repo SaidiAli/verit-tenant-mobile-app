@@ -1,8 +1,8 @@
-import { ScrollView, View, Text, TouchableOpacity } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { Card } from '../../components/ui/Card';
-import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
+import { ScrollView, View, Text, TouchableOpacity } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { Card } from "../../components/ui/Card";
+import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
 
 export default function TermsOfServiceScreen() {
   const router = useRouter();
@@ -33,7 +33,9 @@ export default function TermsOfServiceScreen() {
                     1. Acceptance of Terms
                   </Text>
                   <Text className="text-gray-600 leading-6">
-                    By accessing and using the Verit application, you accept and agree to be bound by the terms and provision of this agreement.
+                    By accessing and using the Verit application, you accept and
+                    agree to be bound by the terms and provision of this
+                    agreement.
                   </Text>
                 </View>
 
@@ -42,7 +44,9 @@ export default function TermsOfServiceScreen() {
                     2. Use License
                   </Text>
                   <Text className="text-gray-600 leading-6">
-                    Permission is granted to temporarily download one copy of the materials on Verit's mobile application for personal, non-commercial transitory viewing only.
+                    Permission is granted to temporarily download one copy of
+                    the materials on Verit&apos;s mobile application for
+                    personal, non-commercial transitory viewing only.
                   </Text>
                 </View>
 
@@ -51,7 +55,9 @@ export default function TermsOfServiceScreen() {
                     3. User Account
                   </Text>
                   <Text className="text-gray-600 leading-6">
-                    You are responsible for safeguarding the password and for maintaining the confidentiality of your account. You agree not to disclose your password to any third party.
+                    You are responsible for safeguarding the password and for
+                    maintaining the confidentiality of your account. You agree
+                    not to disclose your password to any third party.
                   </Text>
                 </View>
 
@@ -60,7 +66,9 @@ export default function TermsOfServiceScreen() {
                     4. Privacy Policy
                   </Text>
                   <Text className="text-gray-600 leading-6">
-                    Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the Service, to understand our practices.
+                    Your privacy is important to us. Please review our Privacy
+                    Policy, which also governs your use of the Service, to
+                    understand our practices.
                   </Text>
                 </View>
 
@@ -69,7 +77,9 @@ export default function TermsOfServiceScreen() {
                     5. Payment Terms
                   </Text>
                   <Text className="text-gray-600 leading-6">
-                    All payments made through the application are subject to the terms and conditions of the respective payment providers. We are not responsible for payment processing failures.
+                    All payments made through the application are subject to the
+                    terms and conditions of the respective payment providers. We
+                    are not responsible for payment processing failures.
                   </Text>
                 </View>
 
@@ -78,7 +88,9 @@ export default function TermsOfServiceScreen() {
                     6. Disclaimer
                   </Text>
                   <Text className="text-gray-600 leading-6">
-                    The materials on Verit's mobile application are provided on an 'as is' basis. Verit makes no warranties, expressed or implied.
+                    The materials on Verit&apos;s mobile application are
+                    provided on an &apos;as is&apos; basis. Verit makes no
+                    warranties, expressed or implied.
                   </Text>
                 </View>
 
@@ -87,7 +99,9 @@ export default function TermsOfServiceScreen() {
                     7. Limitations
                   </Text>
                   <Text className="text-gray-600 leading-6">
-                    In no event shall Verit or its suppliers be liable for any damages arising out of the use or inability to use the materials on the application.
+                    In no event shall Verit or its suppliers be liable for any
+                    damages arising out of the use or inability to use the
+                    materials on the application.
                   </Text>
                 </View>
 
@@ -96,7 +110,10 @@ export default function TermsOfServiceScreen() {
                     8. Accuracy of Materials
                   </Text>
                   <Text className="text-gray-600 leading-6">
-                    The materials appearing on Verit's application could include technical, typographical, or photographic errors. Verit does not warrant that any of the materials are accurate, complete, or current.
+                    The materials appearing on Verit&apos;s application could
+                    include technical, typographical, or photographic errors.
+                    Verit does not warrant that any of the materials are
+                    accurate, complete, or current.
                   </Text>
                 </View>
 
@@ -105,7 +122,9 @@ export default function TermsOfServiceScreen() {
                     9. Modifications
                   </Text>
                   <Text className="text-gray-600 leading-6">
-                    Verit may revise these terms of service at any time without notice. By using this application, you are agreeing to be bound by the then current version of these terms of service.
+                    Verit may revise these terms of service at any time without
+                    notice. By using this application, you are agreeing to be
+                    bound by the then current version of these terms of service.
                   </Text>
                 </View>
 
@@ -114,7 +133,8 @@ export default function TermsOfServiceScreen() {
                     10. Contact Information
                   </Text>
                   <Text className="text-gray-600 leading-6">
-                    If you have any questions about these Terms of Service, please contact us at support@verit.tech
+                    If you have any questions about these Terms of Service,
+                    please contact us at support@verit.tech
                   </Text>
                 </View>
 
