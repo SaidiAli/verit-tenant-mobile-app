@@ -83,7 +83,7 @@ export default function DashboardScreen() {
                   <Text className="text-2xl font-semibold text-gray-800">
                     Hello, {user.firstName}!
                   </Text>
-                  <Text className="text-gray-600 text-sm">
+                  <Text className="text-gray-600 text-body">
                     Welcome to your tenant portal
                   </Text>
                 </View>
@@ -102,7 +102,6 @@ export default function DashboardScreen() {
                       : "Loading..."
                   }
                   subtitle={""}
-                  icon={<MaterialIcons name="home" size={20} color="#6B7280" />}
                   className="flex-1"
                 />
                 <MetricCard
@@ -115,21 +114,7 @@ export default function DashboardScreen() {
                   subtitle={
                     dashboardData?.payments.isOverdue ? "Overdue" : "On Track"
                   }
-                  icon={
-                    <MaterialIcons
-                      name={
-                        dashboardData?.payments.isOverdue
-                          ? "warning"
-                          : "payment"
-                      }
-                      size={20}
-                      color={
-                        dashboardData?.payments.isOverdue
-                          ? "#F59E0B"
-                          : "#6B7280"
-                      }
-                    />
-                  }
+                  variant="danger"
                   className="flex-1"
                 />
               </View>
