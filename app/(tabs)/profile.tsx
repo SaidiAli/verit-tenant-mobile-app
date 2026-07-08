@@ -98,7 +98,7 @@ export default function ProfileScreen() {
             </Text>
 
             {/* User Info Card */}
-            <Card className="mb-4">
+            <View className="mb-4">
               <View className="space-y-4 items-center">
                 <View className="w-20 h-20 bg-brand rounded-full items-center justify-center">
                   <Text className="text-white font-bold text-xl">
@@ -108,13 +108,13 @@ export default function ProfileScreen() {
                 </View>
 
                 <View className="space-y-1 items-center">
-                  <Text className="text-lg font-semibold text-gray-800">
+                  <Text className="text-2xl font-semibold">
                     {user.firstName} {user.lastName}
                   </Text>
-                  <Text className="text-gray-600 text-sm">
+                  <Text className="text-gray-600 text-lg">
                     {user.phone ? user.phone : "No Phone number"}
                   </Text>
-                  <Text className="text-gray-600 text-sm">
+                  <Text className="text-gray-600 text-lg">
                     {user.email ? user.email : "No email"}
                   </Text>
                 </View>
@@ -124,12 +124,12 @@ export default function ProfileScreen() {
                   onPress={handleEditProfile}
                 >
                   <MaterialIcons name="edit" size={16} color={BRAND_COLOR} />
-                  <Text className="text-brand font-medium text-sm">
+                  <Text className="text-brand font-medium text-lg">
                     Edit Profile
                   </Text>
                 </TouchableOpacity>
               </View>
-            </Card>
+            </View>
 
             {/* My Account Section */}
             <Card className="mb-4">
