@@ -102,6 +102,7 @@ export default function DashboardScreen() {
                       : "Loading..."
                   }
                   subtitle={""}
+                  variant="brand"
                   className="flex-1"
                 />
                 <MetricCard
@@ -128,16 +129,6 @@ export default function DashboardScreen() {
                     <Text className="text-lg font-semibold text-gray-800">
                       Quick Actions
                     </Text>
-                    <StatusBadge
-                      status={
-                        dashboardData.payments.isOverdue ? "error" : "warning"
-                      }
-                      text={
-                        dashboardData.payments.isOverdue
-                          ? "Overdue"
-                          : "Payment Due"
-                      }
-                    />
                   </View>
                   <View className="flex-row justify-between items-center">
                     <View>

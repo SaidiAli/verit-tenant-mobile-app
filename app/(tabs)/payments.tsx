@@ -447,11 +447,6 @@ export default function PaymentsScreen() {
                     <Text className="text-lg font-semibold text-gray-800">
                       Outstanding Balance
                     </Text>
-                    <MaterialIcons
-                      name={balance.isOverdue ? "warning" : "account-balance"}
-                      size={24}
-                      color={balance.isOverdue ? "#F59E0B" : "#6B7280"}
-                    />
                   </View>
 
                   <View className="space-y-2">
@@ -461,9 +456,6 @@ export default function PaymentsScreen() {
                     <View className="flex-row justify-between">
                       <Text className="text-gray-600 text-sm">
                         Monthly Rent: {formatUGX(balance.monthlyRent)}
-                      </Text>
-                      <Text className="text-gray-600 text-sm">
-                        Paid: {formatUGX(balance.paidAmount)}
                       </Text>
                     </View>
                     <Text className="text-gray-600 text-sm">
