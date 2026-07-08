@@ -14,8 +14,7 @@ const PHONE_RE = /^(\+?256|0)[0-9]{9}$/;
 
 const PROVIDERS: { value: MobileMoneyProviderId; label: string }[] = [
   { value: 'mtn', label: 'MTN' },
-  { value: 'airtel', label: 'Airtel' },
-  { value: 'm-sente', label: 'M-Sente' },
+  { value: 'airtel', label: 'Airtel' }
 ];
 
 const REMINDER_MIN = 0;
@@ -78,7 +77,7 @@ export default function PaymentPreferencesScreen() {
   }
 
   return (
-    <SafeAreaWrapper backgroundColor="#F9FAFB">
+    <SafeAreaWrapper>
       <View className="flex-1 bg-gray-50">
         <ScrollView showsVerticalScrollIndicator={false}>
           <View className="px-4 pt-6 pb-4">

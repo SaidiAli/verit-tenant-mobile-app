@@ -44,7 +44,7 @@ export default function PreferencesSettingsScreen() {
   }
 
   return (
-    <SafeAreaWrapper backgroundColor="#F9FAFB">
+    <SafeAreaWrapper>
       <View className="flex-1 bg-gray-50">
         <ScrollView showsVerticalScrollIndicator={false}>
           <View className="px-4 pt-6 pb-4">
@@ -62,7 +62,7 @@ export default function PreferencesSettingsScreen() {
             {/* Language */}
             <Card className="mb-4">
               <Text className="text-lg font-semibold text-gray-800 mb-3">Language</Text>
-              <View className="space-y-2">
+              <View className="gap-2">
                 {LANGUAGES.map((lang) => {
                   const selected = language === lang.value;
                   return (
@@ -89,7 +89,7 @@ export default function PreferencesSettingsScreen() {
             {/* Timezone */}
             <Card className="mb-4">
               <Text className="text-lg font-semibold text-gray-800 mb-3">Timezone</Text>
-              <View className="space-y-2">
+              <View className="gap-2">
                 {TIMEZONES.map((tz) => {
                   const selected = timezone === tz;
                   return (

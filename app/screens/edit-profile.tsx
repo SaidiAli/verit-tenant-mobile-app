@@ -61,7 +61,7 @@ export default function EditProfileScreen() {
   };
 
   return (
-    <SafeAreaWrapper backgroundColor="#F9FAFB">
+    <SafeAreaWrapper>
       <View className="flex-1 bg-gray-50">
         <ScrollView showsVerticalScrollIndicator={false}>
           <View className="px-4 pt-6 pb-4">
@@ -80,15 +80,15 @@ export default function EditProfileScreen() {
             </View>
 
             {/* Profile Photo Section */}
-            <Card className="mb-4">
+            <View className="mb-4">
               <View className="items-center space-y-4">
                 <View className="w-24 h-24 bg-brand rounded-full items-center justify-center">
                   <Text className="text-white font-bold text-2xl">
-                    {formData.firstName?.charAt(0) ?? ''}{formData.lastName?.charAt(0) ?? ''}
+                    {formData.firstName?.charAt(0).toUpperCase() ?? ''}{formData.lastName?.charAt(0).toUpperCase() ?? ''}
                   </Text>
                 </View>
               </View>
-            </Card>
+            </View>
 
             {/* Form Fields */}
             <Card className="mb-4">

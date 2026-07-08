@@ -102,8 +102,8 @@ export default function ProfileScreen() {
               <View className="space-y-4 items-center">
                 <View className="w-20 h-20 bg-brand rounded-full items-center justify-center">
                   <Text className="text-white font-bold text-xl">
-                    {user.firstName?.charAt(0) ?? ""}
-                    {user.lastName?.charAt(0) ?? ""}
+                    {user.firstName?.charAt(0).toUpperCase() ?? ""}
+                    {user.lastName?.charAt(0).toUpperCase() ?? ""}
                   </Text>
                 </View>
 
@@ -202,43 +202,6 @@ export default function ProfileScreen() {
             {/* Account Settings */}
             <Card className="mb-4">
               <View className="space-y-3">
-                <Text className="text-lg font-semibold text-gray-800">
-                  Account Settings
-                </Text>
-
-                <TouchableOpacity
-                  className="flex-row justify-between items-center py-2 px-2 rounded-md"
-                  onPress={handleEditProfile}
-                >
-                  <View className="flex-row items-center gap-2">
-                    <MaterialIcons name="person" size={20} color="#6B7280" />
-                    <Text className="font-medium text-gray-800">
-                      Personal Information
-                    </Text>
-                  </View>
-                  <MaterialIcons
-                    name="chevron-right"
-                    size={20}
-                    color="#6B7280"
-                  />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  className="flex-row justify-between items-center py-2 px-2 rounded-md"
-                  onPress={handleChangePassword}
-                >
-                  <View className="flex-row items-center gap-2">
-                    <MaterialIcons name="lock" size={20} color="#6B7280" />
-                    <Text className="font-medium text-gray-800">
-                      Change Password
-                    </Text>
-                  </View>
-                  <MaterialIcons
-                    name="chevron-right"
-                    size={20}
-                    color="#6B7280"
-                  />
-                </TouchableOpacity>
 
                 <TouchableOpacity
                   className="flex-row justify-between items-center py-2 px-2 rounded-md"

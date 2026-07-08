@@ -65,7 +65,7 @@ export default function MaintenanceRequestsScreen() {
   }
 
   return (
-    <SafeAreaWrapper backgroundColor="#F9FAFB">
+    <SafeAreaWrapper>
       <View className="flex-1 bg-gray-50">
         <ScrollView
           showsVerticalScrollIndicator={false}

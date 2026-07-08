@@ -1,30 +1,14 @@
-import { ScrollView, View, Text, TouchableOpacity } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { ScrollView, View, Text } from "react-native";
 import { Card } from "../../components/ui/Card";
 import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
 
 export default function PrivacyPolicyScreen() {
-  const router = useRouter();
 
   return (
-    <SafeAreaWrapper backgroundColor="#F9FAFB">
+    <SafeAreaWrapper>
       <View className="flex-1 bg-gray-50">
         <ScrollView showsVerticalScrollIndicator={false}>
           <View className="px-4 pt-6 pb-4">
-            {/* Header */}
-            <View className="flex-row items-center mb-6">
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className="flex-row items-center gap-2 p-2 -ml-2 rounded-md active:bg-gray-200"
-              >
-                <MaterialIcons name="arrow-back" size={24} color="#374151" />
-              </TouchableOpacity>
-
-              <Text className="text-xl font-semibold text-gray-800 ml-2">
-                Privacy Policy
-              </Text>
-            </View>
 
             <Card className="mb-4">
               <View className="gap-4">

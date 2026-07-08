@@ -57,9 +57,6 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 
 Sentry.init({
   dsn: 'https://e268093b0b645c3bc79a5f4abd022243@o4510142309203968.ingest.de.sentry.io/4510142310383696',
-
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
   sendDefaultPii: false,
 });
 
@@ -103,7 +100,12 @@ export default Sentry.wrap(function RootLayout() {
           <SettingsProvider>
             <LeaseProvider>
               <ThemeProvider value={DefaultTheme}>
-                <Stack screenOptions={{ headerShown: false }}>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    headerBackButtonDisplayMode: 'minimal',
+                  }}
+                >
                   <Stack.Screen name="(auth)" options={{ headerShown: false }} />
                   <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                   <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -139,7 +141,13 @@ export default Sentry.wrap(function RootLayout() {
                   />
                   <Stack.Screen
                     name="screens/settings"
-                    options={{ headerShown: false }}
+                    options={{
+                      headerShown: true,
+                      title: 'Settings',
+                      headerStyle: { backgroundColor: BRAND_COLOR },
+                      headerTintColor: 'white',
+                      headerTitleStyle: { fontWeight: 'bold' }
+                    }}
                   />
                   <Stack.Screen
                     name="screens/notifications-settings"
@@ -163,11 +171,23 @@ export default Sentry.wrap(function RootLayout() {
                   />
                   <Stack.Screen
                     name="screens/terms-of-service"
-                    options={{ headerShown: false }}
+                    options={{
+                      headerShown: true,
+                      title: 'Terms of Service',
+                      headerStyle: { backgroundColor: BRAND_COLOR },
+                      headerTintColor: 'white',
+                      headerTitleStyle: { fontWeight: 'bold' }
+                    }}
                   />
                   <Stack.Screen
                     name="screens/privacy-policy"
-                    options={{ headerShown: false }}
+                    options={{
+                      headerShown: true,
+                      title: 'Privacy Policy',
+                      headerStyle: { backgroundColor: BRAND_COLOR },
+                      headerTintColor: 'white',
+                      headerTitleStyle: { fontWeight: 'bold' }
+                    }}
                   />
                   <Stack.Screen
                     name="screens/payment-history"

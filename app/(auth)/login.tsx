@@ -30,6 +30,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
 
@@ -153,14 +154,27 @@ export default function LoginScreen() {
                             <MaterialIcons name="lock" size={20} color="#6B7280" />
                           </View>
                           <TextInput
-                            className={`w-full pl-12 pr-4 py-3 border rounded-md bg-white ${errors.password ? 'border-red-500' : 'border-gray-300'
+                            className={`w-full pl-12 pr-12 py-3 border rounded-md bg-white ${errors.password ? 'border-red-500' : 'border-gray-300'
                               }`}
                             placeholder="Enter your password"
                             onBlur={onBlur}
                             onChangeText={onChange}
                             value={value}
-                            secureTextEntry
+                            secureTextEntry={!showPassword}
                           />
+                          <TouchableOpacity
+                            onPress={() => setShowPassword((prev) => !prev)}
+                            className="absolute right-0 top-0 bottom-0 justify-center px-3 z-10"
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            accessibilityRole="button"
+                            accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                          >
+                            <MaterialIcons
+                              name={showPassword ? 'visibility-off' : 'visibility'}
+                              size={20}
+                              color="#6B7280"
+                            />
+                          </TouchableOpacity>
                         </View>
                       )}
                     />
@@ -170,16 +184,6 @@ export default function LoginScreen() {
                       </Text>
                     )}
                   </View>
-
-                  {/* Forgot Password */}
-                  <TouchableOpacity
-                    onPress={() => router.push('/(auth)/forgot-password')}
-                    className="self-end"
-                  >
-                    <Text className="text-brand text-sm font-medium">
-                      Forgot Password?
-                    </Text>
-                  </TouchableOpacity>
 
                   {/* Sign In Button */}
                   <TouchableOpacity
@@ -201,6 +205,16 @@ export default function LoginScreen() {
                   <Text className="text-sm text-gray-500 text-center mt-6">
                     Need help? Contact your property manager
                   </Text>
+
+                  {/* Forgot Password */}
+                  <TouchableOpacity
+                    onPress={() => router.push('/(auth)/forgot-password')}
+                    className="self-center mt-4"
+                  >
+                    <Text className="text-brand text-sm font-medium">
+                      Forgot Password?
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>

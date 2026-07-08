@@ -124,7 +124,7 @@ export default function NotificationsSettingsScreen() {
   }
 
   return (
-    <SafeAreaWrapper backgroundColor="#F9FAFB">
+    <SafeAreaWrapper>
       <View className="flex-1 bg-gray-50">
         <ScrollView showsVerticalScrollIndicator={false}>
           <View className="px-4 pt-6 pb-4">
