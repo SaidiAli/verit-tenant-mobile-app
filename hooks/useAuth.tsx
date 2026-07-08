@@ -2,8 +2,9 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { useRouter } from 'expo-router';
 import { User } from '../types';
 import { secureStorage } from '../lib/storage';
-import { authApi } from '../lib/api';
+import { authApi, setUnauthorizedHandler } from '../lib/api';
 import { resetSocket } from '../lib/socket';
+import { isTokenExpired } from '../lib/jwt';
 
 interface UpdateUserRequest {
   firstName?: string;
@@ -47,6 +48,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const token = await secureStorage.getToken();
         const storedUser = await secureStorage.getUser();
 
+        // If we can prove the token is already past its `exp`, don't restore the
+        // session at all — clear it and land on login instead of flashing the
+        // authenticated shell only to be kicked out by the first 401.
+        if (token && isTokenExpired(token)) {
+          await secureStorage.clear();
+          setUser(null);
+          return;
+        }
+
         if (token && storedUser) {
           // Optimistically set user to allow instant app access
           setUser(storedUser);
@@ -79,6 +89,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     initAuth();
   }, []);
+
+  // Let a 401 from any API call reactively log the user out. The interceptor has
+  // already wiped SecureStore by the time this fires, so we only clear in-memory
+  // state, drop the stale-token socket, and bounce to login. Without this, an
+  // expired token leaves `user` set and `isAuthenticated` true, so the route
+  // guard never redirects.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setUser(null);
+      resetSocket();
+      router.replace('/(auth)/login');
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [router]);
 
   const login = async (userName: string, password: string) => {
     try {

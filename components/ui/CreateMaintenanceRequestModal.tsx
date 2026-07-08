@@ -1,20 +1,21 @@
 import { BRAND_COLOR } from '@/constants/theme';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  ScrollView,
   View,
   Text,
+  Modal,
   TouchableOpacity,
   TextInput,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import { Card } from '../../components/ui/Card';
-import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
+import { Card } from './Card';
 import { useAuth } from '../../hooks/useAuth';
 import { tenantApi } from '../../lib/api';
 import type {
@@ -32,8 +33,15 @@ const PRIORITIES: { value: MaintenancePriority; label: string }[] = [
   { value: 'urgent', label: 'Urgent' },
 ];
 
-export default function CreateMaintenanceRequestScreen() {
-  const router = useRouter();
+interface CreateMaintenanceRequestModalProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+export function CreateMaintenanceRequestModal({
+  visible,
+  onClose,
+}: CreateMaintenanceRequestModalProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -45,6 +53,15 @@ export default function CreateMaintenanceRequestScreen() {
   const [photos, setPhotos] = useState<MaintenancePhotoUpload[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  useEffect(() => {
+    if (visible) {
+      // Reset state when modal opens
+      setForm({ title: '', description: '', priority: 'medium' });
+      setPhotos([]);
+      setErrors({});
+    }
+  }, [visible]);
+
   // Category is intentionally not collected here — the landlord/manager triages
   // and sets it. The server defaults new requests to "other".
   const { mutate: submit, isPending } = useMutation({
@@ -52,7 +69,7 @@ export default function CreateMaintenanceRequestScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-requests', user?.id] });
       Alert.alert('Submitted', 'Your maintenance request has been sent to your landlord.', [
-        { text: 'OK', onPress: () => router.back() },
+        { text: 'OK', onPress: () => onClose() },
       ]);
     },
     onError: (err: any) => Alert.alert('Error', err.message || 'Failed to submit request'),
@@ -114,21 +131,33 @@ export default function CreateMaintenanceRequestScreen() {
   };
 
   return (
-    <SafeAreaWrapper backgroundColor="#F9FAFB">
-      <View className="flex-1 bg-gray-50">
-        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          <View className="px-4 pt-6 pb-4">
-            {/* Header */}
-            <View className="flex-row items-center mb-6">
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className="flex-row items-center gap-2 p-2 -ml-2 rounded-md"
-              >
-                <MaterialIcons name="arrow-back" size={24} color="#374151" />
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1"
+      >
+        <View className="flex-1 bg-gray-50">
+          {/* Header */}
+          <View className="bg-white px-4 pt-12 pb-4 border-b border-gray-200">
+            <View className="flex-row items-center justify-between">
+              <TouchableOpacity onPress={onClose} disabled={isPending}>
+                <MaterialIcons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
-              <Text className="text-xl font-semibold text-gray-800 ml-2">Report an Issue</Text>
+              <Text className="text-2xl font-semibold text-gray-800">Report an Issue</Text>
+              <View className="w-6" />
             </View>
+          </View>
 
+          <ScrollView
+            className="flex-1 px-4 pt-6"
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             <Card className="mb-4">
               <View className="space-y-4">
                 {/* Title */}
@@ -230,30 +259,22 @@ export default function CreateMaintenanceRequestScreen() {
                 </View>
               )}
             </Card>
+          </ScrollView>
 
-            {/* Actions */}
-            <View className="gap-2 mt-4">
-              <TouchableOpacity
-                onPress={handleSubmit}
-                disabled={isPending}
-                className={`py-4 rounded-md ${isPending ? 'bg-gray-300' : 'bg-brand'}`}
-              >
-                <Text className="text-white font-semibold text-center text-lg">
-                  {isPending ? 'Submitting...' : 'Submit Request'}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => router.back()}
-                disabled={isPending}
-                className="py-4 rounded-md border border-gray-300 bg-white"
-              >
-                <Text className="text-gray-700 font-semibold text-center text-lg">Cancel</Text>
-              </TouchableOpacity>
-            </View>
+          {/* Footer */}
+          <View className="bg-white px-4 pb-6 pt-4 border-t border-gray-200">
+            <TouchableOpacity
+              onPress={handleSubmit}
+              disabled={isPending}
+              className={`py-3 rounded-md items-center ${isPending ? 'bg-gray-300' : 'bg-brand'}`}
+            >
+              <Text className="text-white font-semibold text-lg">
+                {isPending ? 'Submitting...' : 'Submit Request'}
+              </Text>
+            </TouchableOpacity>
           </View>
-        </ScrollView>
-      </View>
-    </SafeAreaWrapper>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }

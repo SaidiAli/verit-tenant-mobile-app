@@ -1,10 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, RefreshControl } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from '../../components/ui/Card';
+import { CreateMaintenanceRequestModal } from '../../components/ui/CreateMaintenanceRequestModal';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorView } from '../../components/ui/ErrorView';
 import {
@@ -20,9 +20,9 @@ import { formatDateShort } from '@/lib/utils';
 import type { MaintenanceListItem } from '../../types';
 
 export default function MaintenanceRequestsScreen() {
-  const router = useRouter();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const {
     data: requests = [],
@@ -75,7 +75,7 @@ export default function MaintenanceRequestsScreen() {
             {/* New request button */}
             <TouchableOpacity
               className="bg-brand py-3 rounded-md items-center flex-row justify-center gap-2 mb-6"
-              onPress={() => router.push('/screens/create-maintenance-request' as any)}
+              onPress={() => setShowCreateModal(true)}
             >
               <MaterialIcons name="add" size={20} color="white" />
               <Text className="text-white font-medium text-lg">Report an Issue</Text>
@@ -158,6 +158,11 @@ export default function MaintenanceRequestsScreen() {
             )}
           </View>
         </ScrollView>
+
+        <CreateMaintenanceRequestModal
+          visible={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+        />
       </View>
     </SafeAreaWrapper>
   );

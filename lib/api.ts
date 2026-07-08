@@ -46,6 +46,17 @@ if (!apiBaseUrl) {
 
 export const API_BASE_URL: string = apiBaseUrl;
 
+// A 401 from any request means the token is dead (expired/revoked). The axios
+// interceptor can wipe SecureStore, but it can't reach React state to actually
+// log the user out. AuthProvider registers a handler here on mount; the
+// interceptor calls it so the app clears `user`, tears down the socket, and
+// redirects to login. Without this, an expired token leaves the user stranded
+// on the authenticated shell with every query failing until an app restart.
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorizedHandler(fn: (() => void) | null): void {
+  onUnauthorized = fn;
+}
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -76,11 +87,10 @@ api.interceptors.response.use(
   },
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
+      // Token expired or invalid: wipe credentials, then hand off to the auth
+      // context so it can clear React state, reset the socket, and redirect.
       await secureStorage.clear();
-      // Note: Navigation will be handled by the auth context
-
-      Sentry.captureException(error);
+      onUnauthorized?.();
     }
 
     Sentry.captureException(error);
