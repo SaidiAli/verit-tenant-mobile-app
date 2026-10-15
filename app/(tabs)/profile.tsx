@@ -97,6 +97,10 @@ export default function ProfileScreen() {
               Profile Settings
             </Text>
 
+            <TouchableOpacity accessibilityRole="button" onPress={() => router.push('../screens/identity')} className="mb-4 rounded-lg bg-white p-4">
+              <Text className="text-lg font-semibold">Identity</Text>
+            </TouchableOpacity>
+
             {/* User Info Card */}
             <View className="mb-4">
               <View className="space-y-4 items-center">

@@ -1,5 +1,5 @@
 import { BRAND_COLOR } from "@/constants/theme";
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -20,7 +20,7 @@ import { PaymentStatusTracker } from "../../components/ui/PaymentStatusTracker";
 import { useAuth } from "../../hooks/useAuth";
 import { useServerSettings } from "../../hooks/useServerSettings";
 import { useLease } from "../../hooks/LeaseContext";
-import { paymentApi } from "../../lib/api";
+import { paymentApi, tenantApi } from "../../lib/api";
 import { ErrorView } from "../../components/ui/ErrorView";
 import {
   CurrencyBalance,
@@ -50,6 +50,11 @@ export default function PaymentsScreen() {
   const [currentPayment, setCurrentPayment] =
     useState<PaymentInitiationResponse | null>(null);
 
+  useEffect(() => {
+    setCurrentPayment(null);
+    setPaymentFlow({ step: 'idle', isLoading: false });
+  }, [selectedLeaseId]);
+
   const {
     data: balance,
     isLoading: isBalanceLoading,
@@ -59,6 +64,11 @@ export default function PaymentsScreen() {
   } = useQuery({
     queryKey: ["payment-balance", selectedLeaseId],
     queryFn: () => paymentApi.getBalance(selectedLeaseId!),
+    enabled: !!selectedLeaseId,
+  });
+  const { data: tenantContext, refetch: refetchTenantContext } = useQuery({
+    queryKey: ["payment-management-context", selectedLeaseId],
+    queryFn: () => tenantApi.getDashboard(selectedLeaseId || undefined),
     enabled: !!selectedLeaseId,
   });
 
@@ -74,17 +84,25 @@ export default function PaymentsScreen() {
 
   const initiatePaymentMutation = useMutation({
     mutationFn: paymentApi.initiate,
+    retry: false,
     onSuccess: (paymentResponse) => {
+      if (paymentResponse.leaseId !== selectedLeaseId) return;
       setCurrentPayment(paymentResponse);
       setPaymentFlow((prev) => ({
         ...prev,
         transactionId: paymentResponse.transactionId,
-        step: "processing",
+        step: paymentResponse.status === 'completed' ? 'success' : paymentResponse.status === 'failed' ? 'failed' : 'processing',
         isLoading: false,
         error: undefined,
       }));
+      if (paymentResponse.status === 'completed') { void refetchBalance(); void refetchPayments(); }
     },
     onError: (err: any) => {
+      if (err.confirmationPending) {
+        setPaymentFlow(prev => ({ ...prev, step: 'pending', isLoading: false, error: 'The payment outcome is unknown. Check payment history before starting another collection.' }));
+        void refetchPayments();
+        return;
+      }
       let errorMessage = "Payment failed. Please try again.";
       if (
         err.message?.includes("Network Error") ||
@@ -141,9 +159,9 @@ export default function PaymentsScreen() {
 
   const handleRefresh = useCallback(async () => {
     if (selectedLeaseId) {
-      await Promise.all([refetchBalance(), refetchPayments()]);
+      await Promise.all([refetchBalance(), refetchPayments(), refetchTenantContext()]);
     }
-  }, [selectedLeaseId, refetchBalance, refetchPayments]);
+  }, [selectedLeaseId, refetchBalance, refetchPayments, refetchTenantContext]);
 
   useFocusEffect(
     useCallback(() => {
@@ -154,10 +172,33 @@ export default function PaymentsScreen() {
     }, [selectedLeaseId, refetchBalance, refetchPayments]),
   );
 
+  const pendingPayment = payments.map(row => row.payment).find(payment => (payment.status === 'pending' || payment.status === 'processing') && payment.paymentMethod === 'mobile_money' && payment.transactionId);
+  const resumePendingPayment = useCallback(() => {
+    if (!pendingPayment?.transactionId || !selectedLeaseId) return;
+    setCurrentPayment({ paymentId: pendingPayment.id, transactionId: pendingPayment.transactionId,
+      amount: Number(pendingPayment.amount), currency: pendingPayment.currency ?? 'UGX', leaseId: selectedLeaseId,
+      status: 'pending', gateway: pendingPayment.gateway === 'yo' || pendingPayment.gateway === 'iotec' ? pendingPayment.gateway : undefined,
+      gatewayReference: pendingPayment.gatewayReference ?? '', confirmationPending: true });
+    setPaymentFlow({ step: 'processing', transactionId: pendingPayment.transactionId, isLoading: false });
+  }, [pendingPayment, selectedLeaseId]);
+  useEffect(() => {
+    if ((paymentFlow.step === 'idle' || (paymentFlow.step === 'pending' && !currentPayment)) && pendingPayment) resumePendingPayment();
+  }, [paymentFlow.step, currentPayment, pendingPayment, resumePendingPayment]);
+
   const handlePayNow = useCallback(() => {
+    if (currentPayment && (paymentFlow.step === 'processing' || paymentFlow.step === 'pending')) {
+      setPaymentFlow(prev => ({ ...prev, step: 'processing', error: undefined }));
+      return;
+    }
+    if (pendingPayment) { resumePendingPayment(); return; }
+    if (paymentFlow.step === 'pending') { void refetchPayments(); return; }
     if (!balance || balance.currency !== "UGX") return;
+    if (tenantContext?.management && !tenantContext.management.payeeReady) {
+      Alert.alert('Online payment unavailable', 'The payment recipient is not verified yet. Contact the managing organization for an approved payment method.');
+      return;
+    }
     setPaymentFlow({ step: "amount-selection", isLoading: false });
-  }, [balance]);
+  }, [balance, tenantContext?.management, currentPayment, paymentFlow.step, pendingPayment, resumePendingPayment, refetchPayments]);
 
   const handleAmountConfirm = useCallback(
     async (amount: number) => {
@@ -322,17 +363,17 @@ export default function PaymentsScreen() {
   const handlePaymentTimeout = useCallback(() => {
     setPaymentFlow((prev) => ({
       ...prev,
-      step: "failed",
-      error:
-        "Payment processing timed out. Please check your payment status or try again.",
+      step: "pending",
+      error: "Confirmation is still pending. Check this payment before starting another.",
       isLoading: false,
     }));
   }, []);
 
   const closePaymentFlow = useCallback(() => {
+    if (paymentFlow.step === 'pending' || paymentFlow.step === 'processing') return;
     setPaymentFlow({ step: "idle", isLoading: false, error: undefined });
     setCurrentPayment(null);
-  }, []);
+  }, [paymentFlow.step]);
 
   const retryPayment = useCallback(() => {
     setPaymentFlow({
@@ -405,6 +446,7 @@ export default function PaymentsScreen() {
                   onSuccess={handlePaymentSuccess}
                   onFailed={handlePaymentFailed}
                   onTimeout={handlePaymentTimeout}
+                  confirmationPending={currentPayment.confirmationPending}
                   className="mb-6"
                 />
               ) : (
@@ -418,6 +460,14 @@ export default function PaymentsScreen() {
                   </View>
                 </Card>
               ))}
+
+            {paymentFlow.step === 'pending' && <Card className="mb-6 bg-yellow-50">
+              <Text className="text-lg font-semibold">Confirmation pending</Text>
+              <Text className="my-3">{paymentFlow.error}</Text>
+              <TouchableOpacity onPress={() => { if (currentPayment) setPaymentFlow(prev => ({ ...prev, step: 'processing', error: undefined })); else void refetchPayments(); }}>
+                <Text className="text-brand font-semibold">Check payment status</Text>
+              </TouchableOpacity>
+            </Card>}
 
             {/* Success/Failure Messages */}
             {paymentFlow.step === "success" && currentPayment && (
@@ -520,15 +570,29 @@ export default function PaymentsScreen() {
                   </View>
 
                   {balance.currency === "UGX" ? (
-                    <TouchableOpacity
-                      className="bg-brand py-3 rounded-md items-center flex-row justify-center space-x-2 mt-8"
-                      onPress={handlePayNow}
-                      disabled={paymentFlow.step !== "idle"}
-                    >
-                      <Text className="text-white font-medium text-lg">
-                        Pay with mobile money
-                      </Text>
-                    </TouchableOpacity>
+                    tenantContext?.management && !tenantContext.management.payeeReady ? (
+                      <View className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-8">
+                        <Text className="text-yellow-900 text-sm leading-5">Online payment is paused until the payment recipient is verified. {tenantContext.management.managingDisplayName} can provide an approved alternative.</Text>
+                      </View>
+                    ) : (
+                    <View className="mt-8 gap-2">
+                      {tenantContext?.management?.payeeDisplayName && (
+                        <Text className="text-gray-600 text-sm text-center">
+                          Mobile-money recipient: {tenantContext.management.payeeDisplayName}
+                          {tenantContext.management.settlementMode?.startsWith('agency_collect') ? ' (managing agency)' : ''}
+                        </Text>
+                      )}
+                      <TouchableOpacity
+                        className="bg-brand py-3 rounded-md items-center flex-row justify-center space-x-2"
+                        onPress={handlePayNow}
+                        disabled={paymentFlow.step !== "idle"}
+                      >
+                        <Text className="text-white font-medium text-lg">
+                          Pay with mobile money
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    )
                   ) : (
                     <View className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-8">
                       <Text className="text-blue-900 text-sm leading-5">

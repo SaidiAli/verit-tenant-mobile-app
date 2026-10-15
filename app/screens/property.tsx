@@ -83,7 +83,7 @@ export default function PropertyScreen() {
     );
   }
 
-  const { property, emergencyContacts, rules } = propertyInfo;
+  const { property, emergencyContacts, rules, management } = propertyInfo;
 
   return (
     <SafeAreaWrapper>
@@ -125,6 +125,17 @@ export default function PropertyScreen() {
                 )}
               </View>
             </Card>
+
+            {management && (
+              <Card className="mb-4">
+                <View className="gap-2">
+                  <Text className="text-lg font-semibold text-gray-800">Managed by</Text>
+                  <Text className="text-gray-800 font-medium">{management.managingDisplayName}</Text>
+                  <Text className="text-gray-600 text-sm">Contact this organization for maintenance and day-to-day property service.</Text>
+                  {management.managingContactPhone && <TouchableOpacity onPress={() => handleEmergencyCall(management.managingContactPhone!)}><Text className="text-brand font-medium">Call {management.managingContactPhone}</Text></TouchableOpacity>}
+                </View>
+              </Card>
+            )}
 
             {/* Emergency Contact */}
             {emergencyContacts && emergencyContacts.length > 0 && (

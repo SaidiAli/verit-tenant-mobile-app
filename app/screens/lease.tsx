@@ -100,7 +100,7 @@ export default function LeaseScreen() {
     );
   }
 
-  const { lease, unit, property, landlord, quickStats } = dashboardData;
+  const { lease, unit, property, landlord, quickStats, management } = dashboardData;
 
   const endDate = lease.endDate ? new Date(lease.endDate) : null;
   const currentDate = new Date();
@@ -179,6 +179,19 @@ export default function LeaseScreen() {
                 )}
               </View>
             </Card>
+
+            {management && (
+              <Card className="mb-4">
+                <View className="gap-2">
+                  <Text className="text-lg font-semibold text-gray-800">Contracting parties</Text>
+                  <Text className="text-gray-600">Legal owner: <Text className="font-medium text-gray-800">{management.ownerLegalName}</Text></Text>
+                  <Text className="text-gray-600">Property manager: <Text className="font-medium text-gray-800">{management.managingDisplayName}</Text></Text>
+                  {management.payeeDisplayName && (
+                    <Text className="text-gray-600">Mobile-money recipient: <Text className="font-medium text-gray-800">{management.payeeDisplayName}</Text></Text>
+                  )}
+                </View>
+              </Card>
+            )}
 
             {/* Property Information */}
             {property && (

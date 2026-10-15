@@ -1,6 +1,21 @@
 // Shared types with backend (matching server schema)
 export type Currency = 'UGX' | 'USD';
 
+export interface TenantManagementPresentation {
+  managingOrganizationId: string;
+  managingDisplayName: string;
+  managingContactEmail?: string | null;
+  managingContactPhone?: string | null;
+  ownerOrganizationId: string;
+  ownerDisplayName: string;
+  ownerLegalName: string;
+  portfolioManagementId: string;
+  payeeReady: boolean;
+  payeeOrganizationId?: string | null;
+  payeeDisplayName?: string | null;
+  settlementMode?: 'direct_to_owner' | 'agency_collect' | 'agency_collect_net_fee' | null;
+}
+
 export interface User {
   id: string;
   userName?: string;
@@ -286,6 +301,7 @@ export interface TenantDashboard {
 
 // Backend Dashboard API Response Type (matches TenantService.getTenantDashboard response)
 export interface TenantDashboardData {
+  management?: TenantManagementPresentation | null;
   tenant: {
     id: string;
     firstName: string;
@@ -397,9 +413,10 @@ export interface PaymentInitiationResponse {
   transactionId: string;
   amount: number;
   currency: Currency;
-  status: 'pending' | 'processing';
-  gateway: 'yo' | 'iotec';
-  gatewayReference: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  confirmationPending?: boolean;
+  gateway?: 'yo' | 'iotec';
+  gatewayReference?: string;
   leaseId: string;
   scheduleId?: string;
   statusMessage?: string;
@@ -488,6 +505,7 @@ export type PaymentStep =
   | 'confirmation'
   | 'pin-entry'
   | 'processing'
+  | 'pending'
   | 'success'
   | 'failed';
 
@@ -502,6 +520,7 @@ export interface PaymentFlowState {
 }
 
 export interface TenantPropertyInfo {
+  management?: TenantManagementPresentation | null;
   property: Property;
   unit: Unit;
   landlord: {

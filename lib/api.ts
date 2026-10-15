@@ -89,7 +89,11 @@ api.interceptors.response.use(
       onUnauthorized?.();
     }
 
-    Sentry.captureException(error);
+    if (error.config?.url?.startsWith('/tenant/identity')) {
+      Sentry.captureException(new Error(`Tenant identity request failed (HTTP ${error.response?.status ?? 'unavailable'})`));
+    } else {
+      Sentry.captureException(error);
+    }
     return Promise.reject(error);
   }
 );
@@ -383,14 +387,23 @@ export const paymentApi = {
    */
   initiate: async (paymentData: PaymentInitiationRequest): Promise<PaymentInitiationResponse> => {
     try {
-      const response = await api.post<ApiResponse<PaymentInitiationResponse>>('/payments/initiate', paymentData);
+      const response = await api.post<ApiResponse<PaymentInitiationResponse>>('/payments/initiate', paymentData, { timeout: 60000 });
 
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error || response.data.message || 'Failed to initiate payment');
       }
 
-      return response.data.data;
+      return { ...response.data.data, amount: response.data.data.amount ?? paymentData.amount, currency: response.data.data.currency ?? 'UGX', leaseId: paymentData.leaseId };
     } catch (error: any) {
+      const payload = error.response?.data;
+      const pending = payload?.data;
+      if (error.response?.status === 503 && payload?.error === 'Payment confirmation pending'
+        && pending?.status === 'pending' && pending.paymentId && pending.transactionId) {
+        return { ...pending, amount: paymentData.amount, currency: 'UGX', leaseId: paymentData.leaseId, confirmationPending: true };
+      }
+      if (!error.response || error.response.status >= 500) {
+        throw Object.assign(new Error('Payment confirmation pending. Check history before starting another payment.'), { confirmationPending: true });
+      }
       if (error.response?.status === 400) {
         const errorMessage = error.response.data?.message || error.response.data?.error;
         throw new Error(errorMessage || 'Invalid payment data');

@@ -54,7 +54,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Verit to access your photos so you can attach them to a maintenance request."
+          "photosPermission": "Allow Verit to access photos for maintenance requests and tenant ID pictures.",
+          "cameraPermission": "Allow Verit to take tenant ID pictures."
         }
       ],
       [

@@ -16,6 +16,7 @@ interface PaymentStatusTrackerProps {
   onFailed: (status: PaymentStatusResponse) => void;
   onTimeout: () => void;
   className?: string;
+  confirmationPending?: boolean;
 }
 
 export function PaymentStatusTracker({
@@ -25,6 +26,7 @@ export function PaymentStatusTracker({
   onSuccess,
   onFailed,
   onTimeout,
+  confirmationPending = false,
   className = ''
 }: PaymentStatusTrackerProps) {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
@@ -105,7 +107,7 @@ export function PaymentStatusTracker({
     if (!status || status.paymentStatus === 'pending') {
       const message = elapsed > 30
         ? 'Payment is taking longer than usual. Please keep this screen open.'
-        : 'Please complete the payment on your mobile device and wait...';
+        : confirmationPending ? 'Waiting for confirmation. Do not start another payment.' : 'Please complete the payment on your mobile device and wait...';
 
       return {
         icon: 'hourglass-empty' as const,

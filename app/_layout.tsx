@@ -161,6 +161,7 @@ export default Sentry.wrap(function RootLayout() {
                     name="screens/payment-preferences"
                     options={{ headerShown: false }}
                   />
+                  <Stack.Screen name="screens/identity" options={{ headerShown: false }} />
                   <Stack.Screen
                     name="screens/edit-profile"
                     options={{ headerShown: false }}
