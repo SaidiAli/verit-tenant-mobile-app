@@ -1,3 +1,5 @@
+import { useAuth } from '../hooks/useAuth';
+import { tenantKeys } from '../lib/queryKeys';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { paymentApi } from '../lib/api';
@@ -29,6 +31,7 @@ export function usePaymentStatus({
   pollingInterval = 5000, // 5 seconds
   maxPollingDuration = 180000, // 3 minutes
 }: UsePaymentStatusOptions): UsePaymentStatusReturn {
+  const { user } = useAuth();
   const [isPolling, setIsPolling] = useState(false);
   const [timeoutError, setTimeoutError] = useState<string | null>(null);
 
@@ -42,8 +45,8 @@ export function usePaymentStatus({
   useEffect(() => { onErrorRef.current = onError; }, [onError]);
 
   const { data: status, error: queryErr, refetch: queryRefetch } = useQuery({
-    queryKey: ['payment-status', transactionId],
-    queryFn: () => paymentApi.getStatus(transactionId),
+    queryKey: tenantKeys.query(user?.id, 'payment-status', transactionId),
+    queryFn: ({ signal }) => paymentApi.getStatus(transactionId, signal),
     enabled: isPolling && !!transactionId,
     // In TanStack Query v4 the refetchInterval callback receives (data, query)
     refetchInterval: (data: PaymentStatusResponse | undefined) => {

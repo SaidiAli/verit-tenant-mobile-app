@@ -1,3 +1,5 @@
+import { useAuth } from '../../hooks/useAuth';
+import { tenantKeys } from '../../lib/queryKeys';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View, Text, RefreshControl, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -44,12 +46,13 @@ const StatusBadge = ({ status }: { status: ScheduleStatus }) => {
 };
 
 export default function PaymentScheduleScreen() {
+  const { user } = useAuth();
   const { selectedLeaseId } = useLease();
   const [showHistorical, setShowHistorical] = useState(false);
 
   const { data: schedule = [], isLoading, isRefetching, error, refetch } = useQuery({
-    queryKey: ['payment-schedule', selectedLeaseId],
-    queryFn: () => paymentApi.getSchedule(selectedLeaseId!),
+    queryKey: tenantKeys.query(user?.id, 'payment-schedule', selectedLeaseId),
+    queryFn: ({ signal }) => paymentApi.getSchedule(selectedLeaseId!, signal),
     enabled: !!selectedLeaseId,
   });
 

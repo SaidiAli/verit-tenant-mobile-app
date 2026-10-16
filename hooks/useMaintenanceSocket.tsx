@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { Socket } from 'socket.io-client';
+import { session } from '../lib/session';
 import { acquireSocket, releaseSocket } from '../lib/socket';
 
 export interface MaintenanceUpdateEvent {
@@ -27,6 +28,7 @@ export function useMaintenanceSocket(
   }, [onUpdate]);
 
   useEffect(() => {
+    const generation = session.current();
     let active = true;
     let socket: Socket | null = null;
 
@@ -39,7 +41,7 @@ export function useMaintenanceSocket(
       .then((s) => {
         if (!active) {
           // Unmounted before the socket resolved — release the ref we took.
-          releaseSocket();
+          releaseSocket(s);
           return;
         }
         socket = s;
@@ -49,14 +51,14 @@ export function useMaintenanceSocket(
         // Connection failed; a focus refetch remains the fallback. acquireSocket()
         // always took a ref before rejecting, so always release it. `socket` stays
         // null here, so the cleanup below won't double-release.
-        releaseSocket();
+        if (session.isCurrent(generation)) releaseSocket();
       });
 
     return () => {
       active = false;
       if (socket) {
         socket.off('maintenance:updated', handler);
-        releaseSocket();
+        releaseSocket(socket);
       }
     };
   }, []);

@@ -1,3 +1,4 @@
+import { session } from '../../lib/session';
 import { BRAND_COLOR } from "@/constants/theme";
 import {
   ScrollView,
@@ -8,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "expo-router";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/useAuth";
@@ -18,6 +19,7 @@ import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
 export default function ChangePasswordScreen() {
   const { changePassword } = useAuth();
   const router = useRouter();
+  const generation = useRef(session.current()).current;
 
   const [formData, setFormData] = useState({
     currentPassword: "",
@@ -40,6 +42,7 @@ export default function ChangePasswordScreen() {
         newPassword: formData.newPassword,
       }),
     onSuccess: () => {
+      if (!session.isCurrent(generation)) return;
       Alert.alert("Success", "Password changed successfully.", [
         { text: "OK", onPress: () => router.back() },
       ]);

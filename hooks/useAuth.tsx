@@ -1,194 +1,132 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, useCallback, Fragment, ReactNode } from 'react';
 import { useRouter } from 'expo-router';
-import { User } from '../types';
+import { useQueryClient } from '@tanstack/react-query';
+import { CanceledError } from 'axios';
+import { AuthResponse, User } from '../types';
 import { secureStorage } from '../lib/storage';
 import { authApi, setUnauthorizedHandler } from '../lib/api';
 import { resetSocket } from '../lib/socket';
 import { isTokenExpired } from '../lib/jwt';
+import { session } from '../lib/session';
 
-interface UpdateUserRequest {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
-}
-
-interface ChangePasswordRequest {
-  currentPassword: string;
-  newPassword: string;
-}
-
+interface UpdateUserRequest { firstName?: string; lastName?: string; email?: string; phone?: string }
+interface ChangePasswordRequest { currentPassword: string; newPassword: string }
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (userName: string, password: string) => Promise<void>;
-  activate: (phone: string, userName: string, password: string) => Promise<void>;
+  activate: (phone: string, tenantId: string, userName: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateUser: (userData: UpdateUserRequest) => Promise<void>;
   changePassword: (passwordData: ChangePasswordRequest) => Promise<void>;
 }
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const ensureCurrent = (generation: number) => {
+  if (!session.isCurrent(generation)) throw new CanceledError('Session changed');
+};
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [sessionId, setSessionId] = useState(session.current());
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-
-  const isAuthenticated = !!user;
+  const queryClient = useQueryClient();
+  const storageQueue = useRef(Promise.resolve());
+  const persist = useCallback((operation: () => Promise<void>) => {
+    const next = storageQueue.current.catch(() => {}).then(operation);
+    storageQueue.current = next;
+    return next;
+  }, []);
+  const clearSession = useCallback(() => {
+    const generation = session.reset();
+    setSessionId(generation);
+    setUser(null);
+    resetSocket();
+    void queryClient.cancelQueries();
+    queryClient.clear();
+    const cleared = persist(() => secureStorage.clear());
+    return { generation, cleared };
+  }, [persist, queryClient]);
 
   useEffect(() => {
-    const initAuth = async () => {
+    let active = true;
+    const generation = session.current();
+    void (async () => {
       try {
-        const token = await secureStorage.getToken();
-        const storedUser = await secureStorage.getUser();
-
-        // If we can prove the token is already past its `exp`, don't restore the
-        // session at all — clear it and land on login instead of flashing the
-        // authenticated shell only to be kicked out by the first 401.
-        if (token && isTokenExpired(token)) {
-          await secureStorage.clear();
-          setUser(null);
-          return;
-        }
-
+        const [token, storedUser] = await Promise.all([secureStorage.getToken(), secureStorage.getUser()]);
+        if (!active || !session.isCurrent(generation)) return;
+        if (token && isTokenExpired(token)) { await clearSession().cleared; return; }
         if (token && storedUser) {
-          // Optimistically set user to allow instant app access
           setUser(storedUser);
-
-          // Verify token is still valid by calling /me endpoint in background
           try {
-            const currentUser = await authApi.getCurrentUser();
-            setUser(currentUser);
-            await secureStorage.setUser(currentUser); // Update stored user data
-          } catch (error: any) {
-            // Only logout if it's explicitly an authentication error (401)
-            // or if the user data is actually missing (404)
-            if (error.response?.status === 401 || error.response?.status === 404 || error.message?.includes('User not found')) {
-              await logout();
-            }
-            // For network errors (500, timeout, etc), we stay logged in (offline mode)
+            const current = await authApi.getCurrentUser();
+            if (!active || !session.isCurrent(generation)) return;
+            await persist(async () => { if (session.isCurrent(generation)) await secureStorage.setUser(current); });
+            if (active && session.isCurrent(generation)) setUser(current);
+          } catch (error) {
+            if (active && session.isCurrent(generation) && (error as Error).message?.includes('User not found')) await clearSession().cleared;
           }
         }
-      } catch (error) {
-        // Only clear is absolutely necessary
-        const token = await secureStorage.getToken();
-        if (!token) {
-          await secureStorage.clear();
-          setUser(null);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      } finally { if (active) setIsLoading(false); }
+    })().catch(() => { if (active) setIsLoading(false); });
+    return () => { active = false; };
+  }, [clearSession, persist]);
 
-    initAuth();
-  }, []);
-
-  // Let a 401 from any API call reactively log the user out. The interceptor has
-  // already wiped SecureStore by the time this fires, so we only clear in-memory
-  // state, drop the stale-token socket, and bounce to login. Without this, an
-  // expired token leaves `user` set and `isAuthenticated` true, so the route
-  // guard never redirects.
   useEffect(() => {
     setUnauthorizedHandler(() => {
-      setUser(null);
-      resetSocket();
+      void clearSession().cleared.catch(() => {});
       router.replace('/(auth)/login');
     });
     return () => setUnauthorizedHandler(null);
-  }, [router]);
+  }, [clearSession, router]);
 
-  const login = async (userName: string, password: string) => {
-    try {
-      const response = await authApi.login({ username: userName, password });
-
+  const authenticate = async (request: () => Promise<AuthResponse>) => {
+    const { generation, cleared } = clearSession();
+    await cleared;
+    ensureCurrent(generation);
+    const response = await request();
+    await persist(async () => {
+      ensureCurrent(generation);
       await secureStorage.setToken(response.token);
+      ensureCurrent(generation);
       await secureStorage.setUser(response.user);
-      setUser(response.user);
-
-      router.replace('/(tabs)');
-    } catch (error: any) {
-      throw error;
-    }
+    });
+    ensureCurrent(generation);
+    setUser(response.user);
+    router.replace('/(tabs)');
   };
-
-  const activate = async (phone: string, userName: string, password: string) => {
-    try {
-      const response = await authApi.activateTenant({ phone, userName, password });
-
-      await secureStorage.setToken(response.token);
-      await secureStorage.setUser(response.user);
-      setUser(response.user);
-
-      router.replace('/(tabs)');
-    } catch (error: any) {
-      throw error;
-    }
-  };
-
   const logout = async () => {
-    // Do the credential-clearing first so a future throw in socket teardown
-    // can't leave the user half-logged-out.
-    await secureStorage.clear();
-    setUser(null);
-    resetSocket();
-    router.replace('/(auth)/login');
+    const { generation, cleared } = clearSession();
+    await cleared;
+    if (session.isCurrent(generation)) router.replace('/(auth)/login');
   };
-
   const refreshUser = async () => {
-    try {
-      const currentUser = await authApi.getCurrentUser();
-      setUser(currentUser);
-      await secureStorage.setUser(currentUser);
-    } catch (error) {
-      await logout();
-    }
+    const generation = session.current();
+    const current = await authApi.getCurrentUser();
+    await persist(async () => { ensureCurrent(generation); await secureStorage.setUser(current); });
+    ensureCurrent(generation);
+    setUser(current);
   };
-
-  const updateUser = async (userData: UpdateUserRequest) => {
-    try {
-      const updatedUser = await authApi.updateUser(userData);
-      setUser(updatedUser);
-      await secureStorage.setUser(updatedUser);
-    } catch (error: any) {
-      throw error;
-    }
+  const updateUser = async (data: UpdateUserRequest) => {
+    const generation = session.current();
+    const updated = await authApi.updateUser(data);
+    await persist(async () => { ensureCurrent(generation); await secureStorage.setUser(updated); });
+    ensureCurrent(generation);
+    setUser(updated);
   };
-
-  const changePassword = async (passwordData: ChangePasswordRequest) => {
-    try {
-      await authApi.changePassword(passwordData);
-    } catch (error: any) {
-      throw error;
-    }
-  };
-
   const value: AuthContextType = {
-    user,
-    isLoading,
-    isAuthenticated,
-    login,
-    activate,
-    logout,
-    refreshUser,
-    updateUser,
-    changePassword,
+    user, isLoading, isAuthenticated: !!user,
+    login: (username, password) => authenticate(() => authApi.login({ username, password })),
+    activate: (phone, tenantId, userName, password) => authenticate(() => authApi.activateTenant({ phone, tenantId, userName, password })),
+    logout, refreshUser, updateUser,
+    changePassword: data => authApi.changePassword(data),
   };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}><Fragment key={user ? `${user.id}:${sessionId}` : 'signed-out'}>{children}</Fragment></AuthContext.Provider>;
 }
-
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 }

@@ -1,13 +1,14 @@
 # Tenant activation: account chooser for duplicate phone numbers
 
+Status: implemented. Native release acceptance remains outstanding.
+
 ## Context
 
 The phone+OTP activation flow (`app/(auth)/activate.tsx`) currently assumes a phone number identifies
 exactly one pending tenant account. That assumption is wrong on the server side by design: two
 separate landlords can independently register the same person as a tenant, so the same phone number
 can legitimately have more than one pending (not-yet-activated) account behind it. The server has
-already been updated to handle this — this doc describes the matching mobile app work, not yet
-implemented.
+already been updated to handle this — the app now implements the matching account selection and activation request.
 
 The server-side contract (already live in `verit-server`):
 
@@ -34,7 +35,7 @@ The server-side contract (already live in `verit-server`):
   returned for that phone; the server still requires the phone-verified flag and re-checks the phone
   match server-side.
 
-## Required changes
+## Implemented changes
 
 ### 1. `types/index.ts`
 Add:

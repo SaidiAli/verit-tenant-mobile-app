@@ -29,11 +29,11 @@ export const secureStorage = {
     await SecureStore.deleteItemAsync(LEASE_KEY);
   },
 
-  async setLeaseId(leaseId: string): Promise<void> {
-    await SecureStore.setItemAsync(LEASE_KEY, leaseId);
+  async setLeaseId(leaseId: string, userId: string): Promise<void> {
+    await SecureStore.setItemAsync(`${LEASE_KEY}_${userId}`, leaseId);
   },
 
-  async getLeaseId(): Promise<string | null> {
-    return await SecureStore.getItemAsync(LEASE_KEY);
+  async getLeaseId(userId: string): Promise<string | null> {
+    return await SecureStore.getItemAsync(`${LEASE_KEY}_${userId}`);
   },
 };

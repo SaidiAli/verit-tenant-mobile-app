@@ -1,5 +1,9 @@
+import { session } from '../../lib/session';
+import { ErrorView } from '../../components/ui/ErrorView';
+import { useAuth } from '../../hooks/useAuth';
+import { tenantKeys } from '../../lib/queryKeys';
 import { BRAND_COLOR } from '@/constants/theme';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, Linking, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
@@ -13,16 +17,23 @@ import { useLease } from '../../hooks/LeaseContext';
 import { LeaseSwitcher } from '../../components/ui/LeaseSwitcher';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
 import { File, Paths } from 'expo-file-system';
+import { SECURITY_DEPOSIT_LABELS } from '../../lib/paymentCheckout';
 import { formatMoney } from '../../lib/currency';
 
 export default function LeaseScreen() {
-  const { selectedLeaseId } = useLease();
+  const { user } = useAuth();
+  const { selectedLeaseId, isLoadingLeases } = useLease();
   const [isDownloading, setIsDownloading] = useState(false);
+  const generation = useRef(session.current()).current;
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const active = () => mounted.current && session.isCurrent(generation);
 
   // Fetch detailed lease information via dashboard API
   const { data: dashboardData, isLoading, error } = useQuery({
-    queryKey: ['tenant-dashboard', selectedLeaseId],
-    queryFn: () => tenantApi.getDashboard(selectedLeaseId || undefined),
+    queryKey: tenantKeys.query(user?.id, 'tenant-dashboard', selectedLeaseId),
+    queryFn: ({ signal }) => tenantApi.getDashboard(selectedLeaseId!, signal),
+    enabled: !!user && !!selectedLeaseId,
   });
 
   const handleCallLandlord = async (phoneNumber: string) => {
@@ -45,20 +56,22 @@ export default function LeaseScreen() {
     setIsDownloading(true);
     try {
       const token = await secureStorage.getToken();
+      if (!active()) return;
       const result = await File.downloadFileAsync(
         `${API_BASE_URL}/exports/leases/${selectedLeaseId}/my-statement.pdf`,
         new File(Paths.cache, `vrt-${Date.now()}-${selectedLeaseId.split('-')[0]}.pdf`),
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      if (!active()) { result.delete(); return; }
       await Sharing.shareAsync(result.uri, {
         mimeType: 'application/pdf',
         dialogTitle: 'Share Lease Statement',
       });
     } catch {
-      Alert.alert('Error', 'Failed to download statement');
+      if (active()) Alert.alert('Error', 'Failed to download statement');
     } finally {
-      setIsDownloading(false);
+      if (active()) setIsDownloading(false);
     }
   };
 
@@ -76,6 +89,8 @@ export default function LeaseScreen() {
       Alert.alert('Error', 'Failed to open email app');
     }
   };
+
+  if (!selectedLeaseId && !isLoadingLeases) return <ErrorView title="No lease selected" message="Select a lease or contact your property manager." />;
 
   if (isLoading) {
     return (
@@ -280,10 +295,16 @@ export default function LeaseScreen() {
                     </Text>
                   </View>
                   <View className="flex-row justify-between">
-                    <Text className="text-gray-600">Security Deposit:</Text>
+                    <Text className="text-gray-600">Advance rent:</Text>
                     <Text className="font-medium text-gray-800">
-                      {formatMoney(lease.deposit, lease.currency)}
+                      {formatMoney(lease.deposit, lease.depositCurrency)}
                     </Text>
+                  </View>
+                  <View className="gap-2 mt-3">
+                    <Text className="font-semibold">Refundable security deposit</Text>
+                    <Text>{SECURITY_DEPOSIT_LABELS[lease.securityDepositStatus]}</Text>
+                    {lease.securityDeposit !== null && lease.securityDepositCurrency && <Text>{formatMoney(lease.securityDeposit, lease.securityDepositCurrency)}</Text>}
+                    <Text>Held separately from advance rent and rent payments.</Text>
                   </View>
                 </View>
               </View>

@@ -1,760 +1,234 @@
-import { BRAND_COLOR } from "@/constants/theme";
-import React, { useState, useCallback, useMemo, useEffect } from "react";
-import {
-  ScrollView,
-  View,
-  Text,
-  TouchableOpacity,
-  RefreshControl,
-  Alert,
-} from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
-import { useRouter } from "expo-router";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card } from "../../components/ui/Card";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { PaymentModal } from "../../components/ui/PaymentModal";
-import { PaymentConfirmationModal } from "../../components/ui/PaymentConfirmationModal";
-import { PaymentStatusTracker } from "../../components/ui/PaymentStatusTracker";
-import { useAuth } from "../../hooks/useAuth";
-import { useServerSettings } from "../../hooks/useServerSettings";
-import { useLease } from "../../hooks/LeaseContext";
-import { paymentApi, tenantApi } from "../../lib/api";
-import { ErrorView } from "../../components/ui/ErrorView";
-import {
-  CurrencyBalance,
-  PaymentInitiationResponse,
-  PaymentStatusResponse,
-  PaymentFlowState,
-} from "../../types";
-import {
-  formatMoney,
-  MOBILE_MONEY_UNAVAILABLE_MESSAGE,
-  normalizePhoneNumber,
-  getMobileMoneyProvider,
-} from "../../lib/currency";
-import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
-import { formatDateShort } from "@/lib/utils";
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { ScrollView, Text, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Card } from '../../components/ui/Card';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { PaymentModal } from '../../components/ui/PaymentModal';
+import { PaymentConfirmationModal } from '../../components/ui/PaymentConfirmationModal';
+import { PaymentStatusTracker } from '../../components/ui/PaymentStatusTracker';
+import { useAuth } from '../../hooks/useAuth';
+import { useServerSettings } from '../../hooks/useServerSettings';
+import { useLease } from '../../hooks/LeaseContext';
+import { paymentApi, tenantApi } from '../../lib/api';
+import { ErrorView } from '../../components/ui/ErrorView';
+import type { CurrencyBalance, PaymentBalance, PaymentInitiationRequest, PaymentInitiationResponse } from '../../types';
+import { formatMoney, normalizePhoneNumber, getMobileMoneyProvider } from '../../lib/currency';
+import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
+import { tenantKeys } from '../../lib/queryKeys';
+import { session } from '../../lib/session';
+import { rentCheckout, securityCheckout, depositError, validateCheckoutRequest, SECURITY_DEPOSIT_LABELS } from '../../lib/paymentCheckout';
+import { formatDateShort } from '../../lib/utils';
+
+type Checkout = { paymentType: 'rent' | 'security_deposit'; paymentScope?: 'current' | 'arrears'; bucket?: CurrencyBalance; amount?: number };
+type Step = 'idle' | 'amount' | 'confirmation' | 'processing' | 'pending' | 'success' | 'failed';
 
 export default function PaymentsScreen() {
-  const router = useRouter();
   const { user } = useAuth();
+  const { selectedLeaseId, isLoadingLeases } = useLease();
+  if (!user || isLoadingLeases) return <LoadingSpinner message="Loading your leases..." />;
+  if (!selectedLeaseId) return <ErrorView title="No lease selected" message="Select a lease or contact your property manager." />;
+  return <LeasePayments key={`${user.id}:${selectedLeaseId}`} leaseId={selectedLeaseId} />;
+}
+
+function LeasePayments({ leaseId }: { leaseId: string }) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const { settings } = useServerSettings();
-  const { selectedLeaseId } = useLease();
+  const [step, setStep] = useState<Step>('idle');
+  const [checkout, setCheckout] = useState<Checkout | null>(null);
+  const [currentPayment, setCurrentPayment] = useState<PaymentInitiationResponse | null>(null);
+  const [phone, setPhone] = useState('');
+  const [error, setError] = useState('');
+  const [focused, setFocused] = useState(false);
+  const [pollDeposit, setPollDeposit] = useState(false);
+  const mounted = useRef(true);
+  const attempt = useRef(0);
+  const submitting = useRef(false);
+  const generation = useRef(session.current()).current;
+  const active = () => mounted.current && session.isCurrent(generation);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
-  // Payment flow states
-  const [paymentFlow, setPaymentFlow] = useState<PaymentFlowState>({
-    step: "idle",
+  const balanceQuery = useQuery({
+    queryKey: tenantKeys.query(user?.id, 'payment-balance', leaseId),
+    queryFn: ({ signal }) => paymentApi.getBalance(leaseId, signal),
   });
-  const [currentPayment, setCurrentPayment] =
-    useState<PaymentInitiationResponse | null>(null);
-
+  const contextQuery = useQuery({
+    queryKey: tenantKeys.query(user?.id, 'payment-management-context', leaseId),
+    queryFn: ({ signal }) => tenantApi.getDashboard(leaseId, signal),
+    refetchInterval: focused && pollDeposit ? 5000 : false,
+  });
+  const historyQuery = useQuery({
+    queryKey: tenantKeys.query(user?.id, 'payment-history', leaseId),
+    queryFn: ({ signal }) => paymentApi.getHistory(leaseId, signal),
+  });
+  const { refetch: refetchBalance } = balanceQuery;
+  const { refetch: refetchContext } = contextQuery;
+  const { refetch: refetchHistory } = historyQuery;
+  const refresh = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: tenantKeys.query(user?.id, 'tenant-dashboard', leaseId) }),
+      queryClient.invalidateQueries({ queryKey: tenantKeys.query(user?.id, 'payment-schedule', leaseId) }),
+      refetchBalance(), refetchContext(), refetchHistory(),
+    ]);
+  }, [queryClient, user?.id, leaseId, refetchBalance, refetchContext, refetchHistory]);
+  useFocusEffect(useCallback(() => {
+    setFocused(true);
+    void refresh();
+    return () => setFocused(false);
+  }, [refresh]));
+  const deposit = contextQuery.data?.lease;
   useEffect(() => {
-    setCurrentPayment(null);
-    setPaymentFlow({ step: 'idle', isLoading: false });
-  }, [selectedLeaseId]);
+    if (!focused || deposit?.securityDepositStatus !== 'pending') { setPollDeposit(false); return; }
+    setPollDeposit(true);
+    const timer = setTimeout(() => setPollDeposit(false), 120000);
+    return () => clearTimeout(timer);
+  }, [focused, deposit?.securityDepositStatus]);
 
-  const {
-    data: balance,
-    isLoading: isBalanceLoading,
-    isRefetching: isBalanceRefetching,
-    error: balanceError,
-    refetch: refetchBalance,
-  } = useQuery({
-    queryKey: ["payment-balance", selectedLeaseId],
-    queryFn: () => paymentApi.getBalance(selectedLeaseId!),
-    enabled: !!selectedLeaseId,
-  });
-  const { data: tenantContext, refetch: refetchTenantContext } = useQuery({
-    queryKey: ["payment-management-context", selectedLeaseId],
-    queryFn: () => tenantApi.getDashboard(selectedLeaseId || undefined),
-    enabled: !!selectedLeaseId,
-  });
-
-  const {
-    data: payments = [],
-    isRefetching: isPaymentsRefetching,
-    refetch: refetchPayments,
-  } = useQuery({
-    queryKey: ["payment-history", selectedLeaseId],
-    queryFn: () => paymentApi.getHistory(selectedLeaseId!),
-    enabled: !!selectedLeaseId,
-  });
-
-  const initiatePaymentMutation = useMutation({
-    mutationFn: paymentApi.initiate,
+  const mutation = useMutation({
     retry: false,
-    onSuccess: (paymentResponse) => {
-      if (paymentResponse.leaseId !== selectedLeaseId) return;
-      setCurrentPayment(paymentResponse);
-      setPaymentFlow((prev) => ({
-        ...prev,
-        transactionId: paymentResponse.transactionId,
-        step: paymentResponse.status === 'completed' ? 'success' : paymentResponse.status === 'failed' ? 'failed' : 'processing',
-        isLoading: false,
-        error: undefined,
-      }));
-      if (paymentResponse.status === 'completed') { void refetchBalance(); void refetchPayments(); }
+    mutationFn: async ({ request }: { request: PaymentInitiationRequest; attemptId: number }) => paymentApi.initiate(request),
+    onSuccess: (payment, variables) => {
+      if (!active() || variables.attemptId !== attempt.current) return;
+      submitting.current = false;
+      setCurrentPayment(payment);
+      setStep(payment.status === 'completed' ? 'success' : payment.status === 'failed' ? 'failed' : 'processing');
+      setError('');
+      void refresh();
     },
-    onError: (err: any) => {
-      if (err.confirmationPending) {
-        setPaymentFlow(prev => ({ ...prev, step: 'pending', isLoading: false, error: 'The payment outcome is unknown. Check payment history before starting another collection.' }));
-        void refetchPayments();
-        return;
+    onError: (failure: Error & { code?: string; confirmationPending?: boolean }, variables) => {
+      if (!active() || variables.attemptId !== attempt.current) return;
+      submitting.current = false;
+      if (failure.confirmationPending) {
+        setStep('pending');
+        setError('The outcome is unknown. Check payment history before starting another payment.');
+      } else {
+        setStep('failed');
+        setError(depositError(failure.code) || failure.message || 'Payment failed. Refresh before trying again.');
       }
-      let errorMessage = "Payment failed. Please try again.";
-      if (
-        err.message?.includes("Network Error") ||
-        err.message?.includes("connection")
-      ) {
-        errorMessage =
-          "Connection failed. Please check your internet and try again.";
-      } else if (err.message?.includes("timeout")) {
-        errorMessage = "Request timed out. Please try again.";
-      } else if (err.message?.includes("Invalid payment data")) {
-        errorMessage =
-          "Invalid payment information. Please check your details.";
-      } else if (err.message?.includes("Insufficient funds")) {
-        errorMessage = "Insufficient funds in your mobile money account.";
-      } else if (err.message?.includes("Phone number")) {
-        errorMessage =
-          "Invalid phone number. Please check your mobile money number.";
-      } else if (err.message?.toLowerCase().includes("mobile money supports ugx only")) {
-        errorMessage = MOBILE_MONEY_UNAVAILABLE_MESSAGE;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      setPaymentFlow((prev) => ({
-        ...prev,
-        error: errorMessage,
-        isLoading: false,
-      }));
+      void refresh();
     },
   });
 
-  // `balances[0]` is the payable bucket and mirrors the flat fields; the rest are other
-  // currencies still owed on the lease (old-currency arrears after a rent-currency
-  // transition). Fall back to the flat fields so an older server still renders.
-  const { primaryBalance, otherBalances } = useMemo(() => {
-    if (!balance) return { primaryBalance: null, otherBalances: [] as CurrencyBalance[] };
-    const buckets = balance.balances?.length
-      ? balance.balances
-      : [{
-          currency: balance.currency,
-          paidAmount: balance.paidAmount,
-          outstandingBalance: balance.outstandingBalance,
-          minimumPayment: balance.minimumPayment,
-          dueDate: balance.dueDate,
-          nextPaymentDue: balance.nextPaymentDue,
-          isOverdue: balance.isOverdue,
-        }];
-    return {
-      primaryBalance: buckets[0],
-      otherBalances: buckets.slice(1).filter(b => b.outstandingBalance > 0),
-    };
-  }, [balance]);
-
-  const isRefreshing = isBalanceRefetching || isPaymentsRefetching;
-
-  const handleRefresh = useCallback(async () => {
-    if (selectedLeaseId) {
-      await Promise.all([refetchBalance(), refetchPayments(), refetchTenantContext()]);
-    }
-  }, [selectedLeaseId, refetchBalance, refetchPayments, refetchTenantContext]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (selectedLeaseId) {
-        refetchBalance();
-        refetchPayments();
-      }
-    }, [selectedLeaseId, refetchBalance, refetchPayments]),
-  );
-
-  const pendingPayment = payments.map(row => row.payment).find(payment => (payment.status === 'pending' || payment.status === 'processing') && payment.paymentMethod === 'mobile_money' && payment.transactionId);
-  const resumePendingPayment = useCallback(() => {
-    if (!pendingPayment?.transactionId || !selectedLeaseId) return;
-    setCurrentPayment({ paymentId: pendingPayment.id, transactionId: pendingPayment.transactionId,
-      amount: Number(pendingPayment.amount), currency: pendingPayment.currency ?? 'UGX', leaseId: selectedLeaseId,
-      status: 'pending', gateway: pendingPayment.gateway === 'yo' || pendingPayment.gateway === 'iotec' ? pendingPayment.gateway : undefined,
-      gatewayReference: pendingPayment.gatewayReference ?? '', confirmationPending: true });
-    setPaymentFlow({ step: 'processing', transactionId: pendingPayment.transactionId, isLoading: false });
-  }, [pendingPayment, selectedLeaseId]);
+  const payments = historyQuery.data ?? [];
+  const pending = payments.map(row => row.payment).find(payment =>
+    (payment.status === 'pending' || payment.status === 'processing') && payment.paymentMethod === 'mobile_money' && payment.transactionId);
   useEffect(() => {
-    if ((paymentFlow.step === 'idle' || (paymentFlow.step === 'pending' && !currentPayment)) && pendingPayment) resumePendingPayment();
-  }, [paymentFlow.step, currentPayment, pendingPayment, resumePendingPayment]);
+    if (!pending?.transactionId || (step !== 'idle' && !(step === 'pending' && !currentPayment))) return;
+    setCurrentPayment({ paymentId: pending.id, transactionId: pending.transactionId,
+      amount: Number(pending.amount), currency: pending.currency, leaseId, status: 'pending', confirmationPending: true });
+    setCheckout({ paymentType: pending.paymentType === 'security_deposit' ? 'security_deposit' : 'rent' });
+    setStep('processing');
+  }, [pending, step, currentPayment, leaseId]);
 
-  const handlePayNow = useCallback(() => {
-    if (currentPayment && (paymentFlow.step === 'processing' || paymentFlow.step === 'pending')) {
-      setPaymentFlow(prev => ({ ...prev, step: 'processing', error: undefined }));
-      return;
-    }
-    if (pendingPayment) { resumePendingPayment(); return; }
-    if (paymentFlow.step === 'pending') { void refetchPayments(); return; }
-    if (!balance || balance.currency !== "UGX") return;
-    if (tenantContext?.management && !tenantContext.management.payeeReady) {
-      Alert.alert('Online payment unavailable', 'The payment recipient is not verified yet. Contact the managing organization for an approved payment method.');
-      return;
-    }
-    setPaymentFlow({ step: "amount-selection", isLoading: false });
-  }, [balance, tenantContext?.management, currentPayment, paymentFlow.step, pendingPayment, resumePendingPayment, refetchPayments]);
-
-  const handleAmountConfirm = useCallback(
-    async (amount: number) => {
-      if (!balance || balance.currency !== "UGX") {
-        Alert.alert("Payment unavailable", MOBILE_MONEY_UNAVAILABLE_MESSAGE);
-        return;
-      }
-
-      if (!selectedLeaseId) {
-        Alert.alert(
-          "Error",
-          "Payment information not available. Please try again.",
-        );
-        return;
-      }
-
-      try {
-        setPaymentFlow((prev) => ({
-          ...prev,
-          amount,
-          isLoading: true,
-          error: undefined,
-        }));
-
-        // Prefer the tenant's saved payment preferences; fall back to the profile
-        // phone with phone-prefix provider detection when they're unset.
-        const prefs = settings?.paymentPreferences;
-        const phoneNumber = prefs?.mobileMoneyPhone || user?.phone;
-
-        if (!phoneNumber) {
-          throw new Error(
-            "Phone number not found. Please update your profile.",
-          );
-        }
-
-        const normalizedPhone = normalizePhoneNumber(phoneNumber);
-        const provider =
-          prefs?.mobileMoneyProvider || getMobileMoneyProvider(normalizedPhone);
-
-        if (provider === "unknown") {
-          throw new Error(
-            "Unsupported phone number. Please use MTN or Airtel mobile money.",
-          );
-        }
-
-        const providerName =
-          provider === "mtn"
-            ? "MTN MoMo"
-            : provider === "airtel"
-              ? "Airtel Money"
-              : "M-Sente";
-        const providerColor =
-          provider === "mtn"
-            ? "#FFCB05"
-            : provider === "airtel"
-              ? "#E51A1A"
-              : BRAND_COLOR;
-
-        setPaymentFlow((prev) => ({
-          ...prev,
-          phoneNumber: normalizedPhone,
-          paymentMethod: {
-            id: provider as any,
-            name: provider,
-            displayName: providerName,
-            color: providerColor,
-            icon: "phone-android",
-            prefixes: [],
-          },
-          step: "confirmation",
-          isLoading: false,
-          error: undefined,
-        }));
-      } catch (err: any) {
-        Alert.alert("Error", err.message || "Failed to proceed with payment");
-        setPaymentFlow((prev) => ({
-          ...prev,
-          isLoading: false,
-          error: err.message,
-        }));
-      }
-    },
-    [balance, user?.phone, settings?.paymentPreferences, selectedLeaseId],
-  );
-
-  const handlePaymentConfirm = useCallback(
-    async (confirmedPhoneNumber?: string) => {
-      const { amount, phoneNumber, paymentMethod } = paymentFlow;
-      const effectivePhoneNumber = confirmedPhoneNumber || phoneNumber;
-
-      if (!balance || balance.currency !== "UGX") {
-        Alert.alert("Payment unavailable", MOBILE_MONEY_UNAVAILABLE_MESSAGE);
-        return;
-      }
-
-      if (!amount || !effectivePhoneNumber || !selectedLeaseId) {
-        Alert.alert("Error", "Missing payment information. Please try again.");
-        return;
-      }
-
-      let effectiveProviderId = paymentMethod?.id;
-
-      if (confirmedPhoneNumber) {
-        const newProvider = getMobileMoneyProvider(confirmedPhoneNumber);
-        if (newProvider === "unknown") {
-          Alert.alert(
-            "Error",
-            "Invalid phone number. Please use a valid MTN or Airtel number.",
-          );
-          return;
-        }
-        effectiveProviderId = newProvider;
-      }
-
-      if (!effectiveProviderId) {
-        Alert.alert("Error", "Unknown mobile money provider.");
-        return;
-      }
-
-      setPaymentFlow((prev) => ({
-        ...prev,
-        isLoading: true,
-        error: undefined,
-      }));
-
-      initiatePaymentMutation.mutate({
-        leaseId: selectedLeaseId,
-        amount,
-        phoneNumber: effectivePhoneNumber,
-        provider: effectiveProviderId as "mtn" | "airtel" | "m-sente",
-        paymentMethod: "mobile_money",
-      });
-    },
-    [balance, paymentFlow, selectedLeaseId, initiatePaymentMutation],
-  );
-
-  const handlePaymentSuccess = useCallback(
-    (status: PaymentStatusResponse) => {
-      setPaymentFlow((prev) => ({
-        ...prev,
-        step: "success",
-        error: undefined,
-        isLoading: false,
-      }));
-      setTimeout(() => {
-        refetchBalance();
-        refetchPayments();
-      }, 1000);
-    },
-    [refetchBalance, refetchPayments],
-  );
-
-  const handlePaymentFailed = useCallback((status: PaymentStatusResponse) => {
-    setPaymentFlow((prev) => ({
-      ...prev,
-      step: "failed",
-      error: status.message || "Payment failed",
-      isLoading: false,
-    }));
-  }, []);
-
+  const balance = balanceQuery.data;
+  const ready = historyQuery.isSuccess && !historyQuery.isError && contextQuery.isSuccess && !contextQuery.isError;
+  const unavailable = contextQuery.data?.management?.payeeReady === false;
+  const locked = step !== 'idle' || submitting.current || !!pending;
+  const prepare = (selection: Checkout) => {
+    if (locked || !ready || unavailable) return;
+    setError('');
+    setCurrentPayment(null);
+    setCheckout(selection);
+    if (selection.paymentType === 'security_deposit') {
+      setPhone(settings?.paymentPreferences?.mobileMoneyPhone || user?.phone || '');
+      setStep('confirmation');
+    } else setStep('amount');
+  };
+  const confirm = (confirmedPhone?: string) => {
+    if (!checkout || submitting.current || !active()) return;
+    try {
+      const phoneNumber = normalizePhoneNumber(confirmedPhone || phone);
+      const provider = getMobileMoneyProvider(phoneNumber);
+      const savedProvider = settings?.paymentPreferences?.mobileMoneyProvider;
+      const resolved = !confirmedPhone && savedProvider ? savedProvider : provider;
+      if (resolved === 'unknown') throw new Error('Enter a valid mobile money phone number.');
+      const request: PaymentInitiationRequest = {
+        leaseId, amount: checkout.amount!, phoneNumber, provider: resolved,
+        paymentMethod: 'mobile_money', paymentType: checkout.paymentType, paymentScope: checkout.paymentScope,
+      };
+      validateCheckoutRequest(request, deposit ?? undefined);
+      submitting.current = true;
+      setError('');
+      mutation.mutate({ request, attemptId: ++attempt.current });
+    } catch (failure) { setError((failure as Error).message); }
+  };
+  const close = () => {
+    if (submitting.current || step === 'processing' || step === 'pending') return;
+    setStep('idle'); setCheckout(null); setCurrentPayment(null); setError('');
+  };
+  const terminal = (next: 'success' | 'failed', message = '') => {
+    if (!active()) return;
+    setStep(next); setError(message); void refresh();
+  };
   const handlePaymentTimeout = useCallback(() => {
-    setPaymentFlow((prev) => ({
-      ...prev,
-      step: "pending",
-      error: "Confirmation is still pending. Check this payment before starting another.",
-      isLoading: false,
-    }));
+    setStep('pending'); setError('Confirmation is still pending. Check this payment before starting another.');
   }, []);
+  const action = (label: string, onPress: () => void, disabled = false) => <TouchableOpacity
+    accessibilityRole="button" onPress={onPress} disabled={disabled}
+    className={`bg-brand p-3 rounded-md ${disabled ? 'opacity-50' : ''}`}>
+    <Text className="text-white font-semibold text-center">{label}</Text>
+  </TouchableOpacity>;
+  if (balanceQuery.isLoading || contextQuery.isLoading) return <LoadingSpinner message="Loading payment information..." />;
+  if (!balance || balanceQuery.isError || contextQuery.isError) return <ErrorView title="Unable to load payments"
+    message={(balanceQuery.error as Error)?.message || (contextQuery.error as Error)?.message || 'Refresh and try again.'} onRetry={() => void refresh()} />;
 
-  const closePaymentFlow = useCallback(() => {
-    if (paymentFlow.step === 'pending' || paymentFlow.step === 'processing') return;
-    setPaymentFlow({ step: "idle", isLoading: false, error: undefined });
-    setCurrentPayment(null);
-  }, [paymentFlow.step]);
-
-  const retryPayment = useCallback(() => {
-    setPaymentFlow({
-      step: "amount-selection",
-      isLoading: false,
-      error: undefined,
-    });
-    setCurrentPayment(null);
-  }, []);
-
-  if (isBalanceLoading) {
-    return <LoadingSpinner message="Loading payment information..." />;
-  }
-
-  if (!selectedLeaseId) {
-    return (
-      <ErrorView
-        title="No Active Lease Found"
-        message="You don't have an active lease. Please contact your landlord."
-        icon="home"
-        iconColor="#6B7280"
-      />
-    );
-  }
-
-  if (balanceError && !balance) {
-    return (
-      <ErrorView
-        title="Unable to Load Payments"
-        message={
-          (balanceError as any).message || "Failed to load payment information"
-        }
-        onRetry={() => refetchBalance()}
-      >
-        <Text className="text-xs text-gray-500 mt-2 text-center">
-          Check your internet connection and try again
-        </Text>
-      </ErrorView>
-    );
-  }
-
-  return (
-    <SafeAreaWrapper>
-      <View className="flex-1 bg-gray-50">
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-            />
-          }
-        >
-          <View className="px-4 pt-6 pb-4">
-            {/* Header */}
-            <Text className="text-3xl font-bold text-gray-800 mb-6">
-              Payments
-            </Text>
-
-            {/* Processing tracker — polls the verified status endpoint and is
-                nudged by realtime payment:updated events; drives the flow to
-                success/failed/timeout. Falls back to a spinner if we somehow
-                reach 'processing' without an initiated payment in hand. */}
-            {paymentFlow.step === "processing" &&
-              (currentPayment ? (
-                <PaymentStatusTracker
-                  transactionId={currentPayment.transactionId}
-                  amount={currentPayment.amount}
-                  currency={currentPayment.currency}
-                  onSuccess={handlePaymentSuccess}
-                  onFailed={handlePaymentFailed}
-                  onTimeout={handlePaymentTimeout}
-                  confirmationPending={currentPayment.confirmationPending}
-                  className="mb-6"
-                />
-              ) : (
-                <Card className="mb-6">
-                  <View className="items-center py-8">
-                    <LoadingSpinner
-                      size="large"
-                      message="Processing payment..."
-                      className="my-0"
-                    />
-                  </View>
-                </Card>
-              ))}
-
-            {paymentFlow.step === 'pending' && <Card className="mb-6 bg-yellow-50">
-              <Text className="text-lg font-semibold">Confirmation pending</Text>
-              <Text className="my-3">{paymentFlow.error}</Text>
-              <TouchableOpacity onPress={() => { if (currentPayment) setPaymentFlow(prev => ({ ...prev, step: 'processing', error: undefined })); else void refetchPayments(); }}>
-                <Text className="text-brand font-semibold">Check payment status</Text>
-              </TouchableOpacity>
-            </Card>}
-
-            {/* Success/Failure Messages */}
-            {paymentFlow.step === "success" && currentPayment && (
-              <Card className="mb-6 bg-green-50 border-green-200">
-                <View className="items-center space-y-4 py-4">
-                  <MaterialIcons
-                    name="check-circle"
-                    size={48}
-                    color="#10B981"
-                  />
-                  <Text className="text-xl font-bold text-green-800">
-                    Payment Successful!
-                  </Text>
-                  <Text className="text-green-700 text-center">
-                    Your payment of {formatMoney(currentPayment.amount, currentPayment.currency)} has been
-                    processed successfully.
-                  </Text>
-                  <TouchableOpacity
-                    onPress={closePaymentFlow}
-                    className="bg-green-600 px-6 py-3 rounded-md"
-                  >
-                    <Text className="text-white font-semibold">Continue</Text>
-                  </TouchableOpacity>
-                </View>
-              </Card>
-            )}
-
-            {paymentFlow.step === "failed" && (
-              <Card className="mb-6 bg-red-50 border-red-200">
-                <View className="items-center space-y-4 py-4">
-                  <MaterialIcons name="error" size={48} color="#EF4444" />
-                  <Text className="text-xl font-bold text-red-800">
-                    Payment Failed
-                  </Text>
-                  <Text className="text-red-700 text-center">
-                    {paymentFlow.error ||
-                      "Your payment could not be processed."}
-                  </Text>
-                  <View className="flex-row gap-2">
-                    <TouchableOpacity
-                      onPress={retryPayment}
-                      className="bg-red-600 px-6 py-3 rounded-md"
-                    >
-                      <Text className="text-white font-semibold">
-                        Try Again
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={closePaymentFlow}
-                      className="border border-red-600 px-6 py-3 rounded-md"
-                    >
-                      <Text className="text-red-600 font-semibold">Close</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Card>
-            )}
-
-            {/* Current Balance Card */}
-            {balance && primaryBalance && (
-              <Card className="mb-4">
-                <View className="space-y-4">
-                  <View className="flex-row justify-between items-center mb-4">
-                    <Text className="text-lg font-semibold text-gray-800">
-                      Outstanding Balance
-                    </Text>
-                  </View>
-
-                  <View className="space-y-2">
-                    <Text className="text-3xl font-bold text-brand">
-                      {formatMoney(primaryBalance.outstandingBalance, primaryBalance.currency)}
-                    </Text>
-                    {/* A transitioned lease also owes its old currency. Shown separately —
-                        summing across currencies would be meaningless. */}
-                    {otherBalances.map((bucket) => (
-                      <View key={bucket.currency} className="flex-row items-center gap-2">
-                        <Text className="text-gray-800 text-base font-semibold">
-                          + {formatMoney(bucket.outstandingBalance, bucket.currency)}
-                        </Text>
-                        <Text className="text-gray-500 text-xs">
-                          {bucket.currency} arrears{bucket.isOverdue ? ' · overdue' : ''}
-                        </Text>
-                      </View>
-                    ))}
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-600 text-sm">
-                        Monthly Rent: {formatMoney(balance.monthlyRent, balance.monthlyRentCurrency)}
-                      </Text>
-                    </View>
-                    {primaryBalance.dueDate && (
-                      <Text className="text-gray-600 text-sm">
-                        Next Due: {formatDateShort(primaryBalance.dueDate)}
-                      </Text>
-                    )}
-                    {primaryBalance.isOverdue && (
-                      <Text className="text-yellow-600 text-sm font-medium">
-                        ⚠️ Payment is overdue
-                      </Text>
-                    )}
-                  </View>
-
-                  {balance.currency === "UGX" ? (
-                    tenantContext?.management && !tenantContext.management.payeeReady ? (
-                      <View className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-8">
-                        <Text className="text-yellow-900 text-sm leading-5">Online payment is paused until the payment recipient is verified. {tenantContext.management.managingDisplayName} can provide an approved alternative.</Text>
-                      </View>
-                    ) : (
-                    <View className="mt-8 gap-2">
-                      {tenantContext?.management?.payeeDisplayName && (
-                        <Text className="text-gray-600 text-sm text-center">
-                          Mobile-money recipient: {tenantContext.management.payeeDisplayName}
-                          {tenantContext.management.settlementMode?.startsWith('agency_collect') ? ' (managing agency)' : ''}
-                        </Text>
-                      )}
-                      <TouchableOpacity
-                        className="bg-brand py-3 rounded-md items-center flex-row justify-center space-x-2"
-                        onPress={handlePayNow}
-                        disabled={paymentFlow.step !== "idle"}
-                      >
-                        <Text className="text-white font-medium text-lg">
-                          Pay with mobile money
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                    )
-                  ) : (
-                    <View className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-8">
-                      <Text className="text-blue-900 text-sm leading-5">
-                        {MOBILE_MONEY_UNAVAILABLE_MESSAGE}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </Card>
-            )}
-
-            {/* Payment Methods Card */}
-            {balance && <Card className="mb-4">
-              <View className="space-y-3">
-                <Text className="text-lg font-semibold text-gray-800 mb-4">
-                  Payment Methods
-                </Text>
-
-                {balance.currency === "UGX" ? <>
-                <View className="flex-row items-center justify-between py-2 px-2 mb-2 rounded-md bg-yellow-50 border border-yellow-200">
-                  <View className="flex-row items-center gap-2">
-                    <MaterialIcons
-                      name="phone-android"
-                      size={24}
-                      color="#F59E0B"
-                    />
-                    <View>
-                      <Text className="font-medium text-gray-800">
-                        MTN Mobile Money
-                      </Text>
-                      <Text className="text-sm text-gray-600">
-                        Pay with your MTN MoMo account
-                      </Text>
-                    </View>
-                  </View>
-                  <MaterialIcons name="verified" size={20} color="#10B981" />
-                </View>
-
-                <View className="flex-row items-center justify-between py-2 px-2 rounded-md bg-red-50 border border-red-200">
-                  <View className="flex-row items-center gap-2">
-                    <MaterialIcons
-                      name="phone-android"
-                      size={24}
-                      color="#E51A1A"
-                    />
-                    <View>
-                      <Text className="font-medium text-gray-800">
-                        Airtel Money
-                      </Text>
-                      <Text className="text-sm text-gray-600">
-                        Pay with your Airtel Money account
-                      </Text>
-                    </View>
-                  </View>
-                  <MaterialIcons name="verified" size={20} color="#10B981" />
-                </View>
-                </> : (
-                  <Text className="text-gray-600 text-sm leading-5">
-                    {MOBILE_MONEY_UNAVAILABLE_MESSAGE}
-                  </Text>
-                )}
-              </View>
-            </Card>}
-
-            {/* Payment Schedule Link */}
-            <TouchableOpacity
-              onPress={() => router.push("/screens/payment-schedule")}
-              activeOpacity={0.7}
-            >
-              <Card className="mb-4">
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-3">
-                    <View className="w-10 h-10 bg-brand/10 rounded-full items-center justify-center">
-                      <MaterialIcons
-                        name="event-note"
-                        size={24}
-                        color={BRAND_COLOR}
-                      />
-                    </View>
-                    <View>
-                      <Text className="text-lg font-semibold text-gray-800">
-                        Payment Schedule
-                      </Text>
-                      <Text className="text-sm text-gray-500">
-                        View upcoming payments
-                      </Text>
-                    </View>
-                  </View>
-                  <MaterialIcons
-                    name="chevron-right"
-                    size={24}
-                    color="#9CA3AF"
-                  />
-                </View>
-              </Card>
-            </TouchableOpacity>
-
-            {/* Payment History Link */}
-            <TouchableOpacity
-              onPress={() => router.push("/screens/payment-history")}
-              activeOpacity={0.7}
-            >
-              <Card className="mb-6">
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-3">
-                    <View className="w-10 h-10 bg-brand/10 rounded-full items-center justify-center">
-                      <MaterialIcons
-                        name="receipt-long"
-                        size={24}
-                        color={BRAND_COLOR}
-                      />
-                    </View>
-                    <View>
-                      <Text className="text-lg font-semibold text-gray-800">
-                        Payment History
-                      </Text>
-                      <Text className="text-sm text-gray-500">
-                        {payments.length === 0
-                          ? "No payments yet"
-                          : `${payments.length} payment${payments.length === 1 ? "" : "s"}`}
-                      </Text>
-                    </View>
-                  </View>
-                  <MaterialIcons
-                    name="chevron-right"
-                    size={24}
-                    color="#9CA3AF"
-                  />
-                </View>
-              </Card>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-
-        {/* Payment Amount Modal */}
-        {balance && balance.currency === "UGX" && (
-          <PaymentModal
-            visible={paymentFlow.step === "amount-selection"}
-            onClose={closePaymentFlow}
-            onConfirm={handleAmountConfirm}
-            balance={balance}
-            isLoading={paymentFlow.isLoading}
-          />
-        )}
-
-        {/* Payment Confirmation Modal */}
-        {balance?.currency === "UGX" &&
-          paymentFlow.paymentMethod &&
-          paymentFlow.phoneNumber && (
-          <PaymentConfirmationModal
-            visible={paymentFlow.step === "confirmation"}
-            onClose={closePaymentFlow}
-            onConfirm={handlePaymentConfirm}
-            amount={paymentFlow.amount || 0}
-            currency={balance?.currency || "UGX"}
-            phoneNumber={paymentFlow.phoneNumber}
-            providerName={paymentFlow.paymentMethod.displayName}
-            isLoading={paymentFlow.isLoading}
-            error={paymentFlow.error}
-          />
-        )}
-      </View>
-    </SafeAreaWrapper>
-  );
+  const buckets = balance.balances?.length ? balance.balances : [balance];
+  const selectedBalance: PaymentBalance | null = checkout?.bucket ? { ...balance, ...checkout.bucket, balances: [checkout.bucket] } : null;
+  return <SafeAreaWrapper><ScrollView className="flex-1 bg-gray-50" contentContainerStyle={{ padding: 16, gap: 16 }}
+    refreshControl={<RefreshControl refreshing={balanceQuery.isRefetching || contextQuery.isRefetching || historyQuery.isRefetching} onRefresh={() => void refresh()} />}>
+    <Text className="text-3xl font-bold">Payments</Text>
+    {step === 'processing' && currentPayment && <PaymentStatusTracker key={currentPayment.transactionId}
+      transactionId={currentPayment.transactionId} amount={currentPayment.amount} currency={currentPayment.currency}
+      confirmationPending={currentPayment.confirmationPending}
+      onSuccess={() => terminal('success')} onFailed={status => terminal('failed', status.message)} onTimeout={handlePaymentTimeout} />}
+    {step === 'pending' && <Card><Text className="font-semibold">Confirmation pending</Text><Text className="my-3">{error}</Text>
+      {action('Check payment status', () => { if (currentPayment) setStep('processing'); else void refresh(); })}</Card>}
+    {(step === 'success' || step === 'failed') && <Card>
+      <Text className="text-lg font-semibold">{step === 'success' ? 'Payment successful' : 'Payment not completed'}</Text>
+      {currentPayment && <Text className="my-2">{formatMoney(currentPayment.amount, currentPayment.currency)}</Text>}
+      {!!error && <Text className="my-2">{error}</Text>}
+      {action('Continue', close)}
+    </Card>}
+    <Text>Monthly rent: {formatMoney(balance.monthlyRent, balance.monthlyRentCurrency)}</Text>
+    {contextQuery.data?.management?.payeeDisplayName && <Text>
+      Mobile-money recipient: {contextQuery.data.management.payeeDisplayName}
+      {contextQuery.data.management.settlementMode?.startsWith('agency_collect') ? ' (managing agency)' : ''}
+    </Text>}
+    <Text>Mobile money: MTN MoMo and Airtel Money. USD payments use bank transfer or cash.</Text>
+    {unavailable && <Text>Online payment is paused until the recipient is verified. Contact your property manager for an approved alternative.</Text>}
+    {!ready && <Card><Text>Payment history must be refreshed before starting a payment.</Text>{action('Refresh payments', () => void refresh())}</Card>}
+    {buckets.map(bucket => <Card key={bucket.currency}>
+      <Text className="text-lg font-semibold">{bucket.currency === balance.monthlyRentCurrency ? 'Rent balance' : 'Previous-currency rent balance'}</Text>
+      <Text className="text-2xl font-bold my-2">{formatMoney(bucket.outstandingBalance, bucket.currency)}</Text>
+      {bucket.dueDate && <Text>Next due: {formatDateShort(bucket.dueDate)}</Text>}
+      {bucket.isOverdue && <Text>Payment is overdue</Text>}
+      {bucket.currency === 'UGX' ? action('Pay UGX rent', () => prepare(rentCheckout(balance, bucket)), locked || !ready || unavailable)
+        : <Text>Arrange USD payment with your property manager by bank transfer or cash. Mobile money supports UGX only.</Text>}
+    </Card>)}
+    {deposit && <Card>
+      <Text className="text-lg font-semibold">Refundable security deposit</Text>
+      <Text className="my-2">{SECURITY_DEPOSIT_LABELS[deposit.securityDepositStatus]}</Text>
+      {deposit.securityDeposit !== null && deposit.securityDepositCurrency && <Text>{formatMoney(deposit.securityDeposit, deposit.securityDepositCurrency)}</Text>}
+      <Text className="my-2">Held separately from rent. This does not reduce your rent balance.</Text>
+      {deposit.securityDepositStatus === 'unpaid' && (deposit.securityDepositCurrency === 'UGX'
+        ? action('Pay security deposit', () => { try { prepare(securityCheckout(deposit)); } catch (failure) { Alert.alert('Deposit unavailable', (failure as Error).message); } }, locked || !ready || unavailable)
+        : <Text>Arrange exact-amount USD security payment with your property manager. Mobile money supports UGX only.</Text>)}
+      {deposit.securityDepositStatus === 'pending' && <>
+        <Text>{pollDeposit ? 'Checking confirmation...' : 'Confirmation remains pending. Do not pay again.'}</Text>
+        {action('Refresh deposit status', () => void refresh())}
+      </>}
+    </Card>}
+    {action('Payment schedule', () => router.push('/screens/payment-schedule'))}
+    {action(`Payment history (${payments.length})`, () => router.push('/screens/payment-history'))}
+  </ScrollView>
+    {selectedBalance && <PaymentModal visible={step === 'amount'} balance={selectedBalance} onClose={close}
+      onConfirm={amount => { setCheckout(previous => previous && { ...previous, amount }); setPhone(settings?.paymentPreferences?.mobileMoneyPhone || user?.phone || ''); setStep('confirmation'); }} />}
+    {checkout && <PaymentConfirmationModal visible={step === 'confirmation'} onClose={close} onConfirm={confirm}
+      amount={checkout.amount ?? 0} currency="UGX" phoneNumber={phone}
+      providerName={settings?.paymentPreferences?.mobileMoneyProvider === 'airtel' ? 'Airtel Money' : 'Mobile money'}
+      isLoading={mutation.isLoading} error={error} paymentType={checkout.paymentType} />}
+  </SafeAreaWrapper>;
 }

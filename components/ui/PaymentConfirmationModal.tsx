@@ -20,6 +20,7 @@ import {
 import type { Currency } from "../../types";
 
 interface PaymentConfirmationModalProps {
+  paymentType?: 'rent' | 'security_deposit';
   visible: boolean;
   onClose: () => void;
   onConfirm: (phoneNumber: string) => void;
@@ -33,6 +34,7 @@ interface PaymentConfirmationModalProps {
 
 export function PaymentConfirmationModal({
   visible,
+  paymentType = 'rent',
   onClose,
   onConfirm,
   amount,
@@ -87,7 +89,7 @@ export function PaymentConfirmationModal({
                 <MaterialIcons name="arrow-back" size={24} color="#6B7280" />
               </TouchableOpacity>
               <Text className="text-lg font-semibold text-gray-800">
-                Confirm Payment
+                {paymentType === 'security_deposit' ? 'Confirm Security Deposit' : 'Confirm Rent Payment'}
               </Text>
               <View className="w-6" />
             </View>
@@ -114,6 +116,7 @@ export function PaymentConfirmationModal({
                     {formatMoney(amount, currency)}
                   </Text>
                   <Text className="text-gray-600">via {derivedProvider}</Text>
+                  {paymentType === 'security_deposit' && <Text>Exact refundable security amount. This payment does not reduce rent owed.</Text>}
 
                   {isEditing ? (
                     <View className="flex-row items-center bg-gray-100 rounded-full px-3 py-1 border border-gray-300 w-full max-w-[240px]">

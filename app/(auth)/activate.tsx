@@ -1,4 +1,5 @@
 import { BRAND_COLOR } from "@/constants/theme";
+import type { PendingTenantAccount } from "../../types";
 import { useState } from "react";
 import {
   View,
@@ -17,12 +18,14 @@ import { authApi } from "../../lib/api";
 import { useAuth } from "../../hooks/useAuth";
 import { validatePhoneNumber, normalizePhoneNumber } from "../../lib/currency";
 
-type Step = "phone" | "otp" | "credentials";
+type Step = "phone" | "otp" | "choose-account" | "credentials";
 
 export default function ActivateAccountScreen() {
   const router = useRouter();
   const { activate } = useAuth();
   const [step, setStep] = useState<Step>("phone");
+  const [accounts, setAccounts] = useState<PendingTenantAccount[]>([]);
+  const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [userName, setUserName] = useState("");
@@ -66,6 +69,7 @@ export default function ActivateAccountScreen() {
 
   const handleSendCode = async () => {
     if (!validatePhone()) return;
+    setAccounts([]); setSelectedTenantId(null); setError(null);
     setIsLoading(true);
     try {
       await authApi.requestTenantOtp(normalizePhoneNumber(phone));
@@ -87,8 +91,20 @@ export default function ActivateAccountScreen() {
     }
     setIsLoading(true);
     try {
-      await authApi.verifyTenantOtp(normalizePhoneNumber(phone), otp);
-      setStep("credentials");
+      const pending = await authApi.verifyTenantOtp(normalizePhoneNumber(phone), otp);
+      setAccounts(pending);
+      setError(null);
+      if (pending.length === 0) {
+        setSelectedTenantId(null);
+        setStep("phone");
+        setError("No pending account found for this phone number. Ask your landlord to add you as a tenant.");
+      } else if (pending.length === 1) {
+        setSelectedTenantId(pending[0].tenantId);
+        setStep("credentials");
+      } else {
+        setSelectedTenantId(null);
+        setStep("choose-account");
+      }
     } catch (err: any) {
       if (err.status === 429) {
         // Locked out — this code is dead; only a new one works.
@@ -102,11 +118,15 @@ export default function ActivateAccountScreen() {
 
   const handleActivate = async () => {
     if (!validateCredentials()) return;
+    if (!selectedTenantId) { setError("Verify your phone and select an account first."); setStep("phone"); return; }
     setIsLoading(true);
     try {
-      await activate(normalizePhoneNumber(phone), userName.trim(), password);
+      await activate(normalizePhoneNumber(phone), selectedTenantId, userName.trim(), password);
       // `activate()` navigates to /(tabs) on success.
     } catch (err: any) {
+      if (err.status === 400) {
+        setSelectedTenantId(null); setAccounts([]); setStep("phone");
+      }
       setError(err.message || "Failed to activate account");
     } finally {
       setIsLoading(false);
@@ -162,6 +182,7 @@ export default function ActivateAccountScreen() {
                       value={phone}
                       onChangeText={(text) => {
                         setPhone(text);
+                        setAccounts([]); setSelectedTenantId(null);
                         if (error) setError(null);
                       }}
                       keyboardType="phone-pad"
@@ -286,6 +307,15 @@ export default function ActivateAccountScreen() {
                 </View>
               )}
 
+              {step === "choose-account" && <View className="w-full gap-3">
+                <Text className="text-lg font-semibold">Choose your account</Text>
+                {accounts.map(account => <TouchableOpacity key={account.tenantId}
+                  className="rounded-md border border-gray-300 bg-white p-4"
+                  onPress={() => { setSelectedTenantId(account.tenantId); setStep("credentials"); }}>
+                  <Text className="font-semibold">{account.landlordName}</Text>
+                  {account.propertyName && <Text>{account.propertyName}</Text>}
+                </TouchableOpacity>)}
+              </View>}
               {/* Credentials Step */}
               {step === "credentials" && (
                 <View className="w-full gap-2">

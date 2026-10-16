@@ -1,10 +1,13 @@
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import { AxiosError, AxiosResponse, CanceledError, create, isCancel } from 'axios';
+import { assertBalanceCurrencies, assertHistoryCurrencies, assertReceiptCurrencies, assertDashboardCurrencies } from './paymentContracts';
+import { session } from './session';
 import { secureStorage } from './storage';
 import {
   ApiResponse,
   AuthResponse,
   LoginRequest,
   TenantActivateRequest,
+  PendingTenantAccount,
   User,
   PaymentBalance,
   PaymentInitiationRequest,
@@ -42,19 +45,20 @@ if (!apiBaseUrl) {
 
 export const API_BASE_URL: string = apiBaseUrl;
 
-// A 401 from any request means the token is dead (expired/revoked). The axios
-// interceptor can wipe SecureStore, but it can't reach React state to actually
-// log the user out. AuthProvider registers a handler here on mount; the
-// interceptor calls it so the app clears `user`, tears down the socket, and
-// redirects to login. Without this, an expired token leaves the user stranded
-// on the authenticated shell with every query failing until an app restart.
 let onUnauthorized: (() => void) | null = null;
 export function setUnauthorizedHandler(fn: (() => void) | null): void {
   onUnauthorized = fn;
 }
 
+declare module 'axios' {
+  interface InternalAxiosRequestConfig {
+    sessionGeneration?: number;
+    releaseSessionSignal?: () => void;
+  }
+}
+
 // Create axios instance
-const api = axios.create({
+const api = create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -62,33 +66,45 @@ const api = axios.create({
   timeout: 15000, // Increased timeout for slower connections
 });
 
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  async (config) => {
-    const token = await secureStorage.getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+api.interceptors.request.use(async config => {
+  const generation = session.current();
+  config.sessionGeneration = generation;
+  const signal = session.signal();
+  const requestSignal = config.signal;
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  signal.addEventListener('abort', abort);
+  requestSignal?.addEventListener?.('abort', abort);
+  config.releaseSessionSignal = () => {
+    signal.removeEventListener('abort', abort);
+    requestSignal?.removeEventListener?.('abort', abort);
+  };
+  if (signal.aborted || requestSignal?.aborted) abort();
+  config.signal = controller.signal;
+  const token = await secureStorage.getToken();
+  if (!session.isCurrent(generation)) {
+    config.releaseSessionSignal();
+    throw new CanceledError('Session changed');
   }
-);
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
-// Response interceptor to handle errors
 api.interceptors.response.use(
   (response: AxiosResponse) => {
+    response.config.releaseSessionSignal?.();
+    if (!session.isCurrent(response.config.sessionGeneration!)) throw new CanceledError('Session changed');
     return response;
   },
   async (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid: wipe credentials, then hand off to the auth
-      // context so it can clear React state, reset the socket, and redirect.
-      await secureStorage.clear();
+    error.config?.releaseSessionSignal?.();
+    if (isCancel(error)) return Promise.reject(error);
+    if (error.config?.sessionGeneration !== undefined && !session.isCurrent(error.config.sessionGeneration)) {
+      return Promise.reject(new CanceledError('Session changed'));
+    }
+    if (error.response?.status === 401 && error.config?.headers.Authorization) {
       onUnauthorized?.();
     }
-
     if (error.config?.url?.startsWith('/tenant/identity')) {
       Sentry.captureException(new Error(`Tenant identity request failed (HTTP ${error.response?.status ?? 'unavailable'})`));
     } else {
@@ -130,6 +146,7 @@ export const authApi = {
 
       return authData;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 401) {
         throw new Error('Invalid username or password');
       } else if (error.response?.status === 500) {
@@ -152,9 +169,9 @@ export const authApi = {
 
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 401) {
         // Token expired or invalid
-        await secureStorage.clear();
         throw new Error('Session expired. Please login again.');
       } else if (error.response?.status === 404) {
         throw new Error('User not found');
@@ -175,6 +192,7 @@ export const authApi = {
 
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 400) {
         throw new Error(error.response.data?.error || 'Invalid profile data');
       } else if (error.response?.status === 409) {
@@ -194,6 +212,7 @@ export const authApi = {
         throw new Error(response.data.error || 'Failed to change password');
       }
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       // Server returns 400 "Current password is incorrect" for a wrong current password
       if (error.response?.status === 400) {
         throw new Error(error.response.data?.error || 'Invalid password data');
@@ -213,6 +232,7 @@ export const authApi = {
         throw new Error(response.data.error || 'Failed to send reset code');
       }
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 400) {
         throw new Error(error.response.data?.error || 'Invalid email address');
       } else if (error.response?.status === 404) {
@@ -230,6 +250,7 @@ export const authApi = {
         throw new Error(response.data.error || 'Invalid verification code');
       }
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       const status = error.response?.status;
       if (status === 429) {
         // Too many failed attempts — the current code is now dead; only a fresh
@@ -255,6 +276,7 @@ export const authApi = {
         throw new Error(response.data.error || 'Failed to reset password');
       }
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 400) {
         throw new Error(error.response.data?.error || 'Invalid password data');
       }
@@ -273,11 +295,8 @@ export const authApi = {
         throw new Error(response.data.error || 'Failed to send verification code');
       }
     } catch (error: any) {
-      if (error.response?.status === 404) {
-        throw new Error(error.response.data?.error || 'No account found for this phone number.');
-      } else if (error.response?.status === 409) {
-        throw new Error(error.response.data?.error || 'This account is already activated.');
-      } else if (error.response?.status === 429) {
+      if (isCancel(error)) throw error;
+      if (error.response?.status === 429) {
         throw new Error(error.response.data?.error || 'Please wait before requesting another code.');
       } else if (error.response?.status === 400) {
         throw new Error(error.response.data?.error || 'Invalid phone number');
@@ -286,13 +305,15 @@ export const authApi = {
     }
   },
 
-  verifyTenantOtp: async (phone: string, otp: string): Promise<void> => {
+  verifyTenantOtp: async (phone: string, otp: string): Promise<PendingTenantAccount[]> => {
     try {
-      const response = await api.post<ApiResponse<{ message: string }>>('/auth/tenant/verify-otp', { phone, otp });
+      const response = await api.post<ApiResponse<{ accounts: PendingTenantAccount[] }>>('/auth/tenant/verify-otp', { phone, otp });
       if (!response.data.success) {
         throw new Error(response.data.error || 'Invalid verification code');
       }
+      return response.data.data?.accounts ?? [];
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       const status = error.response?.status;
       if (status === 429) {
         const err = new Error(
@@ -316,10 +337,11 @@ export const authApi = {
       }
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 409) {
         throw new Error(error.response.data?.error || 'This username is already taken.');
       } else if (error.response?.status === 400) {
-        throw new Error(error.response.data?.error || 'Please verify your phone number first.');
+        throw Object.assign(new Error(error.response.data?.message || error.response.data?.error || 'Phone verification expired. Request a fresh code.'), { status: 400 });
       } else if (error.response?.status === 404) {
         throw new Error(error.response.data?.error || 'No account found for this phone number.');
       }
@@ -333,9 +355,9 @@ export const paymentApi = {
   /**
    * Get payment balance for a specific lease
    */
-  getBalance: async (leaseId: string): Promise<PaymentBalance> => {
+  getBalance: async (leaseId: string, signal?: AbortSignal): Promise<PaymentBalance> => {
     try {
-      const response = await api.get<ApiResponse<PaymentBalance>>(`/payments/lease/${leaseId}/balance`);
+      const response = await api.get<ApiResponse<PaymentBalance>>(`/payments/lease/${leaseId}/balance`, { signal });
 
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error || 'Failed to get payment balance');
@@ -349,8 +371,10 @@ export const paymentApi = {
         );
       }
 
+      assertBalanceCurrencies(response.data.data);
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 404) {
         throw new Error('Lease not found. Please contact support.');
       } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
@@ -363,17 +387,19 @@ export const paymentApi = {
   /**
    * Get payment history for a specific lease
    */
-  getHistory: async (leaseId: string): Promise<PaymentWithDetails[]> => {
+  getHistory: async (leaseId: string, signal?: AbortSignal): Promise<PaymentWithDetails[]> => {
     try {
-      const response = await api.get<ApiResponse<PaymentWithDetails[]>>(`/payments/lease/${leaseId}/history`);
+      const response = await api.get<ApiResponse<PaymentWithDetails[]>>(`/payments/lease/${leaseId}/history`, { signal });
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to get payment history');
       }
 
       // Return empty array if no data (first time users)
+      assertHistoryCurrencies(response.data.data);
       return response.data.data || [];
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 404) {
         // Return empty array for lease not found or no history
         return [];
@@ -395,6 +421,7 @@ export const paymentApi = {
 
       return { ...response.data.data, amount: response.data.data.amount ?? paymentData.amount, currency: response.data.data.currency ?? 'UGX', leaseId: paymentData.leaseId };
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       const payload = error.response?.data;
       const pending = payload?.data;
       if (error.response?.status === 503 && payload?.error === 'Payment confirmation pending'
@@ -408,16 +435,16 @@ export const paymentApi = {
         const errorMessage = error.response.data?.message || error.response.data?.error;
         throw new Error(errorMessage || 'Invalid payment data');
       }
-      throw new Error(error.message || 'Failed to initiate payment');
+      throw Object.assign(new Error(payload?.message || payload?.error || error.message || 'Failed to initiate payment'), { code: payload?.code, status: error.response?.status });
     }
   },
 
   /**
    * Get payment status
    */
-  getStatus: async (transactionId: string): Promise<PaymentStatusResponse> => {
+  getStatus: async (transactionId: string, signal?: AbortSignal): Promise<PaymentStatusResponse> => {
     try {
-      const response = await api.get<ApiResponse<PaymentStatusResponse>>(`/payments/status/${transactionId}`);
+      const response = await api.get<ApiResponse<PaymentStatusResponse>>(`/payments/status/${transactionId}`, { signal });
 
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error || 'Failed to get payment status');
@@ -425,6 +452,7 @@ export const paymentApi = {
 
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 404) {
         throw new Error('Transaction not found');
       }
@@ -435,16 +463,18 @@ export const paymentApi = {
   /**
    * Get payment receipt
    */
-  getReceipt: async (paymentId: string): Promise<PaymentReceipt> => {
+  getReceipt: async (paymentId: string, signal?: AbortSignal): Promise<PaymentReceipt> => {
     try {
-      const response = await api.get<ApiResponse<PaymentReceipt>>(`/payments/${paymentId}/receipt`);
+      const response = await api.get<ApiResponse<PaymentReceipt>>(`/payments/${paymentId}/receipt`, { signal });
 
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error || 'Failed to get receipt');
       }
 
+      assertReceiptCurrencies(response.data.data);
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 400) {
         throw new Error('Receipt only available for completed payments');
       } else if (error.response?.status === 404) {
@@ -472,6 +502,7 @@ export const paymentApi = {
 
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       throw new Error(error.message || 'Failed to get payments');
     }
   },
@@ -479,9 +510,9 @@ export const paymentApi = {
   /**
    * Get payment schedule for a specific lease
    */
-  getSchedule: async (leaseId: string): Promise<PaymentScheduleItem[]> => {
+  getSchedule: async (leaseId: string, signal?: AbortSignal): Promise<PaymentScheduleItem[]> => {
     try {
-      const response = await api.get<ApiResponse<PaymentScheduleItem[]>>(`/payment-schedules/?leaseId=${leaseId}`);
+      const response = await api.get<ApiResponse<PaymentScheduleItem[]>>(`/payment-schedules/?leaseId=${leaseId}`, { signal });
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to get payment schedule');
@@ -489,6 +520,7 @@ export const paymentApi = {
 
       return response.data.data || [];
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 404) {
         return [];
       }
@@ -499,17 +531,19 @@ export const paymentApi = {
 
 // Tenant-specific API functions
 export const tenantApi = {
-  getDashboard: async (leaseId?: string): Promise<TenantDashboardData> => {
+  getDashboard: async (leaseId?: string, signal?: AbortSignal): Promise<TenantDashboardData> => {
     try {
       const url = leaseId ? `/tenant/dashboard?leaseId=${leaseId}` : '/tenant/dashboard';
-      const response = await api.get<ApiResponse<TenantDashboardData>>(url);
+      const response = await api.get<ApiResponse<TenantDashboardData>>(url, { signal });
 
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error || 'Failed to get dashboard data');
       }
 
+      assertDashboardCurrencies(response.data.data);
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 403) {
         throw new Error('No active lease found. Please contact your landlord.');
       } else if (error.response?.status === 404) {
@@ -521,9 +555,9 @@ export const tenantApi = {
     }
   },
 
-  getLeaseInfo: async (leaseId?: string) => {
+  getLeaseInfo: async (leaseId?: string, signal?: AbortSignal) => {
     const url = leaseId ? `/tenant/lease?leaseId=${leaseId}` : '/tenant/lease';
-    const response = await api.get<ApiResponse<TenantDashboardData>>(url);
+    const response = await api.get<ApiResponse<TenantDashboardData>>(url, { signal });
     if (response.data?.data) {
       // Backend returns TenantDashboardData, not LeaseApiResponse[]
       // Need to convert the structure to match what the mobile app expects
@@ -538,6 +572,10 @@ export const tenantApi = {
           endDate: data.lease.endDate,
           monthlyRent: data.lease.monthlyRent,
           deposit: data.lease.deposit,
+          depositCurrency: data.lease.depositCurrency,
+          securityDeposit: data.lease.securityDeposit,
+          securityDepositCurrency: data.lease.securityDepositCurrency,
+          securityDepositStatus: data.lease.securityDepositStatus,
           currency: data.lease.currency,
           status: data.lease.status as 'draft' | 'active' | 'expired' | 'terminated',
           terms: data.lease.terms,
@@ -598,14 +636,15 @@ export const tenantApi = {
    * List the tenant's own maintenance requests. The server branches on role and
    * returns one row per request: `{ maintenanceRequest, unit, property, vendor }`.
    */
-  getMaintenanceRequests: async (): Promise<MaintenanceListItem[]> => {
+  getMaintenanceRequests: async (signal?: AbortSignal): Promise<MaintenanceListItem[]> => {
     try {
-      const response = await api.get<ApiResponse<MaintenanceListItem[]>>('/maintenance');
+      const response = await api.get<ApiResponse<MaintenanceListItem[]>>('/maintenance', { signal });
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to load maintenance requests');
       }
       return response.data.data || [];
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 404) return [];
       throw new Error(error.message || 'Failed to load maintenance requests');
     }
@@ -622,6 +661,7 @@ export const tenantApi = {
       }
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 404) {
         throw new Error('Maintenance request not found');
       }
@@ -667,6 +707,7 @@ export const tenantApi = {
       }
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 400) {
         // The server puts the generic label in `error` ("Validation failed") and
         // the field-level reason in `message` — prefer the latter so the tenant
@@ -696,6 +737,7 @@ export const tenantApi = {
       }
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 400) {
         throw new Error(error.response.data?.error || 'Invalid photo');
       }
@@ -715,15 +757,16 @@ export const tenantApi = {
       }
       return response.data.data || [];
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 404) return [];
       throw new Error(error.message || 'Failed to load categories');
     }
   },
 
-  getPropertyInfo: async (leaseId?: string): Promise<TenantPropertyInfo> => {
+  getPropertyInfo: async (leaseId?: string, signal?: AbortSignal): Promise<TenantPropertyInfo> => {
     try {
       const url = leaseId ? `/tenant/property?leaseId=${leaseId}` : '/tenant/property';
-      const response = await api.get<ApiResponse<TenantPropertyInfo>>(url);
+      const response = await api.get<ApiResponse<TenantPropertyInfo>>(url, { signal });
 
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error || 'Failed to get property information');
@@ -731,6 +774,7 @@ export const tenantApi = {
 
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 404) {
         throw new Error('Property information not found');
       }
@@ -738,8 +782,8 @@ export const tenantApi = {
     }
   },
 
-  getAllLeases: async (): Promise<LeaseApiResponse[]> => {
-    const response = await api.get<ApiResponse<LeaseApiResponse[]>>('/tenant/leases');
+  getAllLeases: async (signal?: AbortSignal): Promise<LeaseApiResponse[]> => {
+    const response = await api.get<ApiResponse<LeaseApiResponse[]>>('/tenant/leases', { signal });
     return response.data.data || [];
   },
 };
@@ -749,8 +793,8 @@ export const settingsApi = {
   /**
    * Aggregated tenant settings (profile, notifications, preferences, paymentPreferences)
    */
-  get: async (): Promise<TenantSettings> => {
-    const response = await api.get<ApiResponse<TenantSettings>>('/settings');
+  get: async (signal?: AbortSignal): Promise<TenantSettings> => {
+    const response = await api.get<ApiResponse<TenantSettings>>('/settings', { signal });
     if (!response.data.success || !response.data.data) {
       throw new Error(response.data.error || 'Failed to load settings');
     }
@@ -765,6 +809,7 @@ export const settingsApi = {
       }
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 400) {
         throw new Error(error.response.data?.error || 'Invalid profile data');
       } else if (error.response?.status === 409) {
@@ -781,6 +826,7 @@ export const settingsApi = {
         throw new Error(response.data.error || 'Failed to update password');
       }
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 400) {
         throw new Error(error.response.data?.error || 'Current password is incorrect');
       } else if (error.response?.status === 401) {
@@ -798,6 +844,7 @@ export const settingsApi = {
       }
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 400) {
         throw new Error(error.response.data?.error || 'Invalid notification settings');
       }
@@ -813,6 +860,7 @@ export const settingsApi = {
       }
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 400) {
         throw new Error(error.response.data?.error || 'Invalid preferences');
       }
@@ -836,6 +884,7 @@ export const settingsApi = {
       }
       return response.data.data;
     } catch (error: any) {
+      if (isCancel(error)) throw error;
       if (error.response?.status === 400) {
         throw new Error(error.response.data?.error || 'Invalid payment preferences');
       }

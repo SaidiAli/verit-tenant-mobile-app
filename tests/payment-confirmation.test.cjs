@@ -10,7 +10,7 @@ const declaration = source.statements.filter(ts.isVariableStatement).flatMap(nod
 const method = declaration.initializer.properties.find(node => node.name?.getText(source) === 'initiate');
 const code = ts.transpileModule(`const paymentApi = { ${method.getText(source)} }; paymentApi.initiate;`, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
 const input = { leaseId: 'lease', amount: 50000, phoneNumber: '0771234567', provider: 'mtn' };
-function run(post) { return vm.runInNewContext(code, { api: { post } })(input); }
+function run(post) { return vm.runInNewContext(code, { api: { post }, isCancel: () => false })(input); }
 
 test('retains pending confirmation references returned with 503', async () => {
   const data = { paymentId: 'payment', transactionId: 'VRT_test', status: 'pending', gateway: 'yo' };
@@ -48,9 +48,8 @@ test('polling timeout keeps the payment unresolved with the same reference', () 
   }
   visit(ast);
   const code = ts.transpileModule(`(${declaration.initializer.arguments[0].getText(ast)});`, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
-  let state = { step: 'processing', transactionId: 'VRT_test', amount: 50000 };
-  vm.runInNewContext(code, { setPaymentFlow: update => { state = update(state); } })();
-  assert.equal(state.step, 'pending');
-  assert.equal(state.transactionId, 'VRT_test');
-  assert.equal(state.amount, 50000);
+  let state = 'processing'; let error = '';
+  vm.runInNewContext(code, { setStep: value => { state = value; }, setError: value => { error = value; } })();
+  assert.equal(state, 'pending');
+  assert.match(error, /pending/);
 });

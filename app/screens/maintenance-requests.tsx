@@ -1,3 +1,4 @@
+import { tenantKeys } from '../../lib/queryKeys';
 import { useCallback, useState } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, RefreshControl } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -31,8 +32,8 @@ export default function MaintenanceRequestsScreen() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ['maintenance-requests', user?.id],
-    queryFn: tenantApi.getMaintenanceRequests,
+    queryKey: tenantKeys.query(user?.id, 'maintenance-requests'),
+    queryFn: ({ signal }) => tenantApi.getMaintenanceRequests(signal),
   });
 
   useFocusEffect(
@@ -45,8 +46,8 @@ export default function MaintenanceRequestsScreen() {
   // assigns a vendor or transitions status server-side.
   useMaintenanceSocket(
     useCallback(() => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance-requests', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['maintenance-request'] });
+      queryClient.invalidateQueries({ queryKey: tenantKeys.query(user?.id, 'maintenance-requests') });
+      queryClient.invalidateQueries({ queryKey: tenantKeys.query(user?.id, 'maintenance-request') });
     }, [queryClient, user?.id])
   );
 

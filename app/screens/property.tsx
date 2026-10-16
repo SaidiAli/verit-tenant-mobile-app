@@ -1,3 +1,6 @@
+import { ErrorView } from '../../components/ui/ErrorView';
+import { useAuth } from '../../hooks/useAuth';
+import { tenantKeys } from '../../lib/queryKeys';
 import { BRAND_COLOR } from "@/constants/theme";
 import {
   ScrollView,
@@ -18,7 +21,8 @@ import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
 
 export default function PropertyScreen() {
-  const { selectedLeaseId } = useLease();
+  const { user } = useAuth();
+  const { selectedLeaseId, isLoadingLeases } = useLease();
 
   // Fetch property information
   const {
@@ -26,9 +30,9 @@ export default function PropertyScreen() {
     isLoading: isPropertyLoading,
     error: propertyError,
   } = useQuery({
-    queryKey: ["tenant-property", selectedLeaseId],
-    queryFn: () => tenantApi.getPropertyInfo(selectedLeaseId || undefined),
-    enabled: !!selectedLeaseId,
+    queryKey: tenantKeys.query(user?.id, 'tenant-property', selectedLeaseId),
+    queryFn: ({ signal }) => tenantApi.getPropertyInfo(selectedLeaseId!, signal),
+    enabled: !!user && !!selectedLeaseId,
   });
 
   const handleEmergencyCall = (phoneNumber: string) => {
@@ -53,6 +57,8 @@ export default function PropertyScreen() {
   };
 
   const isLoading = isPropertyLoading;
+
+  if (!selectedLeaseId && !isLoadingLeases) return <ErrorView title="No lease selected" message="Select a lease or contact your property manager." />;
 
   if (isLoading) {
     return (

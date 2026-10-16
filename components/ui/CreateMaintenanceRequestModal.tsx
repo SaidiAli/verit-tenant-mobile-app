@@ -1,5 +1,7 @@
+import { session } from '../../lib/session';
+import { tenantKeys } from '../../lib/queryKeys';
 import { BRAND_COLOR } from '@/constants/theme';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -43,6 +45,7 @@ export function CreateMaintenanceRequestModal({
   onClose,
 }: CreateMaintenanceRequestModalProps) {
   const { user } = useAuth();
+  const generation = useRef(session.current()).current;
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState({
@@ -67,12 +70,13 @@ export function CreateMaintenanceRequestModal({
   const { mutate: submit, isPending } = useMutation({
     mutationFn: (input: CreateMaintenanceRequestInput) => tenantApi.createMaintenanceRequest(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['maintenance-requests', user?.id] });
+      if (!session.isCurrent(generation)) return;
+      queryClient.invalidateQueries({ queryKey: tenantKeys.query(user?.id, 'maintenance-requests') });
       Alert.alert('Submitted', 'Your maintenance request has been sent to your landlord.', [
         { text: 'OK', onPress: () => onClose() },
       ]);
     },
-    onError: (err: any) => Alert.alert('Error', err.message || 'Failed to submit request'),
+    onError: (err: any) => session.isCurrent(generation) && Alert.alert('Error', err.message || 'Failed to submit request'),
   });
 
   const pickPhotos = async () => {

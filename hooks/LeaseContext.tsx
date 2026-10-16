@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { tenantApi } from '../lib/api';
 import { LeaseApiResponse } from '../types';
 import { secureStorage } from '../lib/storage';
+import { tenantKeys } from '../lib/queryKeys';
+import { session } from '../lib/session';
 import { useAuth } from './useAuth';
 
 interface LeaseContextType {
@@ -21,53 +23,41 @@ export function LeaseProvider({ children }: { children: ReactNode }) {
     const [selectedLeaseId, setSelectedLeaseId] = useState<string | null>(null);
 
     const { data: allLeases = [], isLoading: isLoadingLeases, refetch } = useQuery({
-        queryKey: ['all-leases'],
-        queryFn: tenantApi.getAllLeases,
+        queryKey: tenantKeys.query(user?.id, 'all-leases'),
+        queryFn: ({ signal }) => tenantApi.getAllLeases(signal),
         enabled: !!user,
     });
 
-    // Select a lease when the list loads or changes
     useEffect(() => {
-        if (!user || allLeases.length === 0) return;
-
-        (async () => {
-            const storedId = await secureStorage.getLeaseId();
-            let toSelect = selectedLeaseId;
-
-            if (storedId && allLeases.some(l => l.id === storedId)) {
-                toSelect = storedId;
-            } else if (!toSelect) {
-                const active = allLeases.find(l => l.status === 'active');
-                toSelect = (active || allLeases[0]).id;
-            }
-
-            if (toSelect) {
-                setSelectedLeaseId(toSelect);
-                if (toSelect !== storedId) {
-                    await secureStorage.setLeaseId(toSelect);
-                }
-            }
+        let active = true;
+        const generation = session.current();
+        if (!user || allLeases.length === 0) { setSelectedLeaseId(null); return; }
+        void (async () => {
+            const storedId = await secureStorage.getLeaseId(user.id);
+            if (!active || !session.isCurrent(generation)) return;
+            const toSelect = allLeases.some(l => l.id === selectedLeaseId) ? selectedLeaseId!
+                : allLeases.some(l => l.id === storedId) ? storedId!
+                : (allLeases.find(l => l.status === 'active') || allLeases[0]).id;
+            setSelectedLeaseId(toSelect);
         })();
-    }, [allLeases, user]);
-
-    // Clear selection on logout
-    useEffect(() => {
-        if (!user) setSelectedLeaseId(null);
-    }, [user]);
+        return () => { active = false; };
+    }, [allLeases, user, selectedLeaseId]);
 
     const switchLease = async (leaseId: string) => {
+        if (!user || !allLeases.some(l => l.id === leaseId)) return;
         setSelectedLeaseId(leaseId);
-        await secureStorage.setLeaseId(leaseId);
+        await secureStorage.setLeaseId(leaseId, user.id);
     };
 
     const selectedLease = allLeases.find(l => l.id === selectedLeaseId) || null;
+    const resolvedLeaseId = selectedLease?.id ?? null;
 
     return (
         <LeaseContext.Provider value={{
             allLeases,
-            selectedLeaseId,
+            selectedLeaseId: resolvedLeaseId,
             selectedLease,
-            isLoadingLeases,
+            isLoadingLeases: !!user && (isLoadingLeases || (allLeases.length > 0 && !resolvedLeaseId)),
             switchLease,
             refreshLeases: async () => { await refetch(); },
         }}>

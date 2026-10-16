@@ -1,3 +1,5 @@
+import { useAuth } from '../../hooks/useAuth';
+import { tenantKeys } from '../../lib/queryKeys';
 import React, { useState, useCallback } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, RefreshControl } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -16,12 +18,13 @@ import { formatDateShort } from '@/lib/utils';
 import { PAYMENT_TYPE_LABELS } from '../../types';
 
 export default function PaymentHistoryScreen() {
+  const { user } = useAuth();
   const { selectedLeaseId } = useLease();
   const [selectedReceiptPaymentId, setSelectedReceiptPaymentId] = useState<string | null>(null);
 
   const { data: payments = [], isLoading, isRefetching, error, refetch } = useQuery({
-    queryKey: ['payment-history', selectedLeaseId],
-    queryFn: () => paymentApi.getHistory(selectedLeaseId!),
+    queryKey: tenantKeys.query(user?.id, 'payment-history', selectedLeaseId),
+    queryFn: ({ signal }) => paymentApi.getHistory(selectedLeaseId!, signal),
     enabled: !!selectedLeaseId,
   });
 

@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { session } from './session';
 import { secureStorage } from './storage';
 import { API_BASE_URL } from './api';
 
@@ -31,8 +32,10 @@ export async function acquireSocket(): Promise<Socket> {
   if (socket) return socket;
   if (connecting) return connecting;
 
-  connecting = (async () => {
+  const generation = session.current();
+  const pending = (async () => {
     const token = await secureStorage.getToken();
+    if (!session.isCurrent(generation)) throw new Error('Session changed');
     if (!token) throw new Error('Cannot open socket: no authentication token');
     const s = io(SOCKET_URL, {
       path: '/socket.io',
@@ -48,17 +51,19 @@ export async function acquireSocket(): Promise<Socket> {
     return s;
   })();
 
+  connecting = pending;
   try {
-    return await connecting;
+    return await pending;
   } finally {
     // Cleared on both success and failure: on failure `socket` stays null so the
     // next acquire retries; on success subsequent acquires hit the `socket` cache.
-    connecting = null;
+    if (connecting === pending) connecting = null;
   }
 }
 
 /** Release interest; disconnects the socket when no consumers remain. */
-export function releaseSocket(): void {
+export function releaseSocket(expected?: Socket): void {
+  if (expected && expected !== socket) return;
   refCount = Math.max(0, refCount - 1);
   if (refCount === 0 && socket) {
     socket.disconnect();

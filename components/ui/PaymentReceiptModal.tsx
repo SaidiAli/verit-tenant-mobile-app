@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+import { session } from '../../lib/session';
+import { useAuth } from '../../hooks/useAuth';
+import { tenantKeys } from '../../lib/queryKeys';
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -31,7 +34,12 @@ export function PaymentReceiptModal({
   onClose,
   paymentId,
 }: PaymentReceiptModalProps) {
+  const { user } = useAuth();
   const [isDownloading, setIsDownloading] = useState(false);
+  const generation = useRef(session.current()).current;
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const active = () => mounted.current && session.isCurrent(generation);
 
   const {
     data: receipt,
@@ -39,8 +47,8 @@ export function PaymentReceiptModal({
     error,
     refetch,
   } = useQuery({
-    queryKey: ["payment-receipt", paymentId],
-    queryFn: () => paymentApi.getReceipt(paymentId),
+    queryKey: tenantKeys.query(user?.id, 'payment-receipt', paymentId),
+    queryFn: ({ signal }) => paymentApi.getReceipt(paymentId, signal),
     enabled: visible && !!paymentId,
   });
 
@@ -48,6 +56,7 @@ export function PaymentReceiptModal({
     setIsDownloading(true);
     try {
       const token = await secureStorage.getToken();
+      if (!active()) return;
       const result = await File.downloadFileAsync(
         `${API_BASE_URL}/exports/payments/${paymentId}/my-receipt.pdf`,
         new File(
@@ -57,14 +66,15 @@ export function PaymentReceiptModal({
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
+      if (!active()) { result.delete(); return; }
       await Sharing.shareAsync(result.uri, {
         mimeType: "application/pdf",
         dialogTitle: "Share Receipt PDF",
       });
     } catch {
-      Alert.alert("Error", "Failed to download receipt PDF");
+      if (active()) Alert.alert("Error", "Failed to download receipt PDF");
     } finally {
-      setIsDownloading(false);
+      if (active()) setIsDownloading(false);
     }
   };
 

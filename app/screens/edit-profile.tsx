@@ -1,6 +1,7 @@
+import { session } from '../../lib/session';
 import { ScrollView, View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
@@ -10,6 +11,7 @@ import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
 export default function EditProfileScreen() {
   const { user, updateUser } = useAuth();
   const router = useRouter();
+  const generation = useRef(session.current()).current;
 
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -22,8 +24,8 @@ export default function EditProfileScreen() {
 
   const { mutate: saveProfile, isPending } = useMutation({
     mutationFn: (data: typeof formData) => updateUser(data),
-    onSuccess: () => Alert.alert('Success', 'Profile updated successfully', [{ text: 'OK', onPress: () => router.back() }]),
-    onError: (err: any) => Alert.alert('Error', err.message || 'Failed to update profile'),
+    onSuccess: () => session.isCurrent(generation) && Alert.alert('Success', 'Profile updated successfully', [{ text: 'OK', onPress: () => router.back() }]),
+    onError: (err: any) => session.isCurrent(generation) && Alert.alert('Error', err.message || 'Failed to update profile'),
   });
 
   const validateForm = () => {

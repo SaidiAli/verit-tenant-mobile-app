@@ -1,3 +1,4 @@
+import { tenantKeys } from '../../lib/queryKeys';
 import { BRAND_COLOR } from '@/constants/theme';
 import {
   ScrollView,
@@ -29,7 +30,7 @@ import { formatDateShort } from "@/lib/utils";
 
 export default function DashboardScreen() {
   const { user } = useAuth();
-  const { selectedLeaseId } = useLease();
+  const { selectedLeaseId, isLoadingLeases } = useLease();
 
   const {
     data: dashboardData,
@@ -38,8 +39,9 @@ export default function DashboardScreen() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["tenant-dashboard", selectedLeaseId],
-    queryFn: () => tenantApi.getDashboard(selectedLeaseId || undefined),
+    queryKey: tenantKeys.query(user?.id, 'tenant-dashboard', selectedLeaseId),
+    queryFn: ({ signal }) => tenantApi.getDashboard(selectedLeaseId!, signal),
+    enabled: !!user && !!selectedLeaseId,
   });
 
   useFocusEffect(
@@ -64,6 +66,8 @@ export default function DashboardScreen() {
   if (!user) {
     return <LoadingSpinner message="Loading dashboard..." />;
   }
+
+  if (!selectedLeaseId && !isLoadingLeases) return <ErrorView title="No lease selected" message="Your account has no available lease. Contact your property manager." />;
 
   if (isLoading) {
     return <LoadingSpinner message="Loading dashboard data..." />;

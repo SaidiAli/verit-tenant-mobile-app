@@ -59,7 +59,14 @@ export interface Unit {
   leases?: Lease[];
 }
 
-export interface Lease {
+export type SecurityDepositStatus = 'not_required' | 'unpaid' | 'pending' | 'paid' | 'refunded';
+export interface SecurityDepositProjection {
+  securityDeposit: number | null;
+  securityDepositCurrency: Currency | null;
+  securityDepositStatus: SecurityDepositStatus;
+}
+
+export interface Lease extends SecurityDepositProjection {
   id: string;
   unitId: string;
   tenantId: string;
@@ -67,6 +74,7 @@ export interface Lease {
   endDate: string;
   monthlyRent: number;
   deposit: number;
+  depositCurrency: Currency;
   currency: Currency;
   status: 'draft' | 'active' | 'expired' | 'terminated';
   terms?: string;
@@ -231,7 +239,14 @@ export interface AuthResponse {
 }
 
 // Tenant phone+OTP self-activation (landlord-provisioned tenant sets their own username/password)
+export interface PendingTenantAccount {
+  tenantId: string;
+  landlordName: string;
+  propertyName: string | null;
+}
+
 export interface TenantActivateRequest {
+  tenantId: string;
   phone: string;
   userName: string;
   password: string;
@@ -262,6 +277,10 @@ export function transformLeaseResponse(response: LeaseApiResponse): Lease {
     endDate: response.endDate || '',
     monthlyRent: parseFloat(response.monthlyRent),
     deposit: 0, // Not provided in list response
+    depositCurrency: response.currency,
+    securityDeposit: null,
+    securityDepositCurrency: null,
+    securityDepositStatus: 'not_required',
     currency: response.currency,
     status: response.status,
     terms: '', // Not provided
@@ -315,6 +334,10 @@ export interface TenantDashboardData {
     endDate: string;
     monthlyRent: number;
     deposit: number;
+    depositCurrency: Currency;
+    securityDeposit: number | null;
+    securityDepositCurrency: Currency | null;
+    securityDepositStatus: SecurityDepositStatus;
     currency: Currency;
     status: string;
     terms?: string;
@@ -401,6 +424,8 @@ export interface PaymentBalance {
 }
 
 export interface PaymentInitiationRequest {
+  paymentType?: 'rent' | 'security_deposit';
+  paymentScope?: 'current' | 'arrears';
   leaseId: string;
   amount: number;
   phoneNumber?: string;
@@ -510,6 +535,8 @@ export type PaymentStep =
   | 'failed';
 
 export interface PaymentFlowState {
+  paymentType?: 'rent' | 'security_deposit';
+  paymentScope?: 'current' | 'arrears';
   step: PaymentStep;
   amount?: number;
   phoneNumber?: string;
