@@ -243,6 +243,7 @@ export interface PendingTenantAccount {
   tenantId: string;
   landlordName: string;
   propertyName: string | null;
+  unitNumber?: string | null;
 }
 
 export interface TenantActivateRequest {

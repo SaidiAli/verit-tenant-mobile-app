@@ -158,12 +158,15 @@ export default function ActivateAccountScreen() {
                 <Text className="text-2xl font-semibold text-gray-800 text-center">
                   {step === "phone" && "Activate Your Account"}
                   {step === "otp" && "Verify Your Number"}
+                  {step === "choose-account" && "Select Your Tenancy"}
                   {step === "credentials" && "Set Up Your Login"}
                 </Text>
                 <Text className="text-sm text-gray-600 text-center mt-2">
                   {step === "phone" &&
                     "Enter the phone number your landlord added to get a verification code"}
                   {step === "otp" && `Enter the 6-digit code sent to ${phone}`}
+                  {step === "choose-account" &&
+                    "Multiple tenancies were found for this number. Select which one to set up"}
                   {step === "credentials" &&
                     "Choose a username and password to finish setting up your account"}
                 </Text>
@@ -307,15 +310,43 @@ export default function ActivateAccountScreen() {
                 </View>
               )}
 
-              {step === "choose-account" && <View className="w-full gap-3">
-                <Text className="text-lg font-semibold">Choose your account</Text>
-                {accounts.map(account => <TouchableOpacity key={account.tenantId}
-                  className="rounded-md border border-gray-300 bg-white p-4"
-                  onPress={() => { setSelectedTenantId(account.tenantId); setStep("credentials"); }}>
-                  <Text className="font-semibold">{account.landlordName}</Text>
-                  {account.propertyName && <Text>{account.propertyName}</Text>}
-                </TouchableOpacity>)}
-              </View>}
+              {step === "choose-account" && (
+                <View className="w-full gap-3">
+                  <Text className="text-lg font-semibold text-gray-800">
+                    Choose your account
+                  </Text>
+                  {accounts.map((account) => {
+                    const propertyHeading =
+                      [
+                        account.propertyName,
+                        account.unitNumber ? `Unit ${account.unitNumber}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") || "Tenancy Account";
+
+                    return (
+                      <TouchableOpacity
+                        key={account.tenantId}
+                        className="rounded-md border border-gray-300 bg-white p-4"
+                        onPress={() => {
+                          setSelectedTenantId(account.tenantId);
+                          setStep("credentials");
+                        }}
+                      >
+                        <Text className="font-semibold text-gray-900 text-base">
+                          {propertyHeading}
+                        </Text>
+                        <Text className="text-sm text-gray-500 mt-1">
+                          Landlord:{" "}
+                          <Text className="font-medium text-gray-700">
+                            {account.landlordName}
+                          </Text>
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
               {/* Credentials Step */}
               {step === "credentials" && (
                 <View className="w-full gap-2">

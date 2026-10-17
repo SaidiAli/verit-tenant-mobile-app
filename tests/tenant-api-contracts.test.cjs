@@ -17,7 +17,7 @@ function fixture() {
 test('OTP returns zero/one/many pending accounts and activation sends selected tenantId', async () => {
   const app = fixture(); let sent;
   for (const count of [0, 1, 2]) {
-    const accounts = Array.from({ length: count }, (_, i) => ({ tenantId: `tenant-${i}`, landlordName: `Owner ${i}`, propertyName: i ? null : 'Home' }));
+    const accounts = Array.from({ length: count }, (_, i) => ({ tenantId: `tenant-${i}`, landlordName: `Owner ${i}`, propertyName: i ? null : 'Home', unitNumber: i ? 'B4' : null }));
     app.default.defaults.adapter = async config => ({ status: 200, statusText: 'OK', headers: {}, config, data: { success: true, data: { accounts } } });
     assert.deepEqual(await app.authApi.verifyTenantOtp('0771234567', '123456'), accounts);
   }

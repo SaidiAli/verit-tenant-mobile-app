@@ -54,6 +54,22 @@ test('multiple pending accounts require choosing the intended landlord, includin
     assert.equal(app.activated[0][1], 'two');
   } finally { await app.close(); }
 });
+test('multiple pending accounts display propertyName and unit number together', async () => {
+  const app = await fixture([
+    { tenantId: 'one', landlordName: 'Owner A', propertyName: 'Kololo Heights', unitNumber: 'B4' },
+    { tenantId: 'two', landlordName: 'Owner B', propertyName: 'Ntinda Court', unitNumber: null },
+  ]);
+  try {
+    await verify(app);
+    assert.match(app.text(), /Kololo Heights · Unit B4/);
+    assert.match(app.text(), /Ntinda Court/);
+    await app.press('Owner A');
+    await app.enter('Choose a username', 'tenant');
+    await app.enter('Choose a password', 'secret1');
+    await app.press('Activate Account');
+    assert.equal(app.activated[0][1], 'one');
+  } finally { await app.close(); }
+});
 test('OTP lockout keeps verification disabled until a new code is requested', async () => {
   const app = await fixture([], Object.assign(new Error('Locked out'), { status: 429 }));
   try { await verify(app); assert.match(app.text(), /Too many incorrect attempts/); await app.press('Resend Code'); assert.equal(app.sends, 2); } finally { await app.close(); }
