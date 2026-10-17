@@ -1,12 +1,15 @@
 import { BRAND_COLOR } from '@/constants/theme';
 import { ScrollView, View, Text, TouchableOpacity, Switch, TextInput, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Card } from '../../components/ui/Card';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useServerSettings } from '../../hooks/useServerSettings';
+import { useAuth } from '../../hooks/useAuth';
+
+import type { NotificationSettings } from '../../types';
 
 const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -42,6 +45,7 @@ function ChannelRow({ icon, label, description, value, onValueChange, disabled }
 
 export default function NotificationsSettingsScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { settings, isLoading, updateNotifications } = useServerSettings();
 
   const [notifyEmail, setNotifyEmail] = useState(true);
@@ -51,19 +55,28 @@ export default function NotificationsSettingsScreen() {
   const [quietStart, setQuietStart] = useState('');
   const [quietEnd, setQuietEnd] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isDirty, setIsDirty] = useState(false);
+  const [previousUserId, setPreviousUserId] = useState(user?.id);
+  const accountChanged = previousUserId !== user?.id;
+  if (accountChanged) {
+    setPreviousUserId(user?.id);
+    setIsDirty(false);
+  }
 
   // Hydrate local form from server settings once loaded
-  useEffect(() => {
+  const [previousSettings, setPreviousSettings] = useState<NotificationSettings | undefined>(undefined);
+  if (accountChanged || previousSettings !== settings?.notifications) {
+    setPreviousSettings(settings?.notifications);
     const n = settings?.notifications;
-    if (n) {
-      setNotifyEmail(n.notifyEmail);
-      setNotifySms(n.notifySms);
-      setNotifyWhatsapp(n.notifyWhatsapp);
-      setNotifyPush(n.notifyPush);
-      setQuietStart(n.quietHoursStart ?? '');
-      setQuietEnd(n.quietHoursEnd ?? '');
+    if ((!isDirty || accountChanged) && (n || accountChanged)) {
+      setNotifyEmail(n?.notifyEmail ?? true);
+      setNotifySms(n?.notifySms ?? true);
+      setNotifyWhatsapp(n?.notifyWhatsapp ?? true);
+      setNotifyPush(n?.notifyPush ?? true);
+      setQuietStart(n?.quietHoursStart ?? '');
+      setQuietEnd(n?.quietHoursEnd ?? '');
     }
-  }, [settings?.notifications]);
+  }
 
   const validate = () => {
     const next: Record<string, string> = {};
@@ -149,26 +162,26 @@ export default function NotificationsSettingsScreen() {
                 icon="email"
                 label="Email"
                 value={notifyEmail}
-                onValueChange={setNotifyEmail}
+                onValueChange={value => { setIsDirty(true); setNotifyEmail(value); }}
               />
               <ChannelRow
                 icon="sms"
                 label="SMS"
                 value={notifySms}
-                onValueChange={setNotifySms}
+                onValueChange={value => { setIsDirty(true); setNotifySms(value); }}
               />
               <ChannelRow
                 icon="chat"
                 label="WhatsApp"
                 value={notifyWhatsapp}
-                onValueChange={setNotifyWhatsapp}
+                onValueChange={value => { setIsDirty(true); setNotifyWhatsapp(value); }}
               />
               <ChannelRow
                 icon="notifications-active"
                 label="Push"
                 description="Coming soon — saved but not yet delivered"
                 value={notifyPush}
-                onValueChange={setNotifyPush}
+                onValueChange={value => { setIsDirty(true); setNotifyPush(value); }}
               />
             </Card>
 
@@ -186,6 +199,7 @@ export default function NotificationsSettingsScreen() {
                   <TextInput
                     value={quietStart}
                     onChangeText={(t) => {
+                      setIsDirty(true);
                       setQuietStart(t);
                       if (errors.quiet || errors.quietStart) setErrors({});
                     }}
@@ -204,6 +218,7 @@ export default function NotificationsSettingsScreen() {
                   <TextInput
                     value={quietEnd}
                     onChangeText={(t) => {
+                      setIsDirty(true);
                       setQuietEnd(t);
                       if (errors.quiet || errors.quietEnd) setErrors({});
                     }}
@@ -226,6 +241,7 @@ export default function NotificationsSettingsScreen() {
                 <TouchableOpacity
                   className="mt-3 self-start"
                   onPress={() => {
+                    setIsDirty(true);
                     setQuietStart('');
                     setQuietEnd('');
                     setErrors({});

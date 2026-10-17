@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useCallback, useMemo } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useAuth } from "../../hooks/useAuth";
@@ -89,7 +89,7 @@ export default function DashboardScreen() {
         <ScrollView
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+            <RefreshControl refreshing={isRefetching} onRefresh={() => { void refetch(); }} />
           }
         >
           <View className="px-4 pt-6 pb-4">

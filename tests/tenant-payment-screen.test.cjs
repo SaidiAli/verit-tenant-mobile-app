@@ -7,7 +7,7 @@ const { loader } = require('./helpers/load.cjs');
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const delay = () => new Promise(resolve => setTimeout(resolve, 20));
 
-async function fixture({ status = 'unpaid', rentCurrency = 'USD', securityCurrency = 'UGX', extraCurrency, initiate } = {}) {
+async function fixture({ status = 'unpaid', rentCurrency = 'USD', securityCurrency = 'UGX', extraCurrency, initiate, history = [], getHistory } = {}) {
   const balance = { currency: rentCurrency, monthlyRentCurrency: rentCurrency, monthlyRent: 100,
     balances: [{ currency: rentCurrency, outstandingBalance: 75, minimumPayment: 25, paidAmount: 25, dueDate: null, isOverdue: false }] };
   if (extraCurrency) balance.balances.push({ ...balance.balances[0], currency: extraCurrency, outstandingBalance: 25000, minimumPayment: 10000 });
@@ -18,13 +18,13 @@ async function fixture({ status = 'unpaid', rentCurrency = 'USD', securityCurren
   const timers = [];
   const host = name => function NativeHost(props) { return React.createElement(name, props, props.children); };
   const api = {
-    paymentApi: { getBalance: async () => balance, getHistory: async () => [],
+    paymentApi: { getBalance: async () => balance, getHistory: getHistory ?? (async () => history),
       initiate: async request => { calls.push(request); return initiate ? initiate(request) : { paymentId: 'p', transactionId: 't', amount: request.amount, currency: 'UGX', status: 'completed' }; } },
     tenantApi: { getDashboard: async () => ({ lease: deposit, management: null }) },
   };
   const load = loader({
     'react-native': { ScrollView: host('ScrollView'), View: host('View'), Text: host('Text'), TouchableOpacity: host('Button'), RefreshControl: host('RefreshControl'), Alert: { alert() {} } },
-    '@react-navigation/native': { useFocusEffect: callback => React.useEffect(callback, [callback]) },
+    'expo-router/react-navigation': { useFocusEffect: callback => React.useEffect(callback, [callback]) },
     'expo-router': { useRouter: () => router },
     'hooks/useAuth.tsx': { useAuth: () => ({ user }) },
     'hooks/LeaseContext.tsx': { useLease: () => ({ selectedLeaseId, isLoadingLeases: false }) },
@@ -68,6 +68,59 @@ test('USD rent does not block an exact UGX security payment or permit double sub
     app.deposit.securityDepositStatus = 'paid';
     await renderer.act(async () => { resolve({ paymentId: 'p', transactionId: 't', amount: 5000, currency: 'UGX', status: 'completed' }); await delay(); });
     assert.match(app.text(), /Payment successful/);
+  } finally { await app.close(); }
+});
+
+for (const outcome of ['success', 'failed']) {
+  for (const refreshMode of ['delayed', 'failed']) {
+    test(`${outcome} can be dismissed with ${refreshMode} history refresh without reopening or enabling collection`, async () => {
+      const history = [{ payment: { id: 'existing', transactionId: 'existing-txn', status: 'pending',
+        paymentMethod: 'mobile_money', amount: '5000', currency: 'UGX', paymentType: 'security_deposit' } }];
+      let refreshing = false, fresh = false;
+      const waiting = [];
+      const app = await fixture({ history, getHistory: () => {
+        if (fresh) return Promise.resolve([]);
+        if (!refreshing) return Promise.resolve(history);
+        if (refreshMode === 'failed') return Promise.reject(new Error('History unavailable'));
+        return new Promise(resolve => waiting.push(resolve));
+      } });
+      try {
+        refreshing = true;
+        await renderer.act(async () => {
+          app.root.root.findByType('StatusTracker').props[outcome === 'success' ? 'onSuccess' : 'onFailed']({ message: 'Declined' });
+          await delay();
+        });
+        await app.press('Continue');
+        assert.equal(app.root.root.findAllByType('StatusTracker').length, 0);
+        assert.equal(app.button('Pay security deposit').props.disabled, true);
+        assert.equal(app.calls.length, 0);
+
+        fresh = true;
+        if (outcome === 'success') app.deposit.securityDepositStatus = 'paid';
+        await renderer.act(async () => { waiting.forEach(resolve => resolve([])); await delay(); });
+        // A failed refresh must remain recoverable through the screen's refresh action.
+        if (refreshMode === 'failed') await app.press('Refresh payments');
+        if (outcome === 'success') assert.equal(app.button('Pay security deposit'), undefined);
+        else assert.equal(app.button('Pay security deposit').props.disabled, false);
+        assert.equal(app.root.root.findAllByType('StatusTracker').length, 0);
+        assert.equal(app.calls.length, 0);
+      } finally { await app.close(); }
+    });
+  }
+}
+
+test('dismissing a completed tracker resumes a different unresolved payment behind it', async () => {
+  const payment = id => ({ payment: { id, transactionId: id, status: 'pending', paymentMethod: 'mobile_money', amount: '5000', currency: 'UGX', paymentType: 'rent' } });
+  const app = await fixture({ history: [payment('first'), payment('second')] });
+  try {
+    await renderer.act(async () => app.root.root.findByType('StatusTracker').props.onSuccess());
+    await app.press('Continue');
+    assert.equal(app.root.root.findByType('StatusTracker').props.transactionId, 'second');
+    assert.equal(app.calls.length, 0);
+    await renderer.act(async () => app.root.root.findByType('StatusTracker').props.onFailed({ message: 'Declined' }));
+    await app.press('Continue');
+    assert.equal(app.root.root.findAllByType('StatusTracker').length, 0);
+    assert.equal(app.button('Pay security deposit').props.disabled, true);
   } finally { await app.close(); }
 });
 test('paid, refunded, pending, and not-required obligations never offer collection', async () => {
@@ -141,5 +194,18 @@ test('pending obligation polling times out to manual refresh without enabling co
     assert.equal(app.button('Pay security deposit'), undefined);
     await app.press('Refresh deposit status');
     assert.equal(app.calls.length, 0);
+  } finally { await app.close(); }
+});
+
+
+test('a pending payment from history resumes its tracker without initiating another collection', async () => {
+  const app = await fixture({ history: [{ payment: { id: 'existing', transactionId: 'existing-txn', status: 'pending',
+    paymentMethod: 'mobile_money', amount: '5000', currency: 'UGX', paymentType: 'security_deposit' } }] });
+  try {
+    const tracker = app.root.root.findByType('StatusTracker');
+    assert.equal(tracker.props.transactionId, 'existing-txn');
+    assert.equal(tracker.props.confirmationPending, true);
+    assert.equal(app.calls.length, 0);
+    assert.equal(app.button('Pay security deposit').props.disabled, true);
   } finally { await app.close(); }
 });

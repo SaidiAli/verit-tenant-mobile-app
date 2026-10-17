@@ -2,6 +2,12 @@
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
+## SDK upgrade and builds
+
+Use Node 24.22.0 (`nvm install && nvm use`) and install dependencies with `npm ci`.
+See [the SDK upgrade and build handoff](docs/expo-sdk-upgrade.md) for validation,
+internal device builds, and the release checklist.
+
 ## Get started
 
 1. Install dependencies

@@ -1,13 +1,14 @@
 import { BRAND_COLOR } from '@/constants/theme';
 import { ScrollView, View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Card } from '../../components/ui/Card';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useServerSettings } from '../../hooks/useServerSettings';
-import { PreferenceLanguage } from '../../types';
+import { useAuth } from '../../hooks/useAuth';
+import { PreferenceLanguage, PreferenceSettings } from '../../types';
 
 const LANGUAGES: { value: PreferenceLanguage; label: string }[] = [
   { value: 'en', label: 'English' },
@@ -19,18 +20,28 @@ const TIMEZONES = ['Africa/Kampala', 'Africa/Nairobi', 'Africa/Dar_es_Salaam'];
 
 export default function PreferencesSettingsScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { settings, isLoading, updatePreferences } = useServerSettings();
 
   const [language, setLanguage] = useState<PreferenceLanguage>('en');
   const [timezone, setTimezone] = useState('Africa/Kampala');
+  const [isDirty, setIsDirty] = useState(false);
+  const [previousUserId, setPreviousUserId] = useState(user?.id);
+  const accountChanged = previousUserId !== user?.id;
+  if (accountChanged) {
+    setPreviousUserId(user?.id);
+    setIsDirty(false);
+  }
 
-  useEffect(() => {
+  const [previousSettings, setPreviousSettings] = useState<PreferenceSettings | undefined>(undefined);
+  if (accountChanged || previousSettings !== settings?.preferences) {
+    setPreviousSettings(settings?.preferences);
     const p = settings?.preferences;
-    if (p) {
-      setLanguage(p.language);
-      setTimezone(p.timezone || 'Africa/Kampala');
+    if ((!isDirty || accountChanged) && (p || accountChanged)) {
+      setLanguage(p?.language ?? 'en');
+      setTimezone(p?.timezone || 'Africa/Kampala');
     }
-  }, [settings?.preferences]);
+  }
 
   const save = () => {
     updatePreferences.mutate(
@@ -68,7 +79,7 @@ export default function PreferencesSettingsScreen() {
                   return (
                     <TouchableOpacity
                       key={lang.value}
-                      onPress={() => setLanguage(lang.value)}
+                      onPress={() => { setIsDirty(true); setLanguage(lang.value); }}
                       className={`flex-row justify-between items-center px-3 py-3 rounded-md border ${selected ? 'border-brand bg-brand/5' : 'border-gray-300 bg-white'
                         }`}
                     >
@@ -95,7 +106,7 @@ export default function PreferencesSettingsScreen() {
                   return (
                     <TouchableOpacity
                       key={tz}
-                      onPress={() => setTimezone(tz)}
+                      onPress={() => { setIsDirty(true); setTimezone(tz); }}
                       className={`flex-row justify-between items-center px-3 py-3 rounded-md border ${selected ? 'border-brand bg-brand/5' : 'border-gray-300 bg-white'
                         }`}
                     >

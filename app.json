@@ -7,15 +7,11 @@
     "icon": "./assets/images/icon.png",
     "scheme": "verit",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aptusagency.verit",
       "infoPlist": {
         "LSApplicationQueriesSchemes": [
-          "tel",
-          "telprompt",
-          "mailto",
           "tel",
           "telprompt",
           "mailto"
@@ -28,7 +24,6 @@
         "backgroundColor": "#524768",
         "foregroundImage": "./assets/images/icon.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.aptusagency.verit_dev",
       "permissions": [
@@ -70,12 +65,17 @@
         "expo-build-properties",
         {
           "android": {
-            "enableProguardInProductionBuilds": true,
-            "enableShrinkResources": true
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
           }
         }
       ],
-      "./plugins/withAndroidAbiFilter"
+      "./plugins/withAndroidAbiFilter",
+      "expo-font",
+      "expo-image",
+      "expo-sharing",
+      "expo-web-browser",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,

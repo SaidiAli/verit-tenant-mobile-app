@@ -11,7 +11,7 @@ import {
   Alert,
   BackHandler,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router/react-navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -187,7 +187,7 @@ export default function LoginScreen() {
 
                   {/* Sign In Button */}
                   <TouchableOpacity
-                    onPress={handleSubmit(onSubmit)}
+                    onPress={() => { void handleSubmit(onSubmit)(); }}
                     disabled={isLoading}
                     className={`w-full py-3 rounded-md mt-6 ${isLoading ? 'bg-gray-400' : 'bg-brand'
                       }`}

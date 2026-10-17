@@ -1,6 +1,6 @@
 import { ScrollView, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Card } from '../../components/ui/Card';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
@@ -8,7 +8,7 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useServerSettings } from '../../hooks/useServerSettings';
 import { useAuth } from '../../hooks/useAuth';
 import { getMobileMoneyProvider } from '../../lib/currency';
-import { MobileMoneyProviderId } from '../../types';
+import { MobileMoneyProviderId, PaymentPreferences } from '../../types';
 
 const PHONE_RE = /^(\+?256|0)[0-9]{9}$/;
 
@@ -29,20 +29,25 @@ export default function PaymentPreferencesScreen() {
   const [provider, setProvider] = useState<MobileMoneyProviderId | null>(null);
   const [reminderDays, setReminderDays] = useState(3);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isDirty, setIsDirty] = useState(false);
 
-  useEffect(() => {
-    if (isLoading) return;
-    const p = settings?.paymentPreferences;
-    // Fall back to the tenant's profile phone (and phone-derived provider) when unset
-    const fallbackPhone = user?.phone ?? '';
-    const detected = fallbackPhone ? getMobileMoneyProvider(fallbackPhone) : 'unknown';
-    setPhone(p?.mobileMoneyPhone ?? fallbackPhone);
-    setProvider(
-      p?.mobileMoneyProvider ?? (detected === 'unknown' ? null : detected)
-    );
-    setReminderDays(p?.reminderDaysBefore ?? 3);
-    // Only re-run when the loaded data changes
-  }, [settings?.paymentPreferences, isLoading, user?.phone]);
+  const [previous, setPrevious] = useState<{ settings: PaymentPreferences | null | undefined; isLoading: boolean; phone: string | undefined; userId: string | undefined }>({ settings: undefined, isLoading: true, phone: undefined, userId: user?.id });
+  const accountChanged = previous.userId !== user?.id;
+  if (accountChanged) setIsDirty(false);
+  if (accountChanged || previous.settings !== settings?.paymentPreferences || previous.isLoading !== isLoading || previous.phone !== user?.phone) {
+    setPrevious({ settings: settings?.paymentPreferences, isLoading, phone: user?.phone, userId: user?.id });
+    if ((!isDirty || accountChanged) && (!isLoading || accountChanged)) {
+      const p = settings?.paymentPreferences;
+      // Fall back to the tenant's profile phone (and phone-derived provider) when unset
+      const fallbackPhone = user?.phone ?? '';
+      const detected = fallbackPhone ? getMobileMoneyProvider(fallbackPhone) : 'unknown';
+      setPhone(p?.mobileMoneyPhone ?? fallbackPhone);
+      setProvider(
+        p?.mobileMoneyProvider ?? (detected === 'unknown' ? null : detected)
+      );
+      setReminderDays(p?.reminderDaysBefore ?? 3);
+    }
+  }
 
   const validate = () => {
     const next: Record<string, string> = {};
@@ -69,6 +74,7 @@ export default function PaymentPreferencesScreen() {
   };
 
   const adjustReminder = (delta: number) => {
+    setIsDirty(true);
     setReminderDays((d) => Math.min(REMINDER_MAX, Math.max(REMINDER_MIN, d + delta)));
   };
 
@@ -104,6 +110,7 @@ export default function PaymentPreferencesScreen() {
                 <TextInput
                   value={phone}
                   onChangeText={(t) => {
+                    setIsDirty(true);
                     setPhone(t);
                     if (errors.phone) setErrors((p) => ({ ...p, phone: '' }));
                   }}
@@ -125,6 +132,7 @@ export default function PaymentPreferencesScreen() {
                     <TouchableOpacity
                       key={p.value}
                       onPress={() => {
+                        setIsDirty(true);
                         setProvider(p.value);
                         if (errors.provider) setErrors((e) => ({ ...e, provider: '' }));
                       }}

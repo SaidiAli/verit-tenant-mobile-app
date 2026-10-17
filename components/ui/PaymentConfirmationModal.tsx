@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -48,13 +48,15 @@ export function PaymentConfirmationModal({
   const [isEditing, setIsEditing] = useState(false);
   const [derivedProvider, setDerivedProvider] = useState(initialProviderName);
 
-  useEffect(() => {
+  const [previous, setPrevious] = useState({ visible, phoneNumber, initialProviderName });
+  if (visible !== previous.visible || phoneNumber !== previous.phoneNumber || initialProviderName !== previous.initialProviderName) {
+    setPrevious({ visible, phoneNumber, initialProviderName });
     if (visible) {
       setCurrentPhoneNumber(phoneNumber);
       setDerivedProvider(initialProviderName);
       setIsEditing(false);
     }
-  }, [visible, phoneNumber, initialProviderName]);
+  }
 
   const handlePhoneChange = (text: string) => {
     setCurrentPhoneNumber(text);

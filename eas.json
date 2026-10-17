@@ -9,7 +9,8 @@
       "distribution": "internal",
       "ios": {
         "simulator": true
-      }
+      },
+      "extends": "base"
     },
     "preview": {
       "distribution": "internal",
@@ -18,10 +19,21 @@
       },
       "ios": {
         "simulator": true
-      }
+      },
+      "extends": "base"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "extends": "base"
+    },
+    "base": {
+      "node": "24.22.0"
+    },
+    "preview-device": {
+      "extends": "preview",
+      "ios": {
+        "simulator": false
+      }
     }
   },
   "submit": {

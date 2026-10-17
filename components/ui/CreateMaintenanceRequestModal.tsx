@@ -1,7 +1,7 @@
 import { session } from '../../lib/session';
 import { tenantKeys } from '../../lib/queryKeys';
 import { BRAND_COLOR } from '@/constants/theme';
-import { useEffect, useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -56,14 +56,15 @@ export function CreateMaintenanceRequestModal({
   const [photos, setPhotos] = useState<MaintenancePhotoUpload[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
+  const [previousVisible, setPreviousVisible] = useState(visible);
+  if (previousVisible !== visible) {
+    setPreviousVisible(visible);
     if (visible) {
-      // Reset state when modal opens
       setForm({ title: '', description: '', priority: 'medium' });
       setPhotos([]);
       setErrors({});
     }
-  }, [visible]);
+  }
 
   // Category is intentionally not collected here — the landlord/manager triages
   // and sets it. The server defaults new requests to "other".

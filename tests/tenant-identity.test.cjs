@@ -28,7 +28,7 @@ test('mobile rejects unsupported or oversized selected pictures', () => {
 test('mobile self-service calls never submit a landlord or target tenant ID', async () => {
   const calls = [];
   const api = new Proxy({}, { get: (_target, method) => async (...args) => { calls.push([method, ...args]); return { data: { success: true, data: { tenantId: 'self' } } }; } });
-  const service = load('lib/tenant-identity.ts', { './api': { default: api } }).tenantIdentityApi;
+  const service = load('lib/tenant-identity.ts', { './api': { __esModule: true, default: api } }).tenantIdentityApi;
   await service.read(); await service.update({ tin: null }); await service.download('front'); await service.remove('back');
   assert.deepEqual(calls.map(call => call[1]), ['/tenant/identity', '/tenant/identity', '/tenant/identity/images/front/download', '/tenant/identity/images/back']);
   assert.deepEqual(Object.keys(calls[1][2]), ['tin']);
@@ -69,4 +69,31 @@ test('mobile mutation failure clears busy state and permits retry without discar
   assert.equal(state.error, 'Upload interrupted'); assert.equal(state.busy, false); assert.equal(state.progress, null);
   await call(async () => ({ images: { front: true, back: false } }));
   assert.equal(state.identity.images.front, true); assert.equal(state.saved, true); assert.equal(state.error, '');
+});
+
+test('mobile picture popup contains the image and closes through native back, accessibility, backdrop or close', () => {
+  const jsx = (type, props) => ({ type, props });
+  const { IdentityImagePreview } = load('components/identity/IdentityImagePreview.tsx', {
+    'react/jsx-runtime': { jsx, jsxs: jsx },
+    'react-native': { Modal: 'Modal', Pressable: 'Pressable', Text: 'Text', View: 'View', useWindowDimensions: () => ({ height: 800 }) },
+    'expo-image': { Image: 'Image' },
+  });
+  const nodes = tree => [tree, ...[tree?.props?.children].flat().filter(child => child && typeof child === 'object').flatMap(nodes)];
+  for (const uri of ['https://private.example/signed', 'file:///selected-front.jpg']) {
+    let closed = 0, failed = 0;
+    const tree = IdentityImagePreview({ uri, title: 'National ID front', onClose: () => { closed++; }, onError: () => { failed++; } });
+    assert.equal(tree.type, 'Modal'); assert.equal(tree.props.visible, true);
+    tree.props.onRequestClose();
+    const content = nodes(tree);
+    const image = content.find(node => node.type === 'Image');
+    assert.equal(image.props.source.uri, uri); assert.equal(image.props.contentFit, 'contain'); assert.equal(image.props.cachePolicy, 'none');
+    image.props.onError(); assert.equal(failed, 1);
+    const panel = content.find(node => node.props.accessibilityViewIsModal);
+    panel.props.onAccessibilityEscape();
+    for (const button of content.filter(node => node.type === 'Pressable')) button.props.onPress();
+    assert.equal(closed, 4);
+  }
+  const closed = IdentityImagePreview({ uri: null, title: '', onClose: () => {}, onError: () => {} });
+  assert.equal(closed.props.visible, false);
+  assert.equal(nodes(closed).some(node => node.type === 'Image'), false);
 });

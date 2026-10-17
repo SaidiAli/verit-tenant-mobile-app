@@ -26,10 +26,6 @@ export default function ProfileScreen() {
     router.push("/screens/edit-profile");
   };
 
-  const handleChangePassword = () => {
-    router.push("/screens/change-password");
-  };
-
   const handleSettings = () => {
     router.push("/screens/settings" as any);
   };
@@ -96,10 +92,6 @@ export default function ProfileScreen() {
             <Text className="text-2xl font-semibold text-gray-800 mb-6">
               Profile Settings
             </Text>
-
-            <TouchableOpacity accessibilityRole="button" onPress={() => router.push('../screens/identity')} className="mb-4 rounded-lg bg-white p-4">
-              <Text className="text-lg font-semibold">Identity</Text>
-            </TouchableOpacity>
 
             {/* User Info Card */}
             <View className="mb-4">

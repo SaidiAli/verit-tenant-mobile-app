@@ -2,7 +2,7 @@ import { tenantKeys } from '../../lib/queryKeys';
 import { useCallback, useState } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, RefreshControl } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router/react-navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from '../../components/ui/Card';
 import { CreateMaintenanceRequestModal } from '../../components/ui/CreateMaintenanceRequestModal';
@@ -70,7 +70,7 @@ export default function MaintenanceRequestsScreen() {
       <View className="flex-1 bg-gray-50">
         <ScrollView
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => { void refetch(); }} />}
         >
           <View className="px-4 pt-6 pb-4">
             {/* New request button */}

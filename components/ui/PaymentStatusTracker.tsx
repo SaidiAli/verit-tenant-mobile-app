@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, Animated, useAnimatedValue } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from './Card';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -29,8 +29,13 @@ export function PaymentStatusTracker({
   confirmationPending = false,
   className = ''
 }: PaymentStatusTrackerProps) {
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const fadeAnim = useAnimatedValue(0);
   const [elapsed, setElapsed] = React.useState(0);
+  const [previousTransactionId, setPreviousTransactionId] = React.useState(transactionId);
+  if (previousTransactionId !== transactionId) {
+    setPreviousTransactionId(transactionId);
+    setElapsed(0);
+  }
   const timerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { status, isPolling, error, startPolling, stopPolling, refetch } = usePaymentStatus({
@@ -61,7 +66,6 @@ export function PaymentStatusTracker({
   useEffect(() => {
     if (transactionId) {
       startPolling();
-      setElapsed(0);
 
       // Start elapsed time counter
       timerRef.current = setInterval(() => {

@@ -20,6 +20,12 @@ const SECTIONS: SettingsRow[] = [
     route: '/screens/edit-profile',
   },
   {
+    icon: 'badge',
+    label: 'Identity',
+    description: 'National ID, TIN and documents',
+    route: '/screens/identity',
+  },
+  {
     icon: 'lock',
     label: 'Security',
     description: 'Change your password',

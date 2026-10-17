@@ -3,7 +3,7 @@ import { tenantKeys } from '../../lib/queryKeys';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View, Text, RefreshControl, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router/react-navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '../../components/ui/Card';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
@@ -236,7 +236,7 @@ export default function PaymentScheduleScreen() {
         <ScrollView
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+            <RefreshControl refreshing={isRefetching} onRefresh={() => { void refetch(); }} />
           }
         >
           <View className="px-4 pt-6 pb-4">

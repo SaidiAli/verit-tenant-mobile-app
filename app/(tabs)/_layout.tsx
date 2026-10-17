@@ -35,8 +35,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Dashboard',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="dashboard" size={size || 24} color={color} />
+          tabBarIcon: ({ focused, size }) => (
+            <MaterialIcons name="dashboard" size={size || 24} color={focused ? Colors.tint : Colors.tabIconDefault} />
           ),
         }}
       />
@@ -44,8 +44,8 @@ export default function TabLayout() {
         name="payments"
         options={{
           title: 'Payments',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="payment" size={size || 24} color={color} />
+          tabBarIcon: ({ focused, size }) => (
+            <MaterialIcons name="payment" size={size || 24} color={focused ? Colors.tint : Colors.tabIconDefault} />
           ),
         }}
       />
@@ -53,8 +53,8 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="person" size={size || 24} color={color} />
+          tabBarIcon: ({ focused, size }) => (
+            <MaterialIcons name="person" size={size || 24} color={focused ? Colors.tint : Colors.tabIconDefault} />
           ),
         }}
       />

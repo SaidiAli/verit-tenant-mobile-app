@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -39,13 +39,15 @@ export function PaymentModal({
   const [amount, setAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [previousVisible, setPreviousVisible] = useState(visible);
+  if (visible !== previousVisible) {
+    setPreviousVisible(visible);
     if (visible) {
       // Reset state when modal opens
       setAmount("");
       setError(null);
     }
-  }, [visible]);
+  }
 
   const handleAmountChange = (text: string) => {
     // Remove any non-digit characters except for spaces and commas

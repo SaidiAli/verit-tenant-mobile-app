@@ -1,5 +1,5 @@
 import { BRAND_COLOR } from '@/constants/theme';
-import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -221,7 +221,7 @@ export default Sentry.wrap(function RootLayout() {
                     }}
                   />
                 </Stack>
-                <StatusBar style="light" backgroundColor={BRAND_COLOR} />
+                <StatusBar style="light" />
               </ThemeProvider>
             </LeaseProvider>
           </SettingsProvider>
