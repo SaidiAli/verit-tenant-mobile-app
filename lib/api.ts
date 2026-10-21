@@ -35,15 +35,21 @@ import {
 
 import * as Sentry from '@sentry/react-native';
 
-const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL;
-if (!apiBaseUrl) {
+const rawApiBaseUrl = process.env.EXPO_PUBLIC_API_URL;
+if (!rawApiBaseUrl) {
   throw new Error(
     'EXPO_PUBLIC_API_URL is not set. Add it to .env.local (e.g. http://<your-lan-ip>:4000/api) ' +
       'and restart the bundler with `npx expo start -c`. For EAS builds, set it in eas.json / build env.',
   );
 }
 
-export const API_BASE_URL: string = apiBaseUrl;
+// The server mounts every route under /api (e.g. POST /api/auth/login). A base
+// URL without that prefix still builds URLs fine but 404s on every request, so
+// normalize it once here rather than trusting the env value.
+const trimmedBaseUrl = rawApiBaseUrl.trim().replace(/\/+$/, '');
+export const API_BASE_URL: string = trimmedBaseUrl.endsWith('/api')
+  ? trimmedBaseUrl
+  : `${trimmedBaseUrl}/api`;
 
 let onUnauthorized: (() => void) | null = null;
 export function setUnauthorizedHandler(fn: (() => void) | null): void {
