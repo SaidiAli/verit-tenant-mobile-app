@@ -175,7 +175,25 @@ module.exports = {
         },
         brand: {
           DEFAULT: '#524768',
+          light: '#F4F2F7',
+          muted: '#EAE6F0',
+          dark: '#3B334C',
         },
+        finance: {
+          DEFAULT: '#00D09E',
+          accent: '#00D09E',
+          light: '#DFF7E2',
+          honeydew: '#F1FFF3',
+          dark: '#0E3E3E',
+          fence: '#052224',
+          void: '#031314',
+          blue: '#3299FF',
+        },
+      },
+      borderRadius: {
+        '2xl': '16px',
+        '3xl': '24px',
+        '4xl': '32px',
       },
       fontFamily: {
         sans: ['NunitoSans_400Regular'],

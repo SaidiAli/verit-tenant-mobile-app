@@ -34,6 +34,9 @@ yarn-error.*
 .env
 .env*.local
 
+# agent planning artifacts
+.planning/
+
 # typescript
 *.tsbuildinfo
 

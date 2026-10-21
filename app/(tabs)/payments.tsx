@@ -20,6 +20,7 @@ import { tenantKeys } from '../../lib/queryKeys';
 import { session } from '../../lib/session';
 import { rentCheckout, securityCheckout, depositError, validateCheckoutRequest, SECURITY_DEPOSIT_LABELS } from '../../lib/paymentCheckout';
 import { formatDateShort } from '../../lib/utils';
+import { BRAND_COLOR } from '@/constants/theme';
 
 type Checkout = { paymentType: 'rent' | 'security_deposit'; paymentScope?: 'current' | 'arrears'; bucket?: CurrencyBalance; amount?: number };
 type Step = 'idle' | 'amount' | 'confirmation' | 'processing' | 'pending' | 'success' | 'failed';
@@ -183,63 +184,214 @@ function LeasePayments({ leaseId }: { leaseId: string }) {
 
   const buckets = balance.balances?.length ? balance.balances : [balance];
   const selectedBalance: PaymentBalance | null = checkout?.bucket ? { ...balance, ...checkout.bucket, balances: [checkout.bucket] } : null;
-  return <SafeAreaWrapper><ScrollView className="flex-1 bg-gray-50" contentContainerStyle={{ padding: 16, gap: 16 }}
-    refreshControl={<RefreshControl refreshing={balanceQuery.isRefetching || contextQuery.isRefetching || historyQuery.isRefetching} onRefresh={() => void refresh()} />}>
-    <Text className="text-3xl font-bold">Payments</Text>
-    {step === 'processing' && currentPayment && <PaymentStatusTracker key={currentPayment.transactionId}
-      transactionId={currentPayment.transactionId} amount={currentPayment.amount} currency={currentPayment.currency}
-      confirmationPending={currentPayment.confirmationPending}
-      onSuccess={() => terminal('success')} onFailed={status => terminal('failed', status.message)} onTimeout={handlePaymentTimeout} />}
-    {step === 'pending' && <Card><Text className="font-semibold">Confirmation pending</Text><Text className="my-3">{error}</Text>
-      <ActionButton label="Check payment status" onPress={() => { if (currentPayment) setStep('processing'); else void refresh(); }} disabled={false} /></Card>}
-    {(step === 'success' || step === 'failed') && <Card>
-      <Text className="text-lg font-semibold">{step === 'success' ? 'Payment successful' : 'Payment not completed'}</Text>
-      {currentPayment && <Text className="my-2">{formatMoney(currentPayment.amount, currentPayment.currency)}</Text>}
-      {!!error && <Text className="my-2">{error}</Text>}
-      <ActionButton label="Continue" onPress={close} disabled={false} />
-    </Card>}
-    {unavailable && <Text>Online payment is paused until the recipient is verified. Contact your property manager for an approved alternative.</Text>}
-    {!ready && <Card><Text>Payment history must be refreshed before starting a payment.</Text><ActionButton label="Refresh payments" onPress={() => void refresh()} disabled={false} /></Card>}
-    {ready && step === 'idle' && pendingPayments.length > 0 && !pending && <Card>
-      <Text>Payment history is still updating. Refresh before starting another payment.</Text>
-      <ActionButton label="Refresh payments" onPress={() => void refresh()} disabled={false} />
-    </Card>}
-    {buckets.map(bucket => <Card key={bucket.currency}>
-      <Text className="text-lg font-semibold">{bucket.currency === balance.monthlyRentCurrency ? 'Rent balance' : 'Previous-currency rent balance'}</Text>
-      <Text className="text-2xl font-bold my-2">{formatMoney(bucket.outstandingBalance, bucket.currency)}</Text>
-      {bucket.dueDate && <Text>Next due: {formatDateShort(bucket.dueDate)}</Text>}
-      {bucket.isOverdue && <Text>Payment is overdue</Text>}
-      {bucket.currency === 'UGX' ? <ActionButton label="Pay UGX rent" onPress={() => prepare(rentCheckout(balance, bucket))} disabled={locked || !ready || unavailable} />
-        : <Text>Arrange USD payment with your property manager by bank transfer or cash. Mobile money supports UGX only.</Text>}
-    </Card>)}
-    {deposit && <Card>
-      <Text className="text-lg font-semibold">Refundable security deposit</Text>
-      <Text className="my-2">{SECURITY_DEPOSIT_LABELS[deposit.securityDepositStatus]}</Text>
-      {deposit.securityDeposit !== null && deposit.securityDepositCurrency && <Text>{formatMoney(deposit.securityDeposit, deposit.securityDepositCurrency)}</Text>}
-      {deposit.securityDepositStatus === 'unpaid' && (deposit.securityDepositCurrency === 'UGX'
-        ? <ActionButton label="Pay security deposit" onPress={() => { try { prepare(securityCheckout(deposit)); } catch (failure) { Alert.alert('Deposit unavailable', (failure as Error).message); } }} disabled={locked || !ready || unavailable} />
-        : <Text>Arrange exact-amount USD security payment with your property manager. Mobile money supports UGX only.</Text>)}
-      {deposit.securityDepositStatus === 'pending' && <>
-        <Text>{pollDeposit ? 'Checking confirmation...' : 'Confirmation remains pending. Do not pay again.'}</Text>
-        <ActionButton label="Refresh deposit status" onPress={() => void refresh()} disabled={false} />
-      </>}
-    </Card>}
-    <ActionButton label="Payment schedule" onPress={() => router.push('/screens/payment-schedule')} disabled={false} />
-    <ActionButton label={`Payment history (${payments.length})`} onPress={() => router.push('/screens/payment-history')} disabled={false} />
-  </ScrollView>
-    {selectedBalance && <PaymentModal visible={step === 'amount'} balance={selectedBalance} onClose={close}
-      onConfirm={amount => { setCheckout(previous => previous && { ...previous, amount }); setPhone(settings?.paymentPreferences?.mobileMoneyPhone || user?.phone || ''); setStep('confirmation'); }} />}
-    {checkout && <PaymentConfirmationModal visible={step === 'confirmation'} onClose={close} onConfirm={confirm}
-      amount={checkout.amount ?? 0} currency="UGX" phoneNumber={phone}
-      providerName={settings?.paymentPreferences?.mobileMoneyProvider === 'airtel' ? 'Airtel Money' : 'Mobile money'}
-      isLoading={mutation.isLoading} error={error} paymentType={checkout.paymentType} />}
-  </SafeAreaWrapper>;
+
+  return (
+    <SafeAreaWrapper>
+      <ScrollView
+        className="flex-1 bg-gray-50"
+        contentContainerStyle={{ padding: 16, gap: 16 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={balanceQuery.isRefetching || contextQuery.isRefetching || historyQuery.isRefetching}
+            onRefresh={() => void refresh()}
+            tintColor={BRAND_COLOR}
+          />
+        }
+      >
+        <Text className="text-3xl font-bold text-gray-900">Payments</Text>
+
+        {step === 'processing' && currentPayment && (
+          <PaymentStatusTracker
+            key={currentPayment.transactionId}
+            transactionId={currentPayment.transactionId}
+            amount={currentPayment.amount}
+            currency={currentPayment.currency}
+            confirmationPending={currentPayment.confirmationPending}
+            onSuccess={() => terminal('success')}
+            onFailed={status => terminal('failed', status.message)}
+            onTimeout={handlePaymentTimeout}
+          />
+        )}
+
+        {step === 'pending' && (
+          <Card>
+            <Text className="font-semibold text-gray-900 text-lg">Confirmation pending</Text>
+            <Text className="my-3 text-sm text-gray-600">{error}</Text>
+            <ActionButton
+              label="Check payment status"
+              onPress={() => {
+                if (currentPayment) setStep('processing');
+                else void refresh();
+              }}
+              disabled={false}
+            />
+          </Card>
+        )}
+
+        {(step === 'success' || step === 'failed') && (
+          <Card>
+            <Text className="text-lg font-semibold text-gray-900">
+              {step === 'success' ? 'Payment successful' : 'Payment not completed'}
+            </Text>
+            {currentPayment && (
+              <Text className="my-2 text-2xl font-bold text-gray-900">
+                {formatMoney(currentPayment.amount, currentPayment.currency)}
+              </Text>
+            )}
+            {!!error && <Text className="my-2 text-sm text-gray-500">{error}</Text>}
+            <ActionButton label="Continue" onPress={close} disabled={false} />
+          </Card>
+        )}
+
+        {unavailable && (
+          <Text className="text-xs text-amber-800 bg-amber-50 p-3 rounded-xl border border-amber-200">
+            Online payment is paused until the recipient is verified. Contact your property manager for an approved alternative.
+          </Text>
+        )}
+
+        {!ready && (
+          <Card>
+            <Text className="text-sm text-gray-600 mb-3">
+              Payment history must be refreshed before starting a payment.
+            </Text>
+            <ActionButton label="Refresh payments" onPress={() => void refresh()} disabled={false} />
+          </Card>
+        )}
+
+        {ready && step === 'idle' && pendingPayments.length > 0 && !pending && (
+          <Card>
+            <Text className="text-sm text-gray-600 mb-3">
+              Payment history is still updating. Refresh before starting another payment.
+            </Text>
+            <ActionButton label="Refresh payments" onPress={() => void refresh()} disabled={false} />
+          </Card>
+        )}
+
+        {buckets.map(bucket => (
+          <Card key={bucket.currency}>
+            <Text className="text-lg font-semibold text-gray-900">
+              {bucket.currency === balance.monthlyRentCurrency ? 'Rent balance' : 'Previous-currency rent balance'}
+            </Text>
+            <Text className="text-3xl font-extrabold text-gray-900 my-2">
+              {formatMoney(bucket.outstandingBalance, bucket.currency)}
+            </Text>
+            {bucket.dueDate && (
+              <Text className="text-sm text-gray-500 mb-1">
+                Next due: {formatDateShort(bucket.dueDate)}
+              </Text>
+            )}
+            {bucket.isOverdue && (
+              <Text className="text-sm font-semibold text-rose-600 mb-2">
+                Payment is overdue
+              </Text>
+            )}
+            {bucket.currency === 'UGX' ? (
+              <ActionButton
+                label="Pay UGX rent"
+                onPress={() => prepare(rentCheckout(balance, bucket))}
+                disabled={locked || !ready || unavailable}
+              />
+            ) : (
+              <Text className="text-xs text-gray-500 bg-gray-50 p-3 rounded-xl mt-2">
+                Arrange USD payment with your property manager by bank transfer or cash. Mobile money supports UGX only.
+              </Text>
+            )}
+          </Card>
+        ))}
+
+        {deposit && (
+          <Card>
+            <Text className="text-lg font-semibold text-gray-900">Refundable security deposit</Text>
+            <Text className="my-2 text-sm text-gray-600 font-medium">
+              {SECURITY_DEPOSIT_LABELS[deposit.securityDepositStatus]}
+            </Text>
+            {deposit.securityDeposit !== null && deposit.securityDepositCurrency && (
+              <Text className="text-2xl font-bold text-gray-900 mb-3">
+                {formatMoney(deposit.securityDeposit, deposit.securityDepositCurrency)}
+              </Text>
+            )}
+            {deposit.securityDepositStatus === 'unpaid' && (
+              deposit.securityDepositCurrency === 'UGX' ? (
+                <ActionButton
+                  label="Pay security deposit"
+                  onPress={() => {
+                    try {
+                      prepare(securityCheckout(deposit));
+                    } catch (failure) {
+                      Alert.alert('Deposit unavailable', (failure as Error).message);
+                    }
+                  }}
+                  disabled={locked || !ready || unavailable}
+                />
+              ) : (
+                <Text className="text-xs text-gray-500 bg-gray-50 p-3 rounded-xl">
+                  Arrange exact-amount USD security payment with your property manager. Mobile money supports UGX only.
+                </Text>
+              )
+            )}
+            {deposit.securityDepositStatus === 'pending' && (
+              <>
+                <Text className="text-sm text-gray-600 mb-3">
+                  {pollDeposit ? 'Checking confirmation...' : 'Confirmation remains pending. Do not pay again.'}
+                </Text>
+                <ActionButton label="Refresh deposit status" onPress={() => void refresh()} disabled={false} />
+              </>
+            )}
+          </Card>
+        )}
+
+        <ActionButton label="Payment schedule" onPress={() => router.push('/screens/payment-schedule')} disabled={false} />
+        <ActionButton label={`Payment history (${payments.length})`} onPress={() => router.push('/screens/payment-history')} disabled={false} />
+      </ScrollView>
+
+      {selectedBalance && (
+        <PaymentModal
+          visible={step === 'amount'}
+          balance={selectedBalance}
+          onClose={close}
+          onConfirm={amount => {
+            setCheckout(previous => previous && { ...previous, amount });
+            setPhone(settings?.paymentPreferences?.mobileMoneyPhone || user?.phone || '');
+            setStep('confirmation');
+          }}
+        />
+      )}
+
+      {checkout && (
+        <PaymentConfirmationModal
+          visible={step === 'confirmation'}
+          onClose={close}
+          onConfirm={confirm}
+          amount={checkout.amount ?? 0}
+          currency="UGX"
+          phoneNumber={phone}
+          providerName={settings?.paymentPreferences?.mobileMoneyProvider === 'airtel' ? 'Airtel Money' : 'Mobile money'}
+          isLoading={mutation.isLoading}
+          error={error}
+          paymentType={checkout.paymentType}
+        />
+      )}
+    </SafeAreaWrapper>
+  );
 }
 
 function ActionButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled: boolean }) {
-  return <TouchableOpacity
-    accessibilityRole="button" onPress={onPress} disabled={disabled}
-    className={`bg-brand p-3 rounded-md ${disabled ? 'opacity-50' : ''}`}>
-    <Text className="text-white font-semibold text-center">{label}</Text>
-  </TouchableOpacity>;
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.8}
+      className={`bg-brand p-3.5 rounded-2xl ${disabled ? 'opacity-50' : ''}`}
+      style={{
+        shadowColor: BRAND_COLOR,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 3,
+      }}
+    >
+      <Text className="text-white font-semibold text-center text-sm">{label}</Text>
+    </TouchableOpacity>
+  );
 }

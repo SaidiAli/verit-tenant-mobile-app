@@ -14,6 +14,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
 import { authApi } from "../../lib/api";
+import { PinInput } from "@/components/ui/PinInput";
 
 type Step = "email" | "otp" | "password" | "success";
 
@@ -24,6 +25,8 @@ export default function ForgotPasswordScreen() {
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Set when the server returns 429 (too many failed OTP attempts). Requesting a
@@ -113,66 +116,115 @@ export default function ForgotPasswordScreen() {
     router.replace("/(auth)/login");
   };
 
+  const getStepNumber = () => {
+    switch (step) {
+      case "email":
+        return "1";
+      case "otp":
+        return "2";
+      case "password":
+        return "3";
+      case "success":
+        return "3";
+    }
+  };
+
   return (
     <SafeAreaWrapper>
       <KeyboardAvoidingView
-        className="flex-1"
+        className="flex-1 bg-brand"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ScrollView className="flex-1 bg-gray-50">
-          <View className="flex-1 px-6 justify-center min-h-screen">
-            <View className="items-center w-full max-w-sm mx-auto">
-              {/* Header */}
-              <View className="mb-8 items-center">
-                <View className="w-16 h-16 bg-brand/10 rounded-full items-center justify-center mb-4">
-                  <MaterialIcons
-                    name="lock-reset"
-                    size={32}
-                    color={BRAND_COLOR}
-                  />
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Top Branded Curve Header */}
+          <View className="pt-8 pb-10 px-6 items-center">
+            <View className="flex-row items-center justify-between w-full mb-4">
+              <TouchableOpacity
+                onPress={() => {
+                  if (step === "otp") setStep("email");
+                  else if (step === "password") setStep("otp");
+                  else handleBackToLogin();
+                }}
+                className="w-10 h-10 rounded-full bg-white/10 items-center justify-center"
+              >
+                <MaterialIcons name="arrow-back" size={20} color="white" />
+              </TouchableOpacity>
+              {step !== "success" ? (
+                <View className="px-3 py-1 rounded-full bg-white/10">
+                  <Text className="text-white text-xs font-semibold tracking-wider">
+                    STEP {getStepNumber()} OF 3
+                  </Text>
                 </View>
-                <Text className="text-2xl font-semibold text-gray-800 text-center">
-                  {step === "email" && "Reset Password"}
-                  {step === "otp" && "Verify Code"}
-                  {step === "password" && "New Password"}
-                  {step === "success" && "Success!"}
-                </Text>
-                <Text className="text-sm text-gray-600 text-center mt-2">
-                  {step === "email" &&
-                    "Enter your email to receive a reset code"}
-                  {step === "otp" && `Enter the 6-digit code sent to ${email}`}
-                  {step === "password" &&
-                    "Create a new password for your account"}
-                  {step === "success" &&
-                    "Your password has been reset successfully"}
-                </Text>
-              </View>
+              ) : (
+                <View className="w-16" />
+              )}
+              <View className="w-10" />
+            </View>
 
-              {/* Email Step */}
+            <Text className="text-2xl font-bold text-white text-center">
+              {step === "email" && "Reset Password"}
+              {step === "otp" && "Verify Code"}
+              {step === "password" && "New Password"}
+              {step === "success" && "Password Reset!"}
+            </Text>
+            <Text className="text-white/70 text-xs text-center mt-1 px-4 leading-relaxed">
+              {step === "email" &&
+                "Enter your registered account email to receive a recovery code"}
+              {step === "otp" && `Enter the 6-digit verification code sent to ${email}`}
+              {step === "password" &&
+                "Choose a strong new password with at least 8 characters"}
+              {step === "success" &&
+                "Your password has been successfully updated. You can now sign in."}
+            </Text>
+          </View>
+
+          {/* FinWise Curved Main Card */}
+          <View
+            className="flex-1 bg-white rounded-t-[36px] px-6 pt-8 pb-10 shadow-2xl"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 8,
+            }}
+          >
+            <View className="w-full max-w-sm mx-auto">
+              {/* STEP 1: Email */}
               {step === "email" && (
-                <View className="w-full space-y-4">
-                  <View className="relative">
-                    <View className="absolute left-3 top-3 z-10">
-                      <MaterialIcons name="email" size={20} color="#6B7280" />
+                <View className="space-y-4">
+                  <View>
+                    <Text className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5 ml-1">
+                      Email Address
+                    </Text>
+                    <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5">
+                      <MaterialIcons name="mail-outline" size={20} color="#6B7280" />
+                      <TextInput
+                        className="flex-1 ml-3 text-base text-gray-900 font-medium"
+                        placeholder="e.g. tenant@example.com"
+                        placeholderTextColor="#9CA3AF"
+                        value={email}
+                        onChangeText={(text) => {
+                          setEmail(text);
+                          if (error) setError(null);
+                        }}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        editable={!isLoading}
+                      />
                     </View>
-                    <TextInput
-                      className="w-full pl-12 pr-4 py-3 border rounded-md bg-white border-gray-300"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChangeText={(text) => {
-                        setEmail(text);
-                        if (error) setError(null);
-                      }}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      editable={!isLoading}
-                    />
                   </View>
 
                   {error && (
-                    <View className="flex-row items-center space-x-2 bg-red-50 px-3 py-2 rounded-md">
-                      <MaterialIcons name="error" size={16} color="#EF4444" />
-                      <Text className="text-red-600 text-sm flex-1">
+                    <View className="flex-row items-center bg-red-50 p-3 rounded-xl border border-red-100">
+                      <MaterialIcons name="error-outline" size={18} color="#EF4444" />
+                      <Text className="text-red-700 text-xs ml-2 flex-1 font-medium">
                         {error}
                       </Text>
                     </View>
@@ -181,9 +233,17 @@ export default function ForgotPasswordScreen() {
                   <TouchableOpacity
                     onPress={handleSendCode}
                     disabled={isLoading}
-                    className={`w-full py-3 rounded-md ${isLoading ? "bg-gray-400" : "bg-brand"}`}
+                    activeOpacity={0.8}
+                    className="w-full py-4 rounded-2xl bg-brand items-center justify-center mt-2 shadow-sm"
+                    style={{
+                      shadowColor: BRAND_COLOR,
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.25,
+                      shadowRadius: 8,
+                      elevation: 3,
+                    }}
                   >
-                    <View className="flex-row justify-center items-center">
+                    <View className="flex-row items-center justify-center">
                       {isLoading && (
                         <ActivityIndicator
                           color="white"
@@ -191,66 +251,59 @@ export default function ForgotPasswordScreen() {
                           className="mr-2"
                         />
                       )}
-                      <Text className="text-white font-medium text-center">
-                        {isLoading ? "Sending..." : "Send Reset Code"}
+                      <Text className="text-white font-bold text-base">
+                        {isLoading ? "Sending Code..." : "Send Reset Code"}
                       </Text>
                     </View>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* OTP Step */}
+              {/* STEP 2: OTP */}
               {step === "otp" && (
-                <View className="w-full space-y-4">
-                  <View className="relative">
-                    <View className="absolute left-3 top-3 z-10">
-                      <MaterialIcons
-                        name="verified"
-                        size={20}
-                        color="#6B7280"
-                      />
-                    </View>
-                    <TextInput
-                      className="w-full pl-12 pr-4 py-3 border rounded-md bg-white border-gray-300"
-                      placeholder="Enter 6-digit code"
-                      value={otp}
-                      onChangeText={(text) => {
-                        setOtp(text.replace(/[^0-9]/g, "").slice(0, 6));
-                        if (error) setError(null);
-                      }}
-                      keyboardType="number-pad"
-                      maxLength={6}
-                      editable={!isLoading}
-                    />
-                  </View>
+                <View className="space-y-4 items-center">
+                  <Text className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+                    Enter 6-Digit PIN
+                  </Text>
+
+                  <PinInput
+                    length={6}
+                    value={otp}
+                    onChange={(val) => {
+                      setOtp(val);
+                      if (error) setError(null);
+                    }}
+                    disabled={isLoading || lockedOut}
+                    hasError={!!error}
+                  />
 
                   {lockedOut ? (
-                    <View className="flex-row items-start space-x-2 bg-amber-50 px-3 py-2 rounded-md">
-                      <MaterialIcons
-                        name="lock-clock"
-                        size={16}
-                        color="#B45309"
-                      />
-                      <Text className="text-amber-700 text-sm flex-1">
-                        Too many incorrect attempts. This code is no longer
-                        valid — request a new one to try again.
+                    <View className="flex-row items-start bg-amber-50 p-3.5 rounded-xl border border-amber-200 w-full my-2">
+                      <MaterialIcons name="lock-clock" size={20} color="#B45309" />
+                      <Text className="text-amber-800 text-xs ml-2.5 flex-1 font-medium leading-relaxed">
+                        Too many incorrect attempts. Request a fresh code below.
                       </Text>
                     </View>
                   ) : error ? (
-                    <View className="flex-row items-center space-x-2 bg-red-50 px-3 py-2 rounded-md">
-                      <MaterialIcons name="error" size={16} color="#EF4444" />
-                      <Text className="text-red-600 text-sm flex-1">
+                    <View className="flex-row items-center bg-red-50 p-3 rounded-xl border border-red-100 w-full my-2">
+                      <MaterialIcons name="error-outline" size={18} color="#EF4444" />
+                      <Text className="text-red-700 text-xs ml-2 flex-1 font-medium">
                         {error}
                       </Text>
                     </View>
                   ) : null}
 
                   <TouchableOpacity
-                    onPress={handleVerifyOtp}
-                    disabled={isLoading || lockedOut}
-                    className={`w-full py-3 rounded-md ${isLoading || lockedOut ? "bg-gray-400" : "bg-brand"}`}
+                    onPress={() => void handleVerifyOtp()}
+                    disabled={isLoading || lockedOut || otp.length !== 6}
+                    activeOpacity={0.8}
+                    className={`w-full py-4 rounded-2xl items-center justify-center mt-2 ${
+                      isLoading || lockedOut || otp.length !== 6
+                        ? "bg-gray-300"
+                        : "bg-brand"
+                    }`}
                   >
-                    <View className="flex-row justify-center items-center">
+                    <View className="flex-row items-center justify-center">
                       {isLoading && (
                         <ActivityIndicator
                           color="white"
@@ -258,7 +311,7 @@ export default function ForgotPasswordScreen() {
                           className="mr-2"
                         />
                       )}
-                      <Text className="text-white font-medium text-center">
+                      <Text className="text-white font-bold text-base">
                         {isLoading ? "Verifying..." : "Verify Code"}
                       </Text>
                     </View>
@@ -267,70 +320,84 @@ export default function ForgotPasswordScreen() {
                   <TouchableOpacity
                     onPress={handleSendCode}
                     disabled={isLoading}
-                    className={
-                      lockedOut
-                        ? "w-full py-3 rounded-md bg-brand"
-                        : "items-center py-2"
-                    }
+                    className="py-3 px-4"
                   >
-                    <Text
-                      className={
-                        lockedOut
-                          ? "text-white font-medium text-center"
-                          : "text-brand text-sm font-medium text-center"
-                      }
-                    >
-                      Resend Code
+                    <Text className="text-brand font-semibold text-sm">
+                      {"Didn't get the code? Resend Code"}
                     </Text>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* New Password Step */}
+              {/* STEP 3: Password */}
               {step === "password" && (
-                <View className="w-full space-y-4">
-                  <View className="relative">
-                    <View className="absolute left-3 top-3 z-10">
-                      <MaterialIcons name="lock" size={20} color="#6B7280" />
+                <View className="space-y-4">
+                  <View>
+                    <Text className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5 ml-1">
+                      New Password
+                    </Text>
+                    <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5">
+                      <MaterialIcons name="lock-outline" size={20} color="#6B7280" />
+                      <TextInput
+                        className="flex-1 ml-3 text-base text-gray-900 font-medium"
+                        placeholder="At least 8 characters"
+                        placeholderTextColor="#9CA3AF"
+                        value={newPassword}
+                        onChangeText={(text) => {
+                          setNewPassword(text);
+                          if (error) setError(null);
+                        }}
+                        secureTextEntry={!showNewPassword}
+                        editable={!isLoading}
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowNewPassword((prev) => !prev)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <MaterialIcons
+                          name={showNewPassword ? "visibility-off" : "visibility"}
+                          size={20}
+                          color="#6B7280"
+                        />
+                      </TouchableOpacity>
                     </View>
-                    <TextInput
-                      className="w-full pl-12 pr-4 py-3 border rounded-md bg-white border-gray-300"
-                      placeholder="New password"
-                      value={newPassword}
-                      onChangeText={(text) => {
-                        setNewPassword(text);
-                        if (error) setError(null);
-                      }}
-                      secureTextEntry
-                      editable={!isLoading}
-                    />
                   </View>
 
-                  <View className="relative">
-                    <View className="absolute left-3 top-3 z-10">
-                      <MaterialIcons
-                        name="lock-outline"
-                        size={20}
-                        color="#6B7280"
+                  <View>
+                    <Text className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5 ml-1">
+                      Confirm New Password
+                    </Text>
+                    <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5">
+                      <MaterialIcons name="lock-outline" size={20} color="#6B7280" />
+                      <TextInput
+                        className="flex-1 ml-3 text-base text-gray-900 font-medium"
+                        placeholder="Re-type new password"
+                        placeholderTextColor="#9CA3AF"
+                        value={confirmPassword}
+                        onChangeText={(text) => {
+                          setConfirmPassword(text);
+                          if (error) setError(null);
+                        }}
+                        secureTextEntry={!showConfirmPassword}
+                        editable={!isLoading}
                       />
+                      <TouchableOpacity
+                        onPress={() => setShowConfirmPassword((prev) => !prev)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <MaterialIcons
+                          name={showConfirmPassword ? "visibility-off" : "visibility"}
+                          size={20}
+                          color="#6B7280"
+                        />
+                      </TouchableOpacity>
                     </View>
-                    <TextInput
-                      className="w-full pl-12 pr-4 py-3 border rounded-md bg-white border-gray-300"
-                      placeholder="Confirm new password"
-                      value={confirmPassword}
-                      onChangeText={(text) => {
-                        setConfirmPassword(text);
-                        if (error) setError(null);
-                      }}
-                      secureTextEntry
-                      editable={!isLoading}
-                    />
                   </View>
 
                   {error && (
-                    <View className="flex-row items-center space-x-2 bg-red-50 px-3 py-2 rounded-md">
-                      <MaterialIcons name="error" size={16} color="#EF4444" />
-                      <Text className="text-red-600 text-sm flex-1">
+                    <View className="flex-row items-center bg-red-50 p-3 rounded-xl border border-red-100">
+                      <MaterialIcons name="error-outline" size={18} color="#EF4444" />
+                      <Text className="text-red-700 text-xs ml-2 flex-1 font-medium">
                         {error}
                       </Text>
                     </View>
@@ -339,9 +406,17 @@ export default function ForgotPasswordScreen() {
                   <TouchableOpacity
                     onPress={handleResetPassword}
                     disabled={isLoading}
-                    className={`w-full py-3 rounded-md ${isLoading ? "bg-gray-400" : "bg-brand"}`}
+                    activeOpacity={0.8}
+                    className="w-full py-4 rounded-2xl bg-brand items-center justify-center mt-2 shadow-sm"
+                    style={{
+                      shadowColor: BRAND_COLOR,
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.25,
+                      shadowRadius: 8,
+                      elevation: 3,
+                    }}
                   >
-                    <View className="flex-row justify-center items-center">
+                    <View className="flex-row items-center justify-center">
                       {isLoading && (
                         <ActivityIndicator
                           color="white"
@@ -349,47 +424,55 @@ export default function ForgotPasswordScreen() {
                           className="mr-2"
                         />
                       )}
-                      <Text className="text-white font-medium text-center">
-                        {isLoading ? "Resetting..." : "Reset Password"}
+                      <Text className="text-white font-bold text-base">
+                        {isLoading ? "Updating..." : "Reset Password"}
                       </Text>
                     </View>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* Success Step */}
+              {/* STEP 4: Success */}
               {step === "success" && (
-                <View className="w-full space-y-4 items-center">
-                  <View className="w-20 h-20 bg-green-100 rounded-full items-center justify-center">
-                    <MaterialIcons
-                      name="check-circle"
-                      size={48}
-                      color="#10B981"
-                    />
+                <View className="items-center py-6">
+                  <View className="w-20 h-20 rounded-full bg-emerald-50 border-4 border-emerald-100 items-center justify-center mb-4">
+                    <MaterialIcons name="check" size={40} color="#00D09E" />
                   </View>
-                  <Text className="text-gray-600 text-center">
-                    You can now sign in with your new password.
+                  <Text className="text-xl font-bold text-gray-900 text-center mb-1">
+                    Password Changed
+                  </Text>
+                  <Text className="text-sm text-gray-500 text-center mb-8 px-4">
+                    Your password has been successfully updated. You can now
+                    sign in with your new credentials.
                   </Text>
                   <TouchableOpacity
                     onPress={handleBackToLogin}
-                    className="w-full py-3 rounded-md bg-brand"
+                    activeOpacity={0.8}
+                    className="w-full py-4 rounded-2xl bg-brand items-center justify-center shadow-sm"
+                    style={{
+                      shadowColor: BRAND_COLOR,
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.25,
+                      shadowRadius: 8,
+                      elevation: 3,
+                    }}
                   >
-                    <Text className="text-white font-medium text-center">
-                      Back to Sign In
+                    <Text className="text-white font-bold text-base">
+                      Sign In Now
                     </Text>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* Back to Login */}
+              {/* Back to Login Footer */}
               {step !== "success" && (
                 <TouchableOpacity
                   onPress={handleBackToLogin}
-                  className="mt-6 items-center"
+                  className="mt-8 items-center py-2"
                 >
-                  <Text className="text-gray-500 text-sm">
+                  <Text className="text-gray-500 text-xs font-medium">
                     Remember your password?{" "}
-                    <Text className="text-brand font-medium">Sign In</Text>
+                    <Text className="text-brand font-bold">Sign In</Text>
                   </Text>
                 </TouchableOpacity>
               )}

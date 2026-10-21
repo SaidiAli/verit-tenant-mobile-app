@@ -4,8 +4,18 @@ import { User } from '../types';
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
 const LEASE_KEY = 'selected_lease_id';
+const ONBOARDING_KEY = 'onboarding_completed';
 
 export const secureStorage = {
+  async setOnboardingCompleted(completed = true): Promise<void> {
+    await SecureStore.setItemAsync(ONBOARDING_KEY, completed ? 'true' : 'false');
+  },
+
+  async isOnboardingCompleted(): Promise<boolean> {
+    const val = await SecureStore.getItemAsync(ONBOARDING_KEY);
+    return val === 'true';
+  },
+
   async setToken(token: string): Promise<void> {
     await SecureStore.setItemAsync(TOKEN_KEY, token);
   },

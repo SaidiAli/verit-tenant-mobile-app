@@ -1,30 +1,66 @@
 import { Text, View } from 'react-native';
 
 interface StatusBadgeProps {
-  status: 'success' | 'warning' | 'error' | 'info';
+  status: 'success' | 'warning' | 'error' | 'info' | 'brand';
   text: string;
   className?: string;
+  dot?: boolean;
 }
 
-export function StatusBadge({ status, text, className = '' }: StatusBadgeProps) {
-  const getStatusClasses = (status: string) => {
+export function StatusBadge({
+  status,
+  text,
+  className = '',
+  dot = false,
+}: StatusBadgeProps) {
+  const getStatusStyles = (status: string) => {
     switch (status) {
       case 'success':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return {
+          container: 'bg-emerald-50 border-emerald-200/60',
+          text: 'text-emerald-800',
+          dot: 'bg-[#00D09E]',
+        };
       case 'warning':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return {
+          container: 'bg-amber-50 border-amber-200/60',
+          text: 'text-amber-800',
+          dot: 'bg-amber-500',
+        };
       case 'error':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return {
+          container: 'bg-rose-50 border-rose-200/60',
+          text: 'text-rose-800',
+          dot: 'bg-rose-500',
+        };
+      case 'brand':
+        return {
+          container: 'bg-brand-light border-brand-muted',
+          text: 'text-brand',
+          dot: 'bg-brand',
+        };
       case 'info':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return {
+          container: 'bg-sky-50 border-sky-200/60',
+          text: 'text-sky-800',
+          dot: 'bg-sky-500',
+        };
     }
   };
 
+  const styles = getStatusStyles(status);
+
   return (
-    <View className={`px-2 py-1 rounded-full border ${getStatusClasses(status)} ${className}`}>
-      <Text className="text-xs font-medium">{text}</Text>
+    <View
+      className={`flex-row items-center px-2.5 py-1 rounded-full border ${styles.container} ${className}`}
+    >
+      {dot && (
+        <View className={`w-1.5 h-1.5 rounded-full mr-1.5 ${styles.dot}`} />
+      )}
+      <Text className={`text-xs font-semibold tracking-wide ${styles.text}`}>
+        {text}
+      </Text>
     </View>
   );
 }
