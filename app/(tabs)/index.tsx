@@ -1,20 +1,13 @@
 import { tenantKeys } from '../../lib/queryKeys';
 import { BRAND_COLOR } from '@/constants/theme';
-import {
-  ScrollView,
-  View,
-  Text,
-  TouchableOpacity,
-  RefreshControl,
-} from "react-native";
+import { View, Text, TouchableOpacity, RefreshControl } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useAuth } from "../../hooks/useAuth";
 import { useLease } from "../../hooks/LeaseContext";
-import { Card, MetricCard } from "../../components/ui/Card";
 import { LeaseSwitcher } from "../../components/ui/LeaseSwitcher";
 import {
   StatusBadge,
@@ -25,11 +18,18 @@ import { ErrorView } from "../../components/ui/ErrorView";
 import { formatMoney } from "../../lib/currency";
 import { tenantApi } from "../../lib/api";
 import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
+import { FinWiseScreen } from "../../components/ui/FinWiseScreen";
+import { FinWiseProgressBar } from "../../components/ui/FinWiseProgressBar";
+import { TransactionRow } from "../../components/ui/TransactionRow";
+import { PillSwitch } from "../../components/ui/PillSwitch";
 import { formatDateShort } from "@/lib/utils";
+
+type PaymentFilter = "all" | "rent" | "security_deposit";
 
 export default function DashboardScreen() {
   const { user } = useAuth();
   const { selectedLeaseId, isLoadingLeases } = useLease();
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
 
   const {
     data: dashboardData,
@@ -92,333 +92,302 @@ export default function DashboardScreen() {
   const currentBalance = dashboardData?.payments.currentBalance ?? 0;
   const isOverdue = dashboardData?.payments.isOverdue;
   const nextDueDate = dashboardData?.payments.nextDueDate;
+  const monthlyRent = dashboardData?.lease?.monthlyRent ?? 0;
+  const leaseStatus = dashboardData?.lease?.status;
+
+  // Portion of this month's rent that is settled (0–100).
+  const settledPercent =
+    monthlyRent > 0
+      ? Math.max(0, Math.min(100, ((monthlyRent - currentBalance) / monthlyRent) * 100))
+      : currentBalance === 0
+        ? 100
+        : 0;
+
+  const recentPayments = (dashboardData?.payments.recentPayments ?? []).filter(
+    ({ payment }) =>
+      paymentFilter === "all" || payment.paymentType === paymentFilter,
+  );
 
   return (
     <SafeAreaWrapper>
-      <View className="flex-1 bg-[#F8F9FA]">
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={() => {
-                void refetch();
-              }}
-              tintColor={BRAND_COLOR}
-            />
-          }
-        >
-          <View className="px-5 pt-6 pb-8 space-y-6">
-            {/* FinWise Header Section */}
-            <View className="flex-row justify-between items-center mb-1">
+      <FinWiseScreen
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={() => {
+              void refetch();
+            }}
+            tintColor="#FFFFFF"
+          />
+        }
+        headerClassName="px-9 pt-6 pb-10"
+        header={
+          <>
+            {/* Greeting row (Figma "Hi, Welcome Back" 20px Semibold) */}
+            <View className="flex-row justify-between items-center">
               <View className="flex-1 mr-3">
-                <Text className="text-xs font-bold uppercase tracking-wider text-brand">
+                <Text className="text-[20px] leading-[22px] font-semibold text-white">
                   Hi, Welcome Back
                 </Text>
-                <Text className="text-2xl font-bold text-gray-900 mt-0.5">
+                <Text className="text-[14px] text-white/70 mt-1">
                   {user.firstName} {user.lastName || ''}
                 </Text>
               </View>
-              <View className="flex-row items-center gap-2">
+              <View className="flex-row items-center gap-2.5">
                 <LeaseSwitcher />
                 <TouchableOpacity
                   onPress={() => router.push('/screens/notifications-settings')}
                   activeOpacity={0.7}
-                  className="w-10 h-10 rounded-full bg-white border border-gray-100 items-center justify-center shadow-sm"
+                  className="w-[30px] h-[30px] rounded-[15px] bg-brand-light items-center justify-center"
                 >
-                  <MaterialIcons
-                    name="notifications-none"
-                    size={22}
-                    color={BRAND_COLOR}
-                  />
+                  <MaterialIcons name="notifications-none" size={18} color={BRAND_COLOR} />
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* FinWise Hero Balance Card (Screen 4-A / 6-A) */}
-            <View
-              className="bg-brand rounded-3xl p-5 shadow-xl relative overflow-hidden"
-              style={{
-                shadowColor: BRAND_COLOR,
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.25,
-                shadowRadius: 16,
-                elevation: 6,
-              }}
-            >
-              {/* Background decorative glow circle */}
-              <View className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-white/5" />
-
-              <View className="flex-row justify-between items-start mb-2">
-                <View>
-                  <Text className="text-xs font-semibold uppercase tracking-wider text-white/70">
+            {/* Balance split hero — directly on the colored background (Figma 7110:4451+) */}
+            <View className="mt-9">
+              <View className="flex-row items-start">
+                <View className="flex-1">
+                  <Text className="text-[12px] text-white/70">
                     Outstanding Balance
                   </Text>
-                  <Text className="text-3xl font-extrabold text-white mt-1">
+                  <Text className="text-[24px] font-bold text-white mt-1">
                     {dashboardData
-                      ? formatMoney(
-                          currentBalance,
-                          dashboardData.payments.currency,
-                        )
+                      ? formatMoney(currentBalance, dashboardData.payments.currency)
                       : '...'}
                   </Text>
                   {otherCurrencyOwed ? (
-                    <Text className="text-xs text-white/70 mt-1">
+                    <Text className="text-[12px] text-white/70 mt-0.5">
                       + {otherCurrencyOwed} other owed
                     </Text>
                   ) : null}
                 </View>
-
-                {/* Status Chip */}
-                <View
-                  className={`px-3 py-1.5 rounded-full flex-row items-center gap-1.5 ${
-                    currentBalance === 0
-                      ? 'bg-[#00D09E]/20'
-                      : isOverdue
-                        ? 'bg-rose-500/20'
-                        : 'bg-white/15'
-                  }`}
-                >
-                  <View
-                    className={`w-2 h-2 rounded-full ${
-                      currentBalance === 0
-                        ? 'bg-[#00D09E]'
-                        : isOverdue
-                          ? 'bg-rose-400'
-                          : 'bg-amber-300'
-                    }`}
-                  />
-                  <Text className="text-xs font-bold text-white tracking-wide">
-                    {currentBalance === 0
-                      ? 'All Paid'
-                      : isOverdue
-                        ? 'Overdue'
-                        : 'Pending'}
+                <View className="w-px h-[42px] bg-white/25 mx-4" />
+                <View className="flex-1 items-end">
+                  <Text className="text-[12px] text-white/70">Monthly Rent</Text>
+                  <Text className="text-[24px] font-semibold text-ocean-light mt-1">
+                    {dashboardData?.lease
+                      ? formatMoney(monthlyRent, dashboardData.lease.currency)
+                      : '...'}
                   </Text>
                 </View>
               </View>
 
-              {/* Due Date & Action Banner */}
-              <View className="flex-row items-center justify-between pt-4 mt-3 border-t border-white/10">
+              {/* Two-segment progress bar (Figma 7110:4827) */}
+              <View className="mt-8">
+                <FinWiseProgressBar
+                  percent={settledPercent}
+                  filledLabel={`${Math.round(settledPercent)}%`}
+                  remainingLabel={
+                    dashboardData
+                      ? formatMoney(currentBalance, dashboardData.payments.currency)
+                      : ''
+                  }
+                />
+                <Text className="text-[13px] text-white/80 mt-3">
+                  {settledPercent >= 100
+                    ? 'Your rent is fully settled. Looks good.'
+                    : `${Math.round(settledPercent)}% of this month's rent settled.`}
+                </Text>
+              </View>
+
+              {/* Due date + status + Pay Now */}
+              <View className="flex-row items-center justify-between mt-7">
                 <View>
-                  <Text className="text-[11px] font-medium text-white/60 uppercase tracking-wider">
-                    Next Due Date
-                  </Text>
-                  <Text className="text-xs font-bold text-white mt-0.5">
+                  <Text className="text-[12px] text-white/70">Next Due Date</Text>
+                  <Text className="text-[15px] font-medium text-white mt-0.5">
                     {nextDueDate ? formatDateShort(nextDueDate) : 'No pending due date'}
+                  </Text>
+                  <Text
+                    className={`text-[12px] font-semibold mt-0.5 ${
+                      currentBalance === 0
+                        ? 'text-finance'
+                        : isOverdue
+                          ? 'text-rose-300'
+                          : 'text-amber-200'
+                    }`}
+                  >
+                    {currentBalance === 0
+                      ? 'All paid'
+                      : isOverdue
+                        ? 'Overdue'
+                        : 'Pending'}
+                    {leaseStatus ? ` · Lease ${leaseStatus}` : ''}
                   </Text>
                 </View>
 
                 <TouchableOpacity
                   onPress={() => router.push('/payments')}
                   activeOpacity={0.8}
-                  className="bg-[#00D09E] px-5 py-2.5 rounded-2xl shadow-sm flex-row items-center gap-1"
+                  className="h-[45px] px-6 rounded-[30px] bg-finance flex-row items-center justify-center"
                 >
-                  <Text className="text-gray-950 font-bold text-xs uppercase tracking-wider">
-                    {currentBalance > 0 ? 'Pay Now' : 'View Payments'}
+                  <Text className="text-[15px] font-semibold text-finance-fence">
+                    {currentBalance > 0 ? 'Pay Now' : 'Payments'}
                   </Text>
-                  <MaterialIcons name="arrow-forward" size={14} color="#031314" />
+                  <MaterialIcons name="arrow-forward" size={16} color="#052224" />
                 </TouchableOpacity>
               </View>
             </View>
+          </>
+        }
+      >
+        <View className="space-y-9">
+          {/* Filter segmented control (Figma Switch2) */}
+          <PillSwitch
+            options={[
+              { id: 'all' as const, label: 'All' },
+              { id: 'rent' as const, label: 'Rent' },
+              { id: 'security_deposit' as const, label: 'Deposit' },
+            ]}
+            selected={paymentFilter}
+            onSelect={setPaymentFilter}
+          />
 
-            {/* FinWise Split Metrics: Monthly Rent vs Outstanding */}
-            <View className="flex-row gap-3">
-              <MetricCard
-                title="Monthly Rent"
-                value={
-                  dashboardData?.lease
-                    ? formatMoney(
-                        dashboardData.lease.monthlyRent,
-                        dashboardData.lease.currency,
-                      )
-                    : 'Loading...'
-                }
-                subtitle="Agreed monthly rate"
-                icon={<MaterialIcons name="home" size={20} color={BRAND_COLOR} />}
-                variant="default"
-                className="flex-1"
-              />
-              <MetricCard
-                title="Lease Status"
-                value={
-                  dashboardData?.lease?.status
-                    ? dashboardData.lease.status.toUpperCase()
-                    : '—'
-                }
-                subtitle={
-                  isOverdue ? 'Action required' : 'In good standing'
-                }
-                icon={
-                  <MaterialIcons
-                    name={isOverdue ? 'warning' : 'verified'}
-                    size={20}
-                    color={isOverdue ? '#EF4444' : '#00D09E'}
-                  />
-                }
-                variant={isOverdue ? 'danger' : 'finance'}
-                className="flex-1"
-              />
-            </View>
-
-            {/* Quick Action Navigation Tiles */}
-            <View>
-              <Text className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 ml-1">
-                Quick Services
+          {/* Quick Services tiles */}
+          <View className="flex-row gap-3">
+            <TouchableOpacity
+              onPress={() => router.push('/payments')}
+              activeOpacity={0.7}
+              className="flex-1 bg-brand-light/60 rounded-[22px] py-4 items-center justify-center"
+            >
+              <View className="w-11 h-11 rounded-[22px] bg-finance/15 items-center justify-center mb-2">
+                <MaterialIcons name="receipt-long" size={22} color="#00D09E" />
+              </View>
+              <Text className="text-[12px] font-medium text-finance-fence text-center">
+                Pay Rent
               </Text>
-              <View className="flex-row gap-3">
-                <TouchableOpacity
-                  onPress={() => router.push('/payments')}
-                  activeOpacity={0.7}
-                  className="flex-1 bg-white p-3.5 rounded-2xl border border-gray-100 items-center justify-center shadow-sm"
-                >
-                  <View className="w-10 h-10 rounded-2xl bg-[#00D09E]/15 items-center justify-center mb-2">
-                    <MaterialIcons name="receipt-long" size={22} color="#00D09E" />
-                  </View>
-                  <Text className="text-xs font-bold text-gray-900 text-center">
-                    Pay Rent
-                  </Text>
-                </TouchableOpacity>
+            </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() =>
-                    router.push('/screens/maintenance-requests' as any)
-                  }
-                  activeOpacity={0.7}
-                  className="flex-1 bg-white p-3.5 rounded-2xl border border-gray-100 items-center justify-center shadow-sm"
-                >
-                  <View className="w-10 h-10 rounded-2xl bg-amber-500/15 items-center justify-center mb-2">
-                    <MaterialIcons name="build" size={20} color="#D97706" />
-                  </View>
-                  <Text className="text-xs font-bold text-gray-900 text-center">
-                    Maintenance
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => router.push('/screens/lease' as any)}
-                  activeOpacity={0.7}
-                  className="flex-1 bg-white p-3.5 rounded-2xl border border-gray-100 items-center justify-center shadow-sm"
-                >
-                  <View className="w-10 h-10 rounded-2xl bg-brand/10 items-center justify-center mb-2">
-                    <MaterialIcons name="description" size={20} color={BRAND_COLOR} />
-                  </View>
-                  <Text className="text-xs font-bold text-gray-900 text-center">
-                    My Lease
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => router.push('/screens/property' as any)}
-                  activeOpacity={0.7}
-                  className="flex-1 bg-white p-3.5 rounded-2xl border border-gray-100 items-center justify-center shadow-sm"
-                >
-                  <View className="w-10 h-10 rounded-2xl bg-sky-500/15 items-center justify-center mb-2">
-                    <MaterialIcons name="apartment" size={20} color="#0284C7" />
-                  </View>
-                  <Text className="text-xs font-bold text-gray-900 text-center">
-                    Property
-                  </Text>
-                </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push('/screens/maintenance-requests' as any)}
+              activeOpacity={0.7}
+              className="flex-1 bg-brand-light/60 rounded-[22px] py-4 items-center justify-center"
+            >
+              <View className="w-11 h-11 rounded-[22px] bg-amber-400/20 items-center justify-center mb-2">
+                <MaterialIcons name="build" size={20} color="#D97706" />
               </View>
+              <Text className="text-[12px] font-medium text-finance-fence text-center">
+                Maintenance
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push('/screens/lease' as any)}
+              activeOpacity={0.7}
+              className="flex-1 bg-brand-light/60 rounded-[22px] py-4 items-center justify-center"
+            >
+              <View className="w-11 h-11 rounded-[22px] bg-brand/10 items-center justify-center mb-2">
+                <MaterialIcons name="description" size={20} color={BRAND_COLOR} />
+              </View>
+              <Text className="text-[12px] font-medium text-finance-fence text-center">
+                My Lease
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push('/screens/property' as any)}
+              activeOpacity={0.7}
+              className="flex-1 bg-brand-light/60 rounded-[22px] py-4 items-center justify-center"
+            >
+              <View className="w-11 h-11 rounded-[22px] bg-vivid-blue/15 items-center justify-center mb-2">
+                <MaterialIcons name="apartment" size={20} color="#3299FF" />
+              </View>
+              <Text className="text-[12px] font-medium text-finance-fence text-center">
+                Property
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Recent transactions */}
+          <View>
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-[15px] font-medium text-finance-fence">
+                Recent Payments
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/screens/payment-history')}
+                activeOpacity={0.7}
+              >
+                <Text className="text-[12px] font-semibold text-ocean">
+                  View All
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            {/* FinWise Recent Transactions Section */}
-            <Card padded={false} className="p-5">
-              <View className="flex-row justify-between items-center mb-4">
-                <View>
-                  <Text className="text-base font-bold text-gray-900">
-                    Recent Payments
-                  </Text>
-                  <Text className="text-xs text-gray-500">
-                    Latest settled transactions
-                  </Text>
+            {recentPayments.length === 0 ? (
+              <View className="items-center py-10">
+                <View className="w-14 h-14 rounded-full bg-brand-light items-center justify-center mb-3">
+                  <MaterialIcons name="receipt" size={26} color="#9CA3AF" />
                 </View>
-                <TouchableOpacity
-                  onPress={() => router.push('/screens/payment-history')}
-                  activeOpacity={0.7}
-                  className="py-1 px-3 rounded-full bg-brand/10"
-                >
-                  <Text className="text-xs font-bold text-brand">View All</Text>
-                </TouchableOpacity>
+                <Text className="text-[15px] font-medium text-finance-fence">
+                  No payments yet
+                </Text>
+                <Text className="text-[12px] text-gray-400 text-center mt-1">
+                  {paymentFilter === 'all'
+                    ? 'Payments made will appear here automatically'
+                    : 'No payments in this category yet'}
+                </Text>
               </View>
+            ) : (
+              <View>
+                {recentPayments.slice(0, 3).map((paymentData, index) => {
+                  const payment = paymentData.payment;
+                  const amountNum =
+                    typeof payment.amount === "string"
+                      ? parseFloat(payment.amount)
+                      : payment.amount;
 
-              {!dashboardData?.payments.recentPayments ||
-              dashboardData.payments.recentPayments.length === 0 ? (
-                <View className="items-center py-8">
-                  <View className="w-14 h-14 rounded-full bg-gray-100 items-center justify-center mb-2">
-                    <MaterialIcons name="receipt" size={28} color="#9CA3AF" />
-                  </View>
-                  <Text className="text-sm font-semibold text-gray-700">No payments yet</Text>
-                  <Text className="text-xs text-gray-400 text-center mt-0.5">
-                    Payments made will appear here automatically
-                  </Text>
-                </View>
-              ) : (
-                <View className="space-y-3">
-                  {dashboardData.payments.recentPayments
-                    .slice(0, 3)
-                    .map((paymentData, index) => {
-                      const payment = paymentData.payment;
-                      const amountNum =
-                        typeof payment.amount === "string"
-                          ? parseFloat(payment.amount)
-                          : payment.amount;
-
-                      return (
-                        <View key={payment.id}>
-                          <View className="flex-row justify-between items-center py-1">
-                            <View className="flex-row items-center gap-3">
-                              {/* Category Icon */}
-                              <View className="w-11 h-11 rounded-2xl bg-finance-honeydew items-center justify-center border border-finance-light">
-                                <MaterialIcons
-                                  name="account-balance-wallet"
-                                  size={22}
-                                  color="#00D09E"
-                                />
-                              </View>
-                              <View>
-                                <Text className="font-bold text-gray-900 text-sm">
-                                  {payment.paymentType === 'security_deposit'
-                                    ? 'Security Deposit'
-                                    : 'Rent Payment'}
-                                </Text>
-                                <Text className="text-xs text-gray-500 mt-0.5">
-                                  {payment.paidDate
-                                    ? formatDateShort(payment.paidDate)
-                                    : formatDateShort(payment.createdAt)}
-                                </Text>
-                              </View>
-                            </View>
-
-                            <View className="items-end">
-                              <Text className="font-bold text-gray-900 text-sm">
-                                {formatMoney(amountNum, payment.currency)}
-                              </Text>
-                              <View className="mt-1">
-                                <StatusBadge
-                                  {...getPaymentStatusBadge(payment.status)}
-                                  dot
-                                />
-                              </View>
-                            </View>
-                          </View>
-                          {index <
-                            Math.min(
-                              3,
-                              dashboardData.payments.recentPayments.length
-                            ) - 1 && (
-                            <View className="border-t border-gray-100 mt-3" />
-                          )}
-                        </View>
-                      );
-                    })}
-                </View>
-              )}
-            </Card>
+                  return (
+                    <View key={payment.id}>
+                      <TransactionRow
+                        iconBgClass={
+                          payment.paymentType === 'security_deposit'
+                            ? 'bg-ocean-light'
+                            : 'bg-vivid-blue'
+                        }
+                        icon={
+                          <MaterialIcons
+                            name={
+                              payment.paymentType === 'security_deposit'
+                                ? 'security'
+                                : 'home-work'
+                            }
+                            size={24}
+                            color="#FFFFFF"
+                          />
+                        }
+                        title={
+                          payment.paymentType === 'security_deposit'
+                            ? 'Security Deposit'
+                            : 'Rent Payment'
+                        }
+                        subtitle={
+                          payment.paidDate
+                            ? formatDateShort(payment.paidDate)
+                            : formatDateShort(payment.createdAt)
+                        }
+                        subtitleClass="text-ocean"
+                        amount={formatMoney(amountNum, payment.currency)}
+                        amountClass="text-finance-fence"
+                        rightExtra={
+                          <StatusBadge
+                            {...getPaymentStatusBadge(payment.status)}
+                            dot
+                          />
+                        }
+                      />
+                      {index < Math.min(3, recentPayments.length) - 1 && (
+                        <View className="h-px bg-gray-100" />
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </View>
-        </ScrollView>
-      </View>
+        </View>
+      </FinWiseScreen>
     </SafeAreaWrapper>
   );
 }

@@ -13,6 +13,9 @@ export const FINANCE_LIGHT = '#DFF7E2';
 export const FINANCE_HONEYDEW = '#F1FFF3';
 export const FINANCE_DARK = '#0E3E3E';
 export const FINANCE_VOID = '#031314';
+export const OCEAN_BLUE = '#0068FF';
+export const LIGHT_BLUE = '#6DB6FE';
+export const VIVID_BLUE = '#3299FF';
 
 export const SUCCESS_COLOR = '#00D09E'; // Upgraded to FinWise green
 export const ERROR_COLOR = '#EF4444';
@@ -45,6 +48,9 @@ export const Colors = {
   financeLight: FINANCE_LIGHT,
   financeHoneydew: FINANCE_HONEYDEW,
   financeDark: FINANCE_DARK,
+  oceanBlue: OCEAN_BLUE,
+  lightBlue: LIGHT_BLUE,
+  vividBlue: VIVID_BLUE,
   success: SUCCESS_COLOR,
   error: ERROR_COLOR,
   warning: WARNING_COLOR,

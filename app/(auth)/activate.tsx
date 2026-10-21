@@ -224,7 +224,7 @@ export default function ActivateAccountScreen() {
 
           {/* FinWise Curved Sheet */}
           <View
-            className="flex-1 bg-white rounded-t-[36px] px-6 pt-8 pb-10 shadow-2xl"
+            className="flex-1 bg-white rounded-t-[40px] px-9 pt-8 pb-10"
             style={{
               shadowColor: "#000",
               shadowOffset: { width: 0, height: -4 },
@@ -238,13 +238,13 @@ export default function ActivateAccountScreen() {
               {step === "phone" && (
                 <View className="space-y-4">
                   <View>
-                    <Text className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5 ml-1">
+                    <Text className="text-[15px] font-medium text-finance-fence mb-2">
                       Mobile Phone Number
                     </Text>
-                    <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5">
+                    <View className="flex-row items-center h-[41px] rounded-[18px] px-4 bg-brand-light">
                       <MaterialIcons name="phone-iphone" size={20} color="#6B7280" />
                       <TextInput
-                        className="flex-1 ml-3 text-base text-gray-900 font-medium"
+                        className="flex-1 ml-3 text-[16px] text-finance-fence"
                         placeholder="0771 234 567"
                         placeholderTextColor="#9CA3AF"
                         value={phone}
@@ -273,24 +273,17 @@ export default function ActivateAccountScreen() {
                     onPress={handleSendCode}
                     disabled={isLoading}
                     activeOpacity={0.8}
-                    className="w-full py-4 rounded-2xl bg-brand items-center justify-center mt-2 shadow-sm"
-                    style={{
-                      shadowColor: BRAND_COLOR,
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 8,
-                      elevation: 3,
-                    }}
+                    className="w-full h-[45px] rounded-[30px] bg-finance items-center justify-center mt-3"
                   >
                     <View className="flex-row items-center justify-center">
                       {isLoading && (
                         <ActivityIndicator
-                          color="white"
+                          color="#052224"
                           size="small"
                           className="mr-2"
                         />
                       )}
-                      <Text className="text-white font-bold text-base">
+                      <Text className="text-finance-fence font-semibold text-[15px]">
                         {isLoading ? "Sending Code..." : "Send Verification Code"}
                       </Text>
                     </View>
@@ -338,21 +331,27 @@ export default function ActivateAccountScreen() {
                     onPress={() => void handleVerifyOtp()}
                     disabled={isLoading || lockedOut}
                     activeOpacity={0.8}
-                    className={`w-full py-4 rounded-2xl items-center justify-center mt-2 ${
+                    className={`w-full h-[45px] rounded-[30px] items-center justify-center mt-2 ${
                       isLoading || lockedOut
-                        ? "bg-gray-300"
-                        : "bg-brand"
+                        ? "bg-brand-light"
+                        : "bg-finance"
                     }`}
                   >
                     <View className="flex-row items-center justify-center">
                       {isLoading && (
                         <ActivityIndicator
-                          color="white"
+                          color="#052224"
                           size="small"
                           className="mr-2"
                         />
                       )}
-                      <Text className="text-white font-bold text-base">
+                      <Text
+                        className={`font-semibold text-[15px] ${
+                          isLoading || lockedOut
+                            ? "text-gray-400"
+                            : "text-finance-fence"
+                        }`}
+                      >
                         {isLoading ? "Verifying..." : "Verify Code"}
                       </Text>
                     </View>
@@ -423,13 +422,13 @@ export default function ActivateAccountScreen() {
               {step === "credentials" && (
                 <View className="space-y-4">
                   <View>
-                    <Text className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5 ml-1">
+                    <Text className="text-[15px] font-medium text-finance-fence mb-2">
                       Choose Username
                     </Text>
-                    <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5">
+                    <View className="flex-row items-center h-[41px] rounded-[18px] px-4 bg-brand-light">
                       <MaterialIcons name="person-outline" size={20} color="#6B7280" />
                       <TextInput
-                        className="flex-1 ml-3 text-base text-gray-900 font-medium"
+                        className="flex-1 ml-3 text-[16px] text-finance-fence"
                         placeholder="Choose a username"
                         placeholderTextColor="#9CA3AF"
                         value={userName}
@@ -445,13 +444,13 @@ export default function ActivateAccountScreen() {
                   </View>
 
                   <View>
-                    <Text className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5 ml-1">
+                    <Text className="text-[15px] font-medium text-finance-fence mb-2">
                       Choose Password
                     </Text>
-                    <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5">
+                    <View className="flex-row items-center h-[41px] rounded-[18px] px-4 bg-brand-light">
                       <MaterialIcons name="lock-outline" size={20} color="#6B7280" />
                       <TextInput
-                        className="flex-1 ml-3 text-base text-gray-900 font-medium"
+                        className="flex-1 ml-3 text-[16px] text-finance-fence"
                         placeholder="Choose a password"
                         placeholderTextColor="#9CA3AF"
                         value={password}
@@ -488,24 +487,17 @@ export default function ActivateAccountScreen() {
                     onPress={handleActivate}
                     disabled={isLoading}
                     activeOpacity={0.8}
-                    className="w-full py-4 rounded-2xl bg-brand items-center justify-center mt-2 shadow-sm"
-                    style={{
-                      shadowColor: BRAND_COLOR,
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 8,
-                      elevation: 3,
-                    }}
+                    className="w-full h-[45px] rounded-[30px] bg-finance items-center justify-center mt-3"
                   >
                     <View className="flex-row items-center justify-center">
                       {isLoading && (
                         <ActivityIndicator
-                          color="white"
+                          color="#052224"
                           size="small"
                           className="mr-2"
                         />
                       )}
-                      <Text className="text-white font-bold text-base">
+                      <Text className="text-finance-fence font-semibold text-[15px]">
                         {isLoading ? "Activating..." : "Activate Account"}
                       </Text>
                     </View>

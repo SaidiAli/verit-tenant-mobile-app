@@ -99,17 +99,17 @@ export default function LoginScreen() {
                 Tenant Portal
               </Text>
             </View>
-            <Text className="text-3xl font-bold text-white text-center">
+            <Text className="text-[30px] leading-[22px] font-semibold text-white text-center mt-1">
               Welcome Back
             </Text>
-            <Text className="text-white/70 text-sm text-center mt-1">
+            <Text className="text-white/70 text-[14px] text-center mt-2">
               Sign in to manage your rent, lease and requests
             </Text>
           </View>
 
           {/* FinWise Curved Main Card */}
           <View
-            className="flex-1 bg-white rounded-t-[36px] px-6 pt-8 pb-10 shadow-2xl"
+            className="flex-1 bg-white rounded-t-[40px] px-9 pt-8 pb-10"
             style={{
               shadowColor: '#000',
               shadowOffset: { width: 0, height: -4 },
@@ -118,10 +118,10 @@ export default function LoginScreen() {
               elevation: 8,
             }}
           >
-            <View className="w-full max-w-sm mx-auto space-y-5">
+            <View className="w-full max-w-sm mx-auto space-y-6">
               {/* Username Field */}
               <View>
-                <Text className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5 ml-1">
+                <Text className="text-[15px] font-medium text-finance-fence mb-2">
                   Username
                 </Text>
                 <Controller
@@ -129,13 +129,13 @@ export default function LoginScreen() {
                   name="userName"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <View
-                      className={`flex-row items-center bg-gray-50/90 border rounded-2xl px-4 py-3.5 transition-all ${
-                        errors.userName ? 'border-red-400 bg-red-50/30' : 'border-gray-200'
+                      className={`flex-row items-center h-[41px] rounded-[18px] px-4 ${
+                        errors.userName ? 'bg-red-50' : 'bg-brand-light'
                       }`}
                     >
                       <MaterialIcons name="person-outline" size={20} color="#6B7280" />
                       <TextInput
-                        className="flex-1 ml-3 text-base text-gray-900 font-medium"
+                        className="flex-1 ml-3 text-[16px] text-finance-fence"
                         placeholder="Enter your username"
                         placeholderTextColor="#9CA3AF"
                         onBlur={onBlur}
@@ -157,14 +157,14 @@ export default function LoginScreen() {
               {/* Password Field */}
               <View>
                 <View className="flex-row justify-between items-center mb-1.5 ml-1">
-                  <Text className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                  <Text className="text-[15px] font-medium text-finance-fence">
                     Password
                   </Text>
                   <TouchableOpacity
                     onPress={() => router.push('/(auth)/forgot-password')}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Text className="text-xs font-semibold text-brand">
+                    <Text className="text-[14px] font-semibold text-brand">
                       Forgot Password?
                     </Text>
                   </TouchableOpacity>
@@ -174,13 +174,13 @@ export default function LoginScreen() {
                   name="password"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <View
-                      className={`flex-row items-center bg-gray-50/90 border rounded-2xl px-4 py-3.5 transition-all ${
-                        errors.password ? 'border-red-400 bg-red-50/30' : 'border-gray-200'
+                      className={`flex-row items-center h-[41px] rounded-[18px] px-4 ${
+                        errors.password ? 'bg-red-50' : 'bg-brand-light'
                       }`}
                     >
                       <MaterialIcons name="lock-outline" size={20} color="#6B7280" />
                       <TextInput
-                        className="flex-1 ml-3 text-base text-gray-900 font-medium"
+                        className="flex-1 ml-3 text-[16px] text-finance-fence"
                         placeholder="Enter your password"
                         placeholderTextColor="#9CA3AF"
                         onBlur={onBlur}
@@ -211,28 +211,21 @@ export default function LoginScreen() {
                 )}
               </View>
 
-              {/* Sign In Primary CTA */}
+              {/* Sign In Primary CTA (Figma LogIn: 207x45 pill, radius 30, green) */}
               <TouchableOpacity
                 onPress={() => { void handleSubmit(onSubmit)(); }}
                 disabled={isLoading}
                 activeOpacity={0.8}
-                className={`w-full py-4 rounded-2xl items-center justify-center mt-4 ${
-                  isLoading ? 'bg-brand/70' : 'bg-brand'
+                className={`w-[207px] h-[45px] rounded-[30px] bg-finance items-center justify-center self-center mt-4 ${
+                  isLoading ? 'opacity-60' : ''
                 }`}
-                style={{
-                  shadowColor: BRAND_COLOR,
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 10,
-                  elevation: 4,
-                }}
               >
                 <View className="flex-row items-center justify-center">
                   {isLoading ? (
-                    <ActivityIndicator color="white" size="small" className="mr-2" />
+                    <ActivityIndicator color="#052224" size="small" className="mr-2" />
                   ) : null}
-                  <Text className="text-white font-bold text-base">
-                    {isLoading ? 'Signing In...' : 'Sign In'}
+                  <Text className="text-finance-fence font-semibold text-[20px]">
+                    {isLoading ? 'Signing In...' : 'Log In'}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -263,17 +256,14 @@ export default function LoginScreen() {
                 <View className="flex-1 h-px bg-gray-200" />
               </View>
 
-              {/* Account Activation Callout Card */}
+              {/* Account Activation (Figma Sign Up: light 207x45 pill) */}
               <TouchableOpacity
                 onPress={() => router.push('/(auth)/activate')}
                 activeOpacity={0.8}
-                className="w-full p-4 rounded-2xl bg-[#F4F2F7] border border-brand/20 items-center justify-center"
+                className="w-[207px] h-[45px] rounded-[30px] bg-brand-light items-center justify-center self-center"
               >
-                <Text className="text-xs font-bold text-brand uppercase tracking-wider mb-0.5">
-                  First Time Tenant
-                </Text>
-                <Text className="text-sm font-semibold text-gray-900 text-center">
-                  Activate Your Account with Phone Number
+                <Text className="text-brand font-semibold text-[15px]">
+                  Activate Account
                 </Text>
               </TouchableOpacity>
 

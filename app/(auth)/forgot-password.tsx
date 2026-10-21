@@ -1,4 +1,3 @@
-import { BRAND_COLOR } from "@/constants/theme";
 import { useState } from "react";
 import {
   View,
@@ -185,7 +184,7 @@ export default function ForgotPasswordScreen() {
 
           {/* FinWise Curved Main Card */}
           <View
-            className="flex-1 bg-white rounded-t-[36px] px-6 pt-8 pb-10 shadow-2xl"
+            className="flex-1 bg-white rounded-t-[40px] px-9 pt-8 pb-10"
             style={{
               shadowColor: "#000",
               shadowOffset: { width: 0, height: -4 },
@@ -199,13 +198,13 @@ export default function ForgotPasswordScreen() {
               {step === "email" && (
                 <View className="space-y-4">
                   <View>
-                    <Text className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5 ml-1">
+                    <Text className="text-[15px] font-medium text-finance-fence mb-2">
                       Email Address
                     </Text>
-                    <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5">
+                    <View className="flex-row items-center h-[41px] rounded-[18px] px-4 bg-brand-light">
                       <MaterialIcons name="mail-outline" size={20} color="#6B7280" />
                       <TextInput
-                        className="flex-1 ml-3 text-base text-gray-900 font-medium"
+                        className="flex-1 ml-3 text-[16px] text-finance-fence"
                         placeholder="e.g. tenant@example.com"
                         placeholderTextColor="#9CA3AF"
                         value={email}
@@ -234,24 +233,17 @@ export default function ForgotPasswordScreen() {
                     onPress={handleSendCode}
                     disabled={isLoading}
                     activeOpacity={0.8}
-                    className="w-full py-4 rounded-2xl bg-brand items-center justify-center mt-2 shadow-sm"
-                    style={{
-                      shadowColor: BRAND_COLOR,
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 8,
-                      elevation: 3,
-                    }}
+                    className="w-full h-[45px] rounded-[30px] bg-finance items-center justify-center mt-3"
                   >
                     <View className="flex-row items-center justify-center">
                       {isLoading && (
                         <ActivityIndicator
-                          color="white"
+                          color="#052224"
                           size="small"
                           className="mr-2"
                         />
                       )}
-                      <Text className="text-white font-bold text-base">
+                      <Text className="text-finance-fence font-semibold text-[15px]">
                         {isLoading ? "Sending Code..." : "Send Reset Code"}
                       </Text>
                     </View>
@@ -297,21 +289,27 @@ export default function ForgotPasswordScreen() {
                     onPress={() => void handleVerifyOtp()}
                     disabled={isLoading || lockedOut || otp.length !== 6}
                     activeOpacity={0.8}
-                    className={`w-full py-4 rounded-2xl items-center justify-center mt-2 ${
+                    className={`w-full h-[45px] rounded-[30px] items-center justify-center mt-2 ${
                       isLoading || lockedOut || otp.length !== 6
-                        ? "bg-gray-300"
-                        : "bg-brand"
+                        ? "bg-brand-light"
+                        : "bg-finance"
                     }`}
                   >
                     <View className="flex-row items-center justify-center">
                       {isLoading && (
                         <ActivityIndicator
-                          color="white"
+                          color="#052224"
                           size="small"
                           className="mr-2"
                         />
                       )}
-                      <Text className="text-white font-bold text-base">
+                      <Text
+                        className={`font-semibold text-[15px] ${
+                          isLoading || lockedOut || otp.length !== 6
+                            ? "text-gray-400"
+                            : "text-finance-fence"
+                        }`}
+                      >
                         {isLoading ? "Verifying..." : "Verify Code"}
                       </Text>
                     </View>
@@ -333,13 +331,13 @@ export default function ForgotPasswordScreen() {
               {step === "password" && (
                 <View className="space-y-4">
                   <View>
-                    <Text className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5 ml-1">
+                    <Text className="text-[15px] font-medium text-finance-fence mb-2">
                       New Password
                     </Text>
-                    <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5">
+                    <View className="flex-row items-center h-[41px] rounded-[18px] px-4 bg-brand-light">
                       <MaterialIcons name="lock-outline" size={20} color="#6B7280" />
                       <TextInput
-                        className="flex-1 ml-3 text-base text-gray-900 font-medium"
+                        className="flex-1 ml-3 text-[16px] text-finance-fence"
                         placeholder="At least 8 characters"
                         placeholderTextColor="#9CA3AF"
                         value={newPassword}
@@ -364,13 +362,13 @@ export default function ForgotPasswordScreen() {
                   </View>
 
                   <View>
-                    <Text className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5 ml-1">
+                    <Text className="text-[15px] font-medium text-finance-fence mb-2">
                       Confirm New Password
                     </Text>
-                    <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5">
+                    <View className="flex-row items-center h-[41px] rounded-[18px] px-4 bg-brand-light">
                       <MaterialIcons name="lock-outline" size={20} color="#6B7280" />
                       <TextInput
-                        className="flex-1 ml-3 text-base text-gray-900 font-medium"
+                        className="flex-1 ml-3 text-[16px] text-finance-fence"
                         placeholder="Re-type new password"
                         placeholderTextColor="#9CA3AF"
                         value={confirmPassword}
@@ -407,24 +405,17 @@ export default function ForgotPasswordScreen() {
                     onPress={handleResetPassword}
                     disabled={isLoading}
                     activeOpacity={0.8}
-                    className="w-full py-4 rounded-2xl bg-brand items-center justify-center mt-2 shadow-sm"
-                    style={{
-                      shadowColor: BRAND_COLOR,
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 8,
-                      elevation: 3,
-                    }}
+                    className="w-full h-[45px] rounded-[30px] bg-finance items-center justify-center mt-3"
                   >
                     <View className="flex-row items-center justify-center">
                       {isLoading && (
                         <ActivityIndicator
-                          color="white"
+                          color="#052224"
                           size="small"
                           className="mr-2"
                         />
                       )}
-                      <Text className="text-white font-bold text-base">
+                      <Text className="text-finance-fence font-semibold text-[15px]">
                         {isLoading ? "Updating..." : "Reset Password"}
                       </Text>
                     </View>
@@ -448,16 +439,9 @@ export default function ForgotPasswordScreen() {
                   <TouchableOpacity
                     onPress={handleBackToLogin}
                     activeOpacity={0.8}
-                    className="w-full py-4 rounded-2xl bg-brand items-center justify-center shadow-sm"
-                    style={{
-                      shadowColor: BRAND_COLOR,
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 8,
-                      elevation: 3,
-                    }}
+                    className="w-full h-[45px] rounded-[30px] bg-finance items-center justify-center"
                   >
-                    <Text className="text-white font-bold text-base">
+                    <Text className="text-finance-fence font-semibold text-[15px]">
                       Sign In Now
                     </Text>
                   </TouchableOpacity>

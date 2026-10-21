@@ -9,13 +9,13 @@ import { Text, TextInput, View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import {
   useFonts,
-  NunitoSans_300Light,
-  NunitoSans_400Regular,
-  NunitoSans_400Regular_Italic,
-  NunitoSans_600SemiBold,
-  NunitoSans_700Bold,
-  NunitoSans_800ExtraBold,
-} from '@expo-google-fonts/nunito-sans';
+  Poppins_300Light,
+  Poppins_400Regular,
+  Poppins_400Regular_Italic,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+} from '@expo-google-fonts/poppins';
 
 import { AuthProvider } from '@/hooks/useAuth';
 import { SettingsProvider } from '@/hooks/useSettings';
@@ -52,8 +52,8 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 // Apply Nunito Sans as the default font to all Text and TextInput components
-(Text as any).defaultProps = { ...((Text as any).defaultProps ?? {}), style: [{ fontFamily: 'NunitoSans_400Regular' }, (Text as any).defaultProps?.style] };
-(TextInput as any).defaultProps = { ...((TextInput as any).defaultProps ?? {}), style: [{ fontFamily: 'NunitoSans_400Regular' }, (TextInput as any).defaultProps?.style] };
+(Text as any).defaultProps = { ...((Text as any).defaultProps ?? {}), style: [{ fontFamily: 'Poppins_400Regular' }, (Text as any).defaultProps?.style] };
+(TextInput as any).defaultProps = { ...((TextInput as any).defaultProps ?? {}), style: [{ fontFamily: 'Poppins_400Regular' }, (TextInput as any).defaultProps?.style] };
 
 Sentry.init({
   dsn: 'https://e268093b0b645c3bc79a5f4abd022243@o4510142309203968.ingest.de.sentry.io/4510142310383696',
@@ -66,12 +66,12 @@ export const unstable_settings = {
 
 export default Sentry.wrap(function RootLayout() {
   const [fontsLoaded] = useFonts({
-    NunitoSans_300Light,
-    NunitoSans_400Regular,
-    NunitoSans_400Regular_Italic,
-    NunitoSans_600SemiBold,
-    NunitoSans_700Bold,
-    NunitoSans_800ExtraBold,
+    Poppins_300Light,
+    Poppins_400Regular,
+    Poppins_400Regular_Italic,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
   });
 
   useEffect(() => {

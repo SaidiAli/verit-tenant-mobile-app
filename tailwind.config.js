@@ -189,6 +189,11 @@ module.exports = {
           void: '#031314',
           blue: '#3299FF',
         },
+        ocean: {
+          DEFAULT: '#0068FF',
+          light: '#6DB6FE',
+        },
+        'vivid-blue': '#3299FF',
       },
       borderRadius: {
         '2xl': '16px',
@@ -196,8 +201,12 @@ module.exports = {
         '4xl': '32px',
       },
       fontFamily: {
-        sans: ['NunitoSans_400Regular'],
-        heading: ['NunitoSans_700Bold'],
+        sans: ['Poppins_400Regular'],
+        'sans-light': ['Poppins_300Light'],
+        'sans-medium': ['Poppins_500Medium'],
+        'sans-semibold': ['Poppins_600SemiBold'],
+        'sans-bold': ['Poppins_700Bold'],
+        heading: ['Poppins_600SemiBold'],
         body: ['NunitoSans_400Regular'],
         mono: ['NunitoSans_400Regular'],
         'nunito-light': ['NunitoSans_300Light'],

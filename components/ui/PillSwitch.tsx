@@ -12,60 +12,57 @@ interface PillSwitchProps<T extends string = string> {
   selected: T;
   onSelect: (id: T) => void;
   className?: string;
-  size?: 'sm' | 'md';
 }
 
+/**
+ * FinWise segmented control (Figma "Switch2"): 60px tall track with a 22px
+ * radius, colored 50px active pill with 19px radius, 31px/10px inactive
+ * options, 24px gaps, 15px labels in dark teal.
+ */
 export function PillSwitch<T extends string = string>({
   options,
   selected,
   onSelect,
   className = '',
-  size = 'md',
 }: PillSwitchProps<T>) {
-  const isSmall = size === 'sm';
-
   return (
     <View
-      className={`flex-row bg-gray-100/90 rounded-2xl p-1 items-center ${className}`}
+      className={`flex-row items-center justify-center bg-brand-light rounded-[22px] h-[60px] px-[14px] py-[6px] ${className}`}
     >
-      {options.map((option) => {
+      {options.map((option, index) => {
         const isSelected = option.id === selected;
 
         return (
           <TouchableOpacity
             key={option.id}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
             onPress={() => onSelect(option.id)}
-            className={`flex-1 flex-row items-center justify-center rounded-xl transition-all ${
-              isSmall ? 'py-1.5 px-2' : 'py-2 px-3'
-            } ${
-              isSelected
-                ? 'bg-white shadow-sm'
-                : 'bg-transparent'
-            }`}
+            className={`flex-1 items-center justify-center rounded-[19px] h-[50px] ${
+              index > 0 ? 'ml-[24px]' : ''
+            } ${isSelected ? 'bg-finance' : ''}`}
           >
-            <Text
-              className={`font-medium ${isSmall ? 'text-xs' : 'text-sm'} ${
-                isSelected ? 'text-gray-900 font-semibold' : 'text-gray-500'
-              }`}
-            >
-              {option.label}
-            </Text>
-            {option.count !== undefined && option.count > 0 && (
-              <View
-                className={`ml-1.5 px-1.5 py-0.5 rounded-full ${
-                  isSelected ? 'bg-brand/10' : 'bg-gray-200'
+            <View className="flex-row items-center">
+              <Text
+                className={`text-[15px] ${
+                  isSelected
+                    ? 'text-finance-fence font-medium'
+                    : 'text-finance-fence/70 font-normal'
                 }`}
               >
-                <Text
-                  className={`text-[10px] font-bold ${
-                    isSelected ? 'text-brand' : 'text-gray-600'
+                {option.label}
+              </Text>
+              {option.count !== undefined && option.count > 0 && (
+                <View
+                  className={`ml-1.5 px-1.5 py-0.5 rounded-full ${
+                    isSelected ? 'bg-finance-fence/15' : 'bg-finance-fence/10'
                   }`}
                 >
-                  {option.count}
-                </Text>
-              </View>
-            )}
+                  <Text className="text-[10px] font-semibold text-finance-fence">
+                    {option.count}
+                  </Text>
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
         );
       })}
