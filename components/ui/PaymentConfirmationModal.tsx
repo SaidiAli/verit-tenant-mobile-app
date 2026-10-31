@@ -6,9 +6,13 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  ScrollView,
   TextInput,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
+import { BRAND_COLOR } from "../../constants/theme";
 import { LoadingSpinner } from "./LoadingSpinner";
 import {
   formatMoney,
@@ -46,6 +50,7 @@ export function PaymentConfirmationModal({
   const [currentPhoneNumber, setCurrentPhoneNumber] = useState(phoneNumber);
   const [isEditing, setIsEditing] = useState(false);
   const [derivedProvider, setDerivedProvider] = useState(initialProviderName);
+  const insets = useSafeAreaInsets();
 
   const [previous, setPrevious] = useState({ visible, phoneNumber, initialProviderName });
   if (visible !== previous.visible || phoneNumber !== previous.phoneNumber || initialProviderName !== previous.initialProviderName) {
@@ -75,29 +80,47 @@ export function PaymentConfirmationModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      transparent
+      statusBarTranslucent
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        className="flex-1 justify-end"
+        style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
       >
-        <View className="flex-1 bg-brand">
+        {/* Backdrop — tap to dismiss */}
+        <Pressable className="flex-1" onPress={() => { if (!isLoading) onClose(); }} />
+
+        {/* Bottom sheet */}
+        <View
+          className="bg-white rounded-t-[40px] px-9 pt-3"
+          style={{ paddingBottom: Math.max(insets.bottom, 20), maxHeight: "90%" }}
+        >
+          {/* Drag handle */}
+          <View className="w-12 h-1.5 rounded-full bg-gray-200 self-center mt-3" />
+
           {/* Header */}
-          <View className="px-9 pt-12 pb-6">
-            <View className="flex-row items-center justify-between">
-              <TouchableOpacity onPress={onClose} disabled={isLoading} className="w-[30px] h-[30px] rounded-full bg-white/10 items-center justify-center">
-                <MaterialIcons name="arrow-back" size={18} color="#FFFFFF" />
-              </TouchableOpacity>
-              <Text className="text-[20px] leading-[22px] font-semibold text-white text-center flex-1 mx-3">
-                {paymentType === 'security_deposit' ? 'Confirm Security Deposit' : 'Confirm Rent Payment'}
-              </Text>
-              <View className="w-[30px]" />
-            </View>
+          <View className="flex-row items-center justify-between mt-4 mb-5">
+            <TouchableOpacity
+              onPress={onClose}
+              disabled={isLoading}
+              className="w-[30px] h-[30px] rounded-full bg-brand-light items-center justify-center"
+            >
+              <MaterialIcons name="arrow-back" size={18} color={BRAND_COLOR} />
+            </TouchableOpacity>
+            <Text className="text-[20px] leading-[22px] font-semibold text-finance-fence text-center flex-1 mx-3">
+              {paymentType === 'security_deposit' ? 'Confirm Security Deposit' : 'Confirm Rent Payment'}
+            </Text>
+            <View className="w-[30px]" />
           </View>
 
-          <View className="flex-1">
-            <View className="bg-white rounded-t-[40px] px-9 pt-8 pb-16">
+          <ScrollView
+            className="flex-1"
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View className="pb-2">
             {/* Provider and Amount Info */}
             <View className="mb-8">
               <View className="items-center gap-4">
@@ -196,33 +219,29 @@ export function PaymentConfirmationModal({
                 </View>
               )}
             </View>
-            </View>
-          </View>
 
-          {/* Footer */}
-          <View className="absolute bottom-0 left-0 right-0 bg-white px-9 pb-6 pt-4 border-t border-gray-100">
-            <View className="gap-3">
-              <TouchableOpacity
-                onPress={handleConfirm}
-                disabled={isLoading || derivedProvider === "Unknown Provider"}
-                className={`h-[45px] rounded-[30px] items-center justify-center ${
+            {/* Pay Now */}
+            <TouchableOpacity
+              onPress={handleConfirm}
+              disabled={isLoading || derivedProvider === "Unknown Provider"}
+              className={`h-[45px] rounded-[30px] items-center justify-center mt-8 ${
+                isLoading || derivedProvider === "Unknown Provider"
+                  ? "bg-brand-light"
+                  : "bg-finance"
+              }`}
+            >
+              <Text
+                className={`font-semibold text-[15px] ${
                   isLoading || derivedProvider === "Unknown Provider"
-                    ? "bg-brand-light"
-                    : "bg-finance"
+                    ? "text-gray-400"
+                    : "text-finance-fence"
                 }`}
               >
-                <Text
-                  className={`font-semibold text-[15px] ${
-                    isLoading || derivedProvider === "Unknown Provider"
-                      ? "text-gray-400"
-                      : "text-finance-fence"
-                  }`}
-                >
-                  {isLoading ? "Processing..." : "Pay Now"}
-                </Text>
-              </TouchableOpacity>
+                {isLoading ? "Processing..." : "Pay Now"}
+              </Text>
+            </TouchableOpacity>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
     </Modal>

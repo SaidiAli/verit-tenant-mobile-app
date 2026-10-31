@@ -8,10 +8,13 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView,
+  Pressable,
   Share,
   Alert,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
+import { BRAND_COLOR } from "../../constants/theme";
 import * as Sharing from "expo-sharing";
 import { useQuery } from "@tanstack/react-query";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -34,6 +37,7 @@ export function PaymentReceiptModal({
   paymentId,
 }: PaymentReceiptModalProps) {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [isDownloading, setIsDownloading] = useState(false);
   const generation = useRef(session.current()).current;
   const mounted = useRef(true);
@@ -113,31 +117,47 @@ Thank you for your payment!
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      transparent
+      statusBarTranslucent
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-brand">
-        {/* Header */}
-        <View className="px-9 pt-12 pb-6">
-          <View className="flex-row items-center justify-between">
-            <TouchableOpacity onPress={onClose} className="w-[30px] h-[30px] rounded-full bg-white/10 items-center justify-center">
-              <MaterialIcons name="close" size={18} color="#FFFFFF" />
+      <View className="flex-1 justify-end" style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}>
+        {/* Backdrop — tap to dismiss */}
+        <Pressable className="flex-1" onPress={onClose} />
+
+        {/* Bottom sheet */}
+        <View
+          className="bg-white rounded-t-[40px] px-9 pt-3"
+          style={{ paddingBottom: Math.max(insets.bottom, 20), maxHeight: "92%" }}
+        >
+          {/* Drag handle */}
+          <View className="w-12 h-1.5 rounded-full bg-gray-200 self-center mt-3" />
+
+          {/* Header */}
+          <View className="flex-row items-center justify-between mt-4 mb-5">
+            <TouchableOpacity
+              onPress={onClose}
+              className="w-[30px] h-[30px] rounded-full bg-brand-light items-center justify-center"
+            >
+              <MaterialIcons name="close" size={18} color={BRAND_COLOR} />
             </TouchableOpacity>
-            <Text className="text-[20px] leading-[22px] font-semibold text-white">
+            <Text className="text-[20px] leading-[22px] font-semibold text-finance-fence">
               Payment Receipt
             </Text>
-            {receipt && (
-              <TouchableOpacity onPress={handleShare} className="w-[30px] h-[30px] rounded-full bg-white/10 items-center justify-center">
-                <MaterialIcons name="share" size={16} color="#FFFFFF" />
+            {receipt ? (
+              <TouchableOpacity
+                onPress={handleShare}
+                className="w-[30px] h-[30px] rounded-full bg-brand-light items-center justify-center"
+              >
+                <MaterialIcons name="share" size={16} color={BRAND_COLOR} />
               </TouchableOpacity>
+            ) : (
+              <View className="w-[30px]" />
             )}
-            {!receipt && <View className="w-[30px]" />}
           </View>
-        </View>
 
-        {/* Content */}
-        <ScrollView className="flex-1">
-          <View className="bg-white rounded-t-[40px] px-9 pt-8 pb-16">
+          {/* Content */}
+          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           {isLoading && <LoadingSpinner message="Loading receipt..." />}
 
           {!!error && (
@@ -333,33 +353,33 @@ Thank you for your payment!
               </View>
             </View>
           )}
-          </View>
-        </ScrollView>
 
-        {/* Actions */}
-        {receipt && (
-          <View className="bg-white px-4 pb-6 pt-4 border-t border-gray-200">
-            <View className="flex-row gap-2">
+          {/* Actions */}
+          {receipt && (
+            <View className="flex-row gap-3 pt-4">
               <TouchableOpacity
                 onPress={handleDownloadPdf}
                 disabled={isDownloading}
-                className="flex-1 bg-brand py-3 rounded-md items-center flex-row justify-center"
+                className={`flex-1 h-[45px] rounded-[30px] items-center flex-row justify-center gap-2 ${
+                  isDownloading ? "bg-brand-light" : "bg-finance"
+                }`}
               >
-                <MaterialIcons name="file-download" size={20} color="white" />
-                <Text className="text-white font-semibold ml-1">
+                <MaterialIcons name="file-download" size={18} color={isDownloading ? "#9CA3AF" : "#052224"} />
+                <Text className={`font-semibold text-[15px] ${isDownloading ? "text-gray-400" : "text-finance-fence"}`}>
                   {isDownloading ? "Downloading..." : "Download PDF"}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={onClose}
-                className="px-6 py-3 border border-gray-300 rounded-md items-center"
+                className="h-[45px] px-6 rounded-[30px] bg-brand-light items-center justify-center"
               >
-                <Text className="text-gray-700 font-semibold">Close</Text>
+                <Text className="text-finance-fence font-medium text-[15px]">Close</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        )}
+          )}
+        </ScrollView>
+        </View>
       </View>
     </Modal>
   );

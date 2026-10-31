@@ -12,8 +12,10 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
@@ -46,6 +48,7 @@ export function CreateMaintenanceRequestModal({
   const { user } = useAuth();
   const generation = useRef(session.current()).current;
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
 
   const [form, setForm] = useState({
     title: '',
@@ -138,145 +141,159 @@ export function CreateMaintenanceRequestModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      transparent
+      statusBarTranslucent
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        className="flex-1 justify-end"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
       >
-        <View className="flex-1 bg-brand">
+        {/* Backdrop — tap to dismiss */}
+        <Pressable className="flex-1" onPress={() => { if (!isPending) onClose(); }} />
+
+        {/* Bottom sheet */}
+        <View
+          className="bg-white rounded-t-[40px] px-9 pt-3"
+          style={{ paddingBottom: Math.max(insets.bottom, 20), maxHeight: '90%' }}
+        >
+          {/* Drag handle */}
+          <View className="w-12 h-1.5 rounded-full bg-gray-200 self-center mt-3" />
+
           {/* Header */}
-          <View className="px-9 pt-12 pb-6">
-            <View className="flex-row items-center justify-between">
-              <TouchableOpacity onPress={onClose} disabled={isPending} className="w-[30px] h-[30px] rounded-full bg-white/10 items-center justify-center">
-                <MaterialIcons name="close" size={18} color="#FFFFFF" />
-              </TouchableOpacity>
-              <Text className="text-[20px] leading-[22px] font-semibold text-white">Report an Issue</Text>
-              <View className="w-[30px]" />
-            </View>
+          <View className="flex-row items-center justify-between mt-4 mb-5">
+            <Text className="text-[20px] leading-[22px] font-semibold text-finance-fence">
+              Report an Issue
+            </Text>
+            <TouchableOpacity
+              onPress={onClose}
+              disabled={isPending}
+              className="w-[30px] h-[30px] rounded-full bg-brand-light items-center justify-center"
+            >
+              <MaterialIcons name="close" size={18} color={BRAND_COLOR} />
+            </TouchableOpacity>
           </View>
 
           <ScrollView
-            className="flex-1"
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <View className="bg-white rounded-t-[40px] px-9 pt-8 pb-16 gap-8">
-              <View className="gap-6">
-                {/* Title */}
-                <View>
-                  <Text className="text-sm font-medium text-gray-700 mb-1">Title</Text>
-                  <TextInput
-                    value={form.title}
-                    onChangeText={(text) => {
-                      setForm((prev) => ({ ...prev, title: text }));
-                      if (errors.title) setErrors((prev) => ({ ...prev, title: '' }));
-                    }}
-                    className={`h-[41px] rounded-[18px] px-4 bg-brand-light text-[16px] text-finance-fence ${
-                      errors.title ? 'bg-red-50' : ''
-                    }`}
-                    placeholder="e.g. Leaking kitchen tap"
-                    maxLength={255}
-                  />
-                  {errors.title && <Text className="text-red-500 text-sm mt-1">{errors.title}</Text>}
-                </View>
+            <View className="gap-6 pb-2">
+              {/* Title */}
+              <View>
+                <Text className="text-sm font-medium text-gray-700 mb-1">Title</Text>
+                <TextInput
+                  value={form.title}
+                  onChangeText={(text) => {
+                    setForm((prev) => ({ ...prev, title: text }));
+                    if (errors.title) setErrors((prev) => ({ ...prev, title: '' }));
+                  }}
+                  className={`h-[41px] rounded-[18px] px-4 bg-brand-light text-[16px] text-finance-fence ${
+                    errors.title ? 'bg-red-50' : ''
+                  }`}
+                  placeholder="e.g. Leaking kitchen tap"
+                  placeholderTextColor="#9CA3AF"
+                  maxLength={255}
+                />
+                {errors.title && <Text className="text-red-500 text-sm mt-1">{errors.title}</Text>}
+              </View>
 
-                {/* Description (optional) */}
-                <View>
-                  <Text className="text-sm font-medium text-gray-700 mb-1">
-                    Description <Text className="text-gray-400 font-normal">(optional)</Text>
-                  </Text>
-                  <TextInput
-                    value={form.description}
-                    onChangeText={(text) => setForm((prev) => ({ ...prev, description: text }))}
-                    className="rounded-[18px] px-4 py-3 bg-brand-light text-[16px] text-finance-fence"
-                    placeholder="Describe the problem in detail"
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                    maxLength={5000}
-                  />
-                </View>
+              {/* Description (optional) */}
+              <View>
+                <Text className="text-sm font-medium text-gray-700 mb-1">
+                  Description <Text className="text-gray-400 font-normal">(optional)</Text>
+                </Text>
+                <TextInput
+                  value={form.description}
+                  onChangeText={(text) => setForm((prev) => ({ ...prev, description: text }))}
+                  className="rounded-[18px] px-4 py-3 bg-brand-light text-[16px] text-finance-fence"
+                  placeholder="Describe the problem in detail"
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  maxLength={5000}
+                />
               </View>
 
               {/* Priority */}
               <View>
-              <Text className="text-[15px] font-medium text-finance-fence mb-3">Priority</Text>
-              <View className="flex-row flex-wrap gap-2">
-                {PRIORITIES.map((p) => {
-                  const selected = form.priority === p.value;
-                  return (
-                    <TouchableOpacity
-                      key={p.value}
-                      onPress={() => setForm((prev) => ({ ...prev, priority: p.value }))}
-                      className={`h-[38px] px-5 rounded-full items-center justify-center ${
-                        selected ? 'bg-finance' : 'bg-brand-light'
-                      }`}
-                    >
-                      <Text className={selected ? 'text-finance-fence font-medium text-[13px]' : 'text-finance-fence text-[13px]'}>
-                        {p.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+                <Text className="text-[15px] font-medium text-finance-fence mb-3">Priority</Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {PRIORITIES.map((p) => {
+                    const selected = form.priority === p.value;
+                    return (
+                      <TouchableOpacity
+                        key={p.value}
+                        onPress={() => setForm((prev) => ({ ...prev, priority: p.value }))}
+                        className={`h-[38px] px-5 rounded-full items-center justify-center ${
+                          selected ? 'bg-finance' : 'bg-brand-light'
+                        }`}
+                      >
+                        <Text className={selected ? 'text-finance-fence font-medium text-[13px]' : 'text-finance-fence text-[13px]'}>
+                          {p.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
 
               {/* Photos */}
               <View>
-              <View className="flex-row justify-between items-center mb-3">
-                <Text className="text-[15px] font-medium text-finance-fence">
-                  Photos {photos.length > 0 ? `(${photos.length}/${MAX_PHOTOS})` : '(optional)'}
-                </Text>
-                <TouchableOpacity
-                  onPress={pickPhotos}
-                  className="flex-row items-center gap-1.5 px-4 h-[34px] rounded-full bg-brand-light"
-                >
-                  <MaterialIcons name="add-a-photo" size={16} color={BRAND_COLOR} />
-                  <Text className="text-brand font-semibold text-[12px]">Add</Text>
-                </TouchableOpacity>
+                <View className="flex-row justify-between items-center mb-3">
+                  <Text className="text-[15px] font-medium text-finance-fence">
+                    Photos {photos.length > 0 ? `(${photos.length}/${MAX_PHOTOS})` : '(optional)'}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={pickPhotos}
+                    className="flex-row items-center gap-1.5 px-4 h-[34px] rounded-full bg-brand-light"
+                  >
+                    <MaterialIcons name="add-a-photo" size={16} color={BRAND_COLOR} />
+                    <Text className="text-brand font-semibold text-[12px]">Add</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {photos.length === 0 ? (
+                  <Text className="text-gray-400 text-sm">
+                    Add up to {MAX_PHOTOS} photos to help your landlord understand the issue.
+                  </Text>
+                ) : (
+                  <View className="flex-row flex-wrap gap-2">
+                    {photos.map((photo) => (
+                      <View key={photo.uri} className="relative">
+                        <Image
+                          source={{ uri: photo.uri }}
+                          className="w-20 h-20 rounded-[18px]"
+                          resizeMode="cover"
+                        />
+                        <TouchableOpacity
+                          onPress={() => removePhoto(photo.uri)}
+                          className="absolute -top-2 -right-2 bg-red-500 rounded-full w-6 h-6 items-center justify-center"
+                        >
+                          <MaterialIcons name="close" size={16} color="white" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
 
-              {photos.length === 0 ? (
-                <Text className="text-gray-400 text-sm">
-                  Add up to {MAX_PHOTOS} photos to help your landlord understand the issue.
+              {/* Submit */}
+              <TouchableOpacity
+                onPress={handleSubmit}
+                disabled={isPending}
+                className={`h-[45px] rounded-[30px] items-center justify-center mt-2 ${
+                  isPending ? 'bg-brand-light' : 'bg-finance'
+                }`}
+              >
+                <Text className={`font-semibold text-[15px] ${isPending ? 'text-gray-400' : 'text-finance-fence'}`}>
+                  {isPending ? 'Submitting...' : 'Submit Request'}
                 </Text>
-              ) : (
-                <View className="flex-row flex-wrap gap-2">
-                  {photos.map((photo) => (
-                    <View key={photo.uri} className="relative">
-                      <Image
-                        source={{ uri: photo.uri }}
-                        className="w-20 h-20 rounded-md"
-                        resizeMode="cover"
-                      />
-                      <TouchableOpacity
-                        onPress={() => removePhoto(photo.uri)}
-                        className="absolute -top-2 -right-2 bg-red-500 rounded-full w-6 h-6 items-center justify-center"
-                      >
-                        <MaterialIcons name="close" size={16} color="white" />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              )}
-              </View>
+              </TouchableOpacity>
             </View>
           </ScrollView>
-
-          {/* Footer */}
-          <View className="absolute bottom-0 left-0 right-0 bg-white px-9 pb-6 pt-4 border-t border-gray-100">
-            <TouchableOpacity
-              onPress={handleSubmit}
-              disabled={isPending}
-              className={`h-[45px] rounded-[30px] items-center justify-center ${isPending ? 'bg-brand-light' : 'bg-finance'}`}
-            >
-              <Text className={`font-semibold text-[15px] ${isPending ? 'text-gray-400' : 'text-finance-fence'}`}>
-                {isPending ? 'Submitting...' : 'Submit Request'}
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>

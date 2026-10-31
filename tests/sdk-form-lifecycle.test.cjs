@@ -10,9 +10,10 @@ async function fixture(file, initialProps = {}, initialSettings = {}) {
   let user = { id: 'tenant-a', phone: '0771234567' };
   const saved = [];
   const host = name => function NativeHost(props) { return React.createElement(name, props, props.children); };
-  const native = Object.fromEntries(['View', 'Text', 'Modal', 'TouchableOpacity', 'TextInput', 'KeyboardAvoidingView', 'ScrollView', 'Switch', 'Image'].map(name => [name, host(name)]));
+  const native = Object.fromEntries(['View', 'Text', 'Modal', 'TouchableOpacity', 'Pressable', 'TextInput', 'KeyboardAvoidingView', 'ScrollView', 'Switch', 'Image'].map(name => [name, host(name)]));
   const load = loader({
     'react-native': { ...native, Platform: { OS: 'ios' }, Alert: { alert() {} } },
+    'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) },
     '@expo/vector-icons': { MaterialIcons: host('Icon') },
     'expo-router': { useRouter: () => ({ back() {} }) },
     'expo-image-picker': {},
@@ -21,6 +22,7 @@ async function fixture(file, initialProps = {}, initialSettings = {}) {
     'hooks/useServerSettings.tsx': { useServerSettings: () => ({ settings, isLoading: false,
       updateNotifications: { mutate: value => saved.push(value) }, updatePaymentPrefs: { mutate: value => saved.push(value) }, updatePreferences: { mutate: value => saved.push(value) } }) },
     'lib/api.ts': {},
+    'constants/theme.ts': { BRAND_COLOR: '#000000' },
     'components/ui/Card.tsx': { Card: host('Card') },
     'components/ui/FinWiseScreen.tsx': { FinWiseScreen: host('FinWiseScreen') },
     'components/ui/SettingsRow.tsx': { SettingsRow: host('SettingsRow') },

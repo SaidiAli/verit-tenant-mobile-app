@@ -7,9 +7,12 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
+import { BRAND_COLOR } from "../../constants/theme";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { PaymentBalance } from "../../types";
 import {
@@ -37,6 +40,7 @@ export function PaymentModal({
 }: PaymentAmountModalProps) {
   const [amount, setAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
 
   const [previousVisible, setPreviousVisible] = useState(visible);
   if (visible !== previousVisible) {
@@ -89,29 +93,45 @@ export function PaymentModal({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      transparent
+      statusBarTranslucent
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        className="flex-1 justify-end"
+        style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
       >
-        <View className="flex-1 bg-brand">
+        {/* Backdrop — tap to dismiss */}
+        <Pressable className="flex-1" onPress={onClose} />
+
+        {/* Bottom sheet */}
+        <View
+          className="bg-white rounded-t-[40px] px-9 pt-3"
+          style={{ paddingBottom: Math.max(insets.bottom, 20), maxHeight: "90%" }}
+        >
+          {/* Drag handle */}
+          <View className="w-12 h-1.5 rounded-full bg-gray-200 self-center mt-3" />
+
           {/* Header */}
-          <View className="px-9 pt-12 pb-6">
-            <View className="flex-row items-center justify-between">
-              <TouchableOpacity onPress={onClose} className="w-[30px] h-[30px] rounded-full bg-white/10 items-center justify-center">
-                <MaterialIcons name="close" size={18} color="#FFFFFF" />
-              </TouchableOpacity>
-              <Text className="text-[20px] leading-[22px] font-semibold text-white">
-                Make Payment
-              </Text>
-              <View className="w-[30px]" />
-            </View>
+          <View className="flex-row items-center justify-between mt-4 mb-5">
+            <Text className="text-[20px] leading-[22px] font-semibold text-finance-fence">
+              Make Payment
+            </Text>
+            <TouchableOpacity
+              onPress={onClose}
+              className="w-[30px] h-[30px] rounded-full bg-brand-light items-center justify-center"
+            >
+              <MaterialIcons name="close" size={18} color={BRAND_COLOR} />
+            </TouchableOpacity>
           </View>
 
-          <ScrollView className="flex-1">
-            <View className="bg-white rounded-t-[40px] px-9 pt-8 pb-16">
+          <ScrollView
+            className="flex-1"
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View className="pb-2">
               {/* Balance Information */}
               <View className="mb-8">
                 <Text className="text-[15px] font-medium text-finance-fence mb-2">
@@ -165,31 +185,29 @@ export function PaymentModal({
                   </View>
                 )}
               </View>
+
+              {/* Continue */}
+              <TouchableOpacity
+                onPress={handleConfirm}
+                disabled={!amount || isLoading || !!error}
+                className={`h-[45px] rounded-[30px] items-center justify-center mt-8 ${
+                  !amount || isLoading || !!error ? "bg-brand-light" : "bg-finance"
+                }`}
+              >
+                {isLoading ? (
+                  <LoadingSpinner size="small" message="" className="my-0" />
+                ) : (
+                  <Text
+                    className={`font-semibold text-[15px] ${
+                      !amount || isLoading || !!error ? "text-gray-400" : "text-finance-fence"
+                    }`}
+                  >
+                    Continue to Pay
+                  </Text>
+                )}
+              </TouchableOpacity>
             </View>
           </ScrollView>
-
-          {/* Footer */}
-          <View className="absolute bottom-0 left-0 right-0 bg-white px-9 pb-6 pt-4 border-t border-gray-100">
-            <TouchableOpacity
-              onPress={handleConfirm}
-              disabled={!amount || isLoading || !!error}
-              className={`h-[45px] rounded-[30px] items-center justify-center ${
-                !amount || isLoading || !!error ? "bg-brand-light" : "bg-finance"
-              }`}
-            >
-              {isLoading ? (
-                <LoadingSpinner size="small" message="" className="my-0" />
-              ) : (
-                <Text
-                  className={`font-semibold text-[15px] ${
-                    !amount || isLoading || !!error ? "text-gray-400" : "text-finance-fence"
-                  }`}
-                >
-                  Continue to Pay
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
