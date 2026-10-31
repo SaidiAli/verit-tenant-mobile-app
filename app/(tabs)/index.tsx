@@ -184,7 +184,7 @@ export default function DashboardScreen() {
               </View>
 
               {/* Two-segment progress bar (Figma 7110:4827) */}
-              <View className="mt-8">
+              {/*<View className="mt-8">
                 <FinWiseProgressBar
                   percent={settledPercent}
                   filledLabel={`${Math.round(settledPercent)}%`}
@@ -199,7 +199,7 @@ export default function DashboardScreen() {
                     ? 'Your rent is fully settled. Looks good.'
                     : `${Math.round(settledPercent)}% of this month's rent settled.`}
                 </Text>
-              </View>
+              </View>*/}
 
               {/* Due date + status + Pay Now */}
               <View className="flex-row items-center justify-between mt-7">
