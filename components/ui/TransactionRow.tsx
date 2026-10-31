@@ -28,7 +28,7 @@ interface TransactionRowProps {
  */
 export function TransactionRow({
   icon,
-  iconBgClass = 'bg-vivid-blue',
+  iconBgClass = 'bg-finance',
   title,
   subtitle,
   subtitleClass = 'text-ocean',

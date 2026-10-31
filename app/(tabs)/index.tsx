@@ -260,8 +260,8 @@ export default function DashboardScreen() {
               activeOpacity={0.7}
               className="flex-1 bg-brand-light/60 rounded-[22px] py-4 items-center justify-center"
             >
-              <View className="w-11 h-11 rounded-[22px] bg-finance/15 items-center justify-center mb-2">
-                <MaterialIcons name="receipt-long" size={22} color="#00D09E" />
+              <View className="w-11 h-11 rounded-[22px] items-center justify-center mb-2">
+                <MaterialIcons name="receipt-long" size={28} color="#00D09E" />
               </View>
               <Text className="text-[12px] font-medium text-finance-fence text-center">
                 Pay Rent
@@ -273,8 +273,8 @@ export default function DashboardScreen() {
               activeOpacity={0.7}
               className="flex-1 bg-brand-light/60 rounded-[22px] py-4 items-center justify-center"
             >
-              <View className="w-11 h-11 rounded-[22px] bg-amber-400/20 items-center justify-center mb-2">
-                <MaterialIcons name="build" size={20} color="#D97706" />
+              <View className="w-11 h-11 rounded-[22px] items-center justify-center mb-2">
+                <MaterialIcons name="build" size={28} color="#D97706" />
               </View>
               <Text className="text-[12px] font-medium text-finance-fence text-center">
                 Maintenance
@@ -286,8 +286,8 @@ export default function DashboardScreen() {
               activeOpacity={0.7}
               className="flex-1 bg-brand-light/60 rounded-[22px] py-4 items-center justify-center"
             >
-              <View className="w-11 h-11 rounded-[22px] bg-brand/10 items-center justify-center mb-2">
-                <MaterialIcons name="description" size={20} color={BRAND_COLOR} />
+              <View className="w-11 h-11 rounded-[22px] items-center justify-center mb-2">
+                <MaterialIcons name="description" size={28} color={BRAND_COLOR} />
               </View>
               <Text className="text-[12px] font-medium text-finance-fence text-center">
                 My Lease
@@ -299,8 +299,8 @@ export default function DashboardScreen() {
               activeOpacity={0.7}
               className="flex-1 bg-brand-light/60 rounded-[22px] py-4 items-center justify-center"
             >
-              <View className="w-11 h-11 rounded-[22px] bg-vivid-blue/15 items-center justify-center mb-2">
-                <MaterialIcons name="apartment" size={20} color="#3299FF" />
+              <View className="w-11 h-11 rounded-[22px] items-center justify-center mb-2">
+                <MaterialIcons name="apartment" size={28} color="#3299FF" />
               </View>
               <Text className="text-[12px] font-medium text-finance-fence text-center">
                 Property
@@ -353,7 +353,7 @@ export default function DashboardScreen() {
                         iconBgClass={
                           payment.paymentType === 'security_deposit'
                             ? 'bg-ocean-light'
-                            : 'bg-vivid-blue'
+                            : 'bg-finance'
                         }
                         icon={
                           <MaterialIcons
