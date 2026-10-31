@@ -434,6 +434,12 @@ export const paymentApi = {
         && pending?.status === 'pending' && pending.paymentId && pending.transactionId) {
         return { ...pending, amount: paymentData.amount, currency: 'UGX', leaseId: paymentData.leaseId, confirmationPending: true };
       }
+      if (payload?.code === 'PAYMENT_ALREADY_PENDING') {
+        throw Object.assign(
+          new Error(payload?.message || 'A payment is already in progress. Check your payment history for its status before starting another.'),
+          { code: 'PAYMENT_ALREADY_PENDING', alreadyPending: true },
+        );
+      }
       if (!error.response || error.response.status >= 500) {
         throw Object.assign(new Error('Payment confirmation pending. Check history before starting another payment.'), { confirmationPending: true });
       }
