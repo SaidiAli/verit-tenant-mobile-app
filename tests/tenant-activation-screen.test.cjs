@@ -11,6 +11,8 @@ async function fixture(accounts, verifyError, activationError) {
   const load = loader({
     'react-native': { View: host('View'), Text: host('Text'), TextInput: host('Input'), TouchableOpacity: host('Button'), ScrollView: host('ScrollView'), KeyboardAvoidingView: host('Keyboard'), ActivityIndicator: host('Spinner'), Platform: { OS: 'ios' } },
     '@expo/vector-icons': { MaterialIcons: host('Icon') },
+    'expo-image': { Image: host('Logo') },
+    '../../assets/logos/logos-09.svg': {},
     'expo-router': { useRouter: () => ({ replace() {} }) },
     'constants/theme.ts': { BRAND_COLOR: '#000000' },
     'hooks/useAuth.tsx': { useAuth: () => ({ activate: async (...args) => { if (activationError) throw activationError; activated.push(args); } }) },

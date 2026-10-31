@@ -1,12 +1,11 @@
 import { session } from '../../lib/session';
-import { ScrollView, View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
-import { Card } from '../../components/ui/Card';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
+import { FinWiseScreen } from '../../components/ui/FinWiseScreen';
 
 export default function EditProfileScreen() {
   const { user, updateUser } = useAuth();
@@ -64,167 +63,163 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaWrapper>
-      <View className="flex-1 bg-gray-50">
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="px-4 pt-6 pb-4">
-            {/* Header */}
-            <View className="flex-row items-center mb-6">
-              <TouchableOpacity
-                onPress={handleCancel}
-                className="flex-row items-center gap-2 p-2 -ml-2 rounded-md active:bg-gray-200"
-              >
-                <MaterialIcons name="arrow-back" size={24} color="#374151" />
-              </TouchableOpacity>
+      <FinWiseScreen
+        title="Edit my Profile"
+        onBack={handleCancel}
+        headerClassName="px-9 pt-6 pb-8 items-center"
+        header={
+          /* Avatar on the colored background (Figma 9.5.1-A) */
+          <View className="w-[117px] h-[117px] rounded-full bg-white/15 border-2 border-white/30 items-center justify-center mt-4">
+            <Text className="text-white font-bold text-[36px] tracking-wider">
+              {formData.firstName?.charAt(0).toUpperCase() ?? ''}{formData.lastName?.charAt(0).toUpperCase() ?? ''}
+            </Text>
+          </View>
+        }
+      >
+        <View className="space-y-9">
+          {/* Account settings (Figma 9.5.1-A: 20px heading, 61px field gaps) */}
+          <Text className="text-[20px] leading-[22px] font-semibold text-finance-fence">
+            Account Settings
+          </Text>
 
-              <Text className="text-xl font-semibold text-gray-800 ml-2">
-                Edit Profile
+          <View className="gap-[30px]">
+            {/* First Name */}
+            <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-2">
+                First Name
               </Text>
+              <TextInput
+                value={formData.firstName}
+                onChangeText={(text) => {
+                  setFormData(prev => ({ ...prev, firstName: text }));
+                  if (errors.firstName) {
+                    setErrors(prev => ({ ...prev, firstName: '' }));
+                  }
+                }}
+                className={`h-[41px] rounded-[18px] px-4 text-[16px] text-finance-fence ${
+                  errors.firstName ? 'bg-red-50' : 'bg-brand-light'
+                }`}
+                placeholder="Enter your first name"
+                placeholderTextColor="#9CA3AF"
+              />
+              {errors.firstName && (
+                <Text className="text-red-500 text-[12px] mt-1.5">
+                  {errors.firstName}
+                </Text>
+              )}
             </View>
 
-            {/* Profile Photo Section */}
-            <View className="mb-4">
-              <View className="items-center space-y-4">
-                <View className="w-24 h-24 bg-brand rounded-full items-center justify-center">
-                  <Text className="text-white font-bold text-2xl">
-                    {formData.firstName?.charAt(0).toUpperCase() ?? ''}{formData.lastName?.charAt(0).toUpperCase() ?? ''}
-                  </Text>
-                </View>
-              </View>
+            {/* Last Name */}
+            <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-2">
+                Last Name
+              </Text>
+              <TextInput
+                value={formData.lastName}
+                onChangeText={(text) => {
+                  setFormData(prev => ({ ...prev, lastName: text }));
+                  if (errors.lastName) {
+                    setErrors(prev => ({ ...prev, lastName: '' }));
+                  }
+                }}
+                className={`h-[41px] rounded-[18px] px-4 text-[16px] text-finance-fence ${
+                  errors.lastName ? 'bg-red-50' : 'bg-brand-light'
+                }`}
+                placeholder="Enter your last name"
+                placeholderTextColor="#9CA3AF"
+              />
+              {errors.lastName && (
+                <Text className="text-red-500 text-[12px] mt-1.5">
+                  {errors.lastName}
+                </Text>
+              )}
             </View>
 
-            {/* Form Fields */}
-            <Card className="mb-4">
-              <View className="space-y-4">
-                <Text className="text-lg font-semibold text-gray-800 mb-2">
-                  Personal Information
+            {/* Email */}
+            <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-2">
+                Email Address
+              </Text>
+              <TextInput
+                value={formData.email}
+                onChangeText={(text) => {
+                  setFormData(prev => ({ ...prev, email: text }));
+                  if (errors.email) {
+                    setErrors(prev => ({ ...prev, email: '' }));
+                  }
+                }}
+                className={`h-[41px] rounded-[18px] px-4 text-[16px] text-finance-fence ${
+                  errors.email ? 'bg-red-50' : 'bg-brand-light'
+                }`}
+                placeholder="Enter your email address"
+                placeholderTextColor="#9CA3AF"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              {errors.email && (
+                <Text className="text-red-500 text-[12px] mt-1.5">
+                  {errors.email}
                 </Text>
+              )}
+            </View>
 
-                {/* First Name */}
-                <View>
-                  <Text className="text-sm font-medium text-gray-700 mb-1">
-                    First Name
-                  </Text>
-                  <TextInput
-                    value={formData.firstName}
-                    onChangeText={(text) => {
-                      setFormData(prev => ({ ...prev, firstName: text }));
-                      if (errors.firstName) {
-                        setErrors(prev => ({ ...prev, firstName: '' }));
-                      }
-                    }}
-                    className={`border rounded-md px-3 py-3 bg-white ${errors.firstName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    placeholder="Enter your first name"
-                  />
-                  {errors.firstName && (
-                    <Text className="text-red-500 text-sm mt-1">
-                      {errors.firstName}
-                    </Text>
-                  )}
-                </View>
-
-                {/* Last Name */}
-                <View>
-                  <Text className="text-sm font-medium text-gray-700 mb-1">
-                    Last Name
-                  </Text>
-                  <TextInput
-                    value={formData.lastName}
-                    onChangeText={(text) => {
-                      setFormData(prev => ({ ...prev, lastName: text }));
-                      if (errors.lastName) {
-                        setErrors(prev => ({ ...prev, lastName: '' }));
-                      }
-                    }}
-                    className={`border rounded-md px-3 py-3 bg-white ${errors.lastName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    placeholder="Enter your last name"
-                  />
-                  {errors.lastName && (
-                    <Text className="text-red-500 text-sm mt-1">
-                      {errors.lastName}
-                    </Text>
-                  )}
-                </View>
-
-                {/* Email */}
-                <View>
-                  <Text className="text-sm font-medium text-gray-700 mb-1">
-                    Email Address
-                  </Text>
-                  <TextInput
-                    value={formData.email}
-                    onChangeText={(text) => {
-                      setFormData(prev => ({ ...prev, email: text }));
-                      if (errors.email) {
-                        setErrors(prev => ({ ...prev, email: '' }));
-                      }
-                    }}
-                    className={`border rounded-md px-3 py-3 bg-white ${errors.email ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    placeholder="Enter your email address"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                  {errors.email && (
-                    <Text className="text-red-500 text-sm mt-1">
-                      {errors.email}
-                    </Text>
-                  )}
-                </View>
-
-                {/* Phone */}
-                <View>
-                  <Text className="text-sm font-medium text-gray-700 mb-1">
-                    Phone Number
-                  </Text>
-                  <TextInput
-                    value={formData.phone}
-                    onChangeText={(text) => {
-                      setFormData(prev => ({ ...prev, phone: text }));
-                      if (errors.phone) {
-                        setErrors(prev => ({ ...prev, phone: '' }));
-                      }
-                    }}
-                    className={`border rounded-md px-3 py-3 bg-white ${errors.phone ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    placeholder="Enter your phone number"
-                    keyboardType="phone-pad"
-                  />
-                  {errors.phone && (
-                    <Text className="text-red-500 text-sm mt-1">
-                      {errors.phone}
-                    </Text>
-                  )}
-                </View>
-              </View>
-            </Card>
-
-            {/* Action Buttons */}
-            <View className="gap-2 mt-6">
-              <TouchableOpacity
-                onPress={handleSave}
-                disabled={isPending}
-                className={`py-4 rounded-md ${isPending ? 'bg-gray-300' : 'bg-brand'
-                  }`}
-              >
-                <Text className="text-white font-semibold text-center text-lg">
-                  {isPending ? 'Saving Changes...' : 'Save Changes'}
+            {/* Phone */}
+            <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-2">
+                Phone Number
+              </Text>
+              <TextInput
+                value={formData.phone}
+                onChangeText={(text) => {
+                  setFormData(prev => ({ ...prev, phone: text }));
+                  if (errors.phone) {
+                    setErrors(prev => ({ ...prev, phone: '' }));
+                  }
+                }}
+                className={`h-[41px] rounded-[18px] px-4 text-[16px] text-finance-fence ${
+                  errors.phone ? 'bg-red-50' : 'bg-brand-light'
+                }`}
+                placeholder="Enter your phone number"
+                placeholderTextColor="#9CA3AF"
+                keyboardType="phone-pad"
+              />
+              {errors.phone && (
+                <Text className="text-red-500 text-[12px] mt-1.5">
+                  {errors.phone}
                 </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleCancel}
-                className="py-4 rounded-md border border-gray-300 bg-white"
-              >
-                <Text className="text-gray-700 font-semibold text-center text-lg">
-                  Cancel
-                </Text>
-              </TouchableOpacity>
+              )}
             </View>
           </View>
-        </ScrollView>
-      </View>
+
+          {/* Action Buttons */}
+          <View className="gap-2.5 pt-2">
+            <TouchableOpacity
+              onPress={handleSave}
+              disabled={isPending}
+              className={`h-[45px] rounded-[30px] items-center justify-center ${
+                isPending ? 'bg-brand-light' : 'bg-finance'
+              }`}
+            >
+              <Text
+                className={`font-semibold text-[15px] ${
+                  isPending ? 'text-gray-400' : 'text-finance-fence'
+                }`}
+              >
+                {isPending ? 'Saving Changes...' : 'Save Changes'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleCancel}
+              className="h-[45px] rounded-[30px] bg-brand-light items-center justify-center"
+            >
+              <Text className="text-finance-fence font-medium text-[15px]">
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </FinWiseScreen>
     </SafeAreaWrapper>
   );
 }

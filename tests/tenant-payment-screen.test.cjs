@@ -24,6 +24,7 @@ async function fixture({ status = 'unpaid', rentCurrency = 'USD', securityCurren
   };
   const load = loader({
     'react-native': { ScrollView: host('ScrollView'), View: host('View'), Text: host('Text'), TouchableOpacity: host('Button'), RefreshControl: host('RefreshControl'), Alert: { alert() {} } },
+    '@expo/vector-icons': { MaterialIcons: host('Icon') },
     'expo-router/react-navigation': { useFocusEffect: callback => React.useEffect(callback, [callback]) },
     'expo-router': { useRouter: () => router },
     'hooks/useAuth.tsx': { useAuth: () => ({ user }) },
@@ -32,6 +33,8 @@ async function fixture({ status = 'unpaid', rentCurrency = 'USD', securityCurren
     'lib/api.ts': api,
     'lib/utils.ts': { formatDateShort: value => value },
     'components/ui/Card.tsx': { Card: host('Card') },
+    'components/ui/FinWiseScreen.tsx': { FinWiseScreen: host('FinWiseScreen') },
+    'components/ui/FinWiseProgressBar.tsx': { FinWiseProgressBar: host('ProgressBar') },
     'components/ui/LoadingSpinner.tsx': { LoadingSpinner: host('Spinner') },
     'components/ui/ErrorView.tsx': { ErrorView: host('ErrorView') },
     'components/ui/SafeAreaWrapper.tsx': { SafeAreaWrapper: host('SafeArea') },

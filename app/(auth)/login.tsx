@@ -89,15 +89,10 @@ export default function LoginScreen() {
           <View className="pt-8 pb-10 px-6 items-center justify-center">
             <View className="w-48 h-16 mb-4 items-center justify-center">
               <Image
-                source={require('../../assets/logos/logos-02.svg')}
-                style={{ width: '100%', height: '100%' }}
+                source={require('../../assets/logos/logos-09.svg')}
+                style={{ width: 100, height: '100%' }}
                 contentFit="contain"
               />
-            </View>
-            <View className="px-3 py-1 rounded-full bg-white/10 mb-2">
-              <Text className="text-white/90 text-xs font-semibold tracking-wider uppercase">
-                Tenant Portal
-              </Text>
             </View>
             <Text className="text-[30px] leading-[22px] font-semibold text-white text-center mt-1">
               Welcome Back
@@ -118,7 +113,7 @@ export default function LoginScreen() {
               elevation: 8,
             }}
           >
-            <View className="w-full max-w-sm mx-auto space-y-6">
+            <View className="w-full max-w-sm mx-auto gap-6">
               {/* Username Field */}
               <View>
                 <Text className="text-[15px] font-medium text-finance-fence mb-2">

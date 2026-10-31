@@ -17,7 +17,6 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import { Card } from './Card';
 import { useAuth } from '../../hooks/useAuth';
 import { tenantApi } from '../../lib/api';
 import type {
@@ -146,25 +145,25 @@ export function CreateMaintenanceRequestModal({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <View className="flex-1 bg-gray-50">
+        <View className="flex-1 bg-brand">
           {/* Header */}
-          <View className="bg-white px-4 pt-12 pb-4 border-b border-gray-200">
+          <View className="px-9 pt-12 pb-6">
             <View className="flex-row items-center justify-between">
-              <TouchableOpacity onPress={onClose} disabled={isPending}>
-                <MaterialIcons name="close" size={24} color="#6B7280" />
+              <TouchableOpacity onPress={onClose} disabled={isPending} className="w-[30px] h-[30px] rounded-full bg-white/10 items-center justify-center">
+                <MaterialIcons name="close" size={18} color="#FFFFFF" />
               </TouchableOpacity>
-              <Text className="text-2xl font-semibold text-gray-800">Report an Issue</Text>
-              <View className="w-6" />
+              <Text className="text-[20px] leading-[22px] font-semibold text-white">Report an Issue</Text>
+              <View className="w-[30px]" />
             </View>
           </View>
 
           <ScrollView
-            className="flex-1 px-4 pt-6"
+            className="flex-1"
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <Card className="mb-4">
-              <View className="space-y-4">
+            <View className="bg-white rounded-t-[40px] px-9 pt-8 pb-16 space-y-8">
+              <View className="space-y-6">
                 {/* Title */}
                 <View>
                   <Text className="text-sm font-medium text-gray-700 mb-1">Title</Text>
@@ -174,8 +173,8 @@ export function CreateMaintenanceRequestModal({
                       setForm((prev) => ({ ...prev, title: text }));
                       if (errors.title) setErrors((prev) => ({ ...prev, title: '' }));
                     }}
-                    className={`border rounded-md px-3 py-3 bg-white ${
-                      errors.title ? 'border-red-500' : 'border-gray-300'
+                    className={`h-[41px] rounded-[18px] px-4 bg-brand-light text-[16px] text-finance-fence ${
+                      errors.title ? 'bg-red-50' : ''
                     }`}
                     placeholder="e.g. Leaking kitchen tap"
                     maxLength={255}
@@ -191,7 +190,7 @@ export function CreateMaintenanceRequestModal({
                   <TextInput
                     value={form.description}
                     onChangeText={(text) => setForm((prev) => ({ ...prev, description: text }))}
-                    className="border border-gray-300 rounded-md px-3 py-3 bg-white"
+                    className="rounded-[18px] px-4 py-3 bg-brand-light text-[16px] text-finance-fence"
                     placeholder="Describe the problem in detail"
                     multiline
                     numberOfLines={4}
@@ -200,11 +199,10 @@ export function CreateMaintenanceRequestModal({
                   />
                 </View>
               </View>
-            </Card>
 
-            {/* Priority */}
-            <Card className="mb-4">
-              <Text className="text-sm font-medium text-gray-700 mb-3">Priority</Text>
+              {/* Priority */}
+              <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-3">Priority</Text>
               <View className="flex-row flex-wrap gap-2">
                 {PRIORITIES.map((p) => {
                   const selected = form.priority === p.value;
@@ -212,31 +210,31 @@ export function CreateMaintenanceRequestModal({
                     <TouchableOpacity
                       key={p.value}
                       onPress={() => setForm((prev) => ({ ...prev, priority: p.value }))}
-                      className={`px-4 py-2 rounded-full border ${
-                        selected ? 'bg-brand border-brand' : 'bg-white border-gray-300'
+                      className={`h-[38px] px-5 rounded-full items-center justify-center ${
+                        selected ? 'bg-finance' : 'bg-brand-light'
                       }`}
                     >
-                      <Text className={selected ? 'text-white font-medium' : 'text-gray-700'}>
+                      <Text className={selected ? 'text-finance-fence font-medium text-[13px]' : 'text-finance-fence text-[13px]'}>
                         {p.label}
                       </Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
-            </Card>
+              </View>
 
-            {/* Photos */}
-            <Card className="mb-4">
+              {/* Photos */}
+              <View>
               <View className="flex-row justify-between items-center mb-3">
-                <Text className="text-sm font-medium text-gray-700">
+                <Text className="text-[15px] font-medium text-finance-fence">
                   Photos {photos.length > 0 ? `(${photos.length}/${MAX_PHOTOS})` : '(optional)'}
                 </Text>
                 <TouchableOpacity
                   onPress={pickPhotos}
-                  className="flex-row items-center gap-1 px-3 py-2 rounded-md bg-gray-100"
+                  className="flex-row items-center gap-1.5 px-4 h-[34px] rounded-full bg-brand-light"
                 >
-                  <MaterialIcons name="add-a-photo" size={18} color={BRAND_COLOR} />
-                  <Text className="text-brand font-medium text-sm">Add</Text>
+                  <MaterialIcons name="add-a-photo" size={16} color={BRAND_COLOR} />
+                  <Text className="text-brand font-semibold text-[12px]">Add</Text>
                 </TouchableOpacity>
               </View>
 
@@ -263,17 +261,18 @@ export function CreateMaintenanceRequestModal({
                   ))}
                 </View>
               )}
-            </Card>
+              </View>
+            </View>
           </ScrollView>
 
           {/* Footer */}
-          <View className="bg-white px-4 pb-6 pt-4 border-t border-gray-200">
+          <View className="absolute bottom-0 left-0 right-0 bg-white px-9 pb-6 pt-4 border-t border-gray-100">
             <TouchableOpacity
               onPress={handleSubmit}
               disabled={isPending}
-              className={`py-3 rounded-md items-center ${isPending ? 'bg-gray-300' : 'bg-brand'}`}
+              className={`h-[45px] rounded-[30px] items-center justify-center ${isPending ? 'bg-brand-light' : 'bg-finance'}`}
             >
-              <Text className="text-white font-semibold text-lg">
+              <Text className={`font-semibold text-[15px] ${isPending ? 'text-gray-400' : 'text-finance-fence'}`}>
                 {isPending ? 'Submitting...' : 'Submit Request'}
               </Text>
             </TouchableOpacity>

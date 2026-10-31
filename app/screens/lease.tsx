@@ -4,10 +4,10 @@ import { useAuth } from '../../hooks/useAuth';
 import { tenantKeys } from '../../lib/queryKeys';
 import { BRAND_COLOR } from '@/constants/theme';
 import { useState, useRef, useEffect } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, Linking, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
-import { Card } from '../../components/ui/Card';
+import { useRouter } from 'expo-router';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useQuery } from '@tanstack/react-query';
@@ -16,6 +16,7 @@ import { secureStorage } from '../../lib/storage';
 import { useLease } from '../../hooks/LeaseContext';
 import { LeaseSwitcher } from '../../components/ui/LeaseSwitcher';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
+import { FinWiseScreen } from '../../components/ui/FinWiseScreen';
 import { File, Paths } from 'expo-file-system';
 import { SECURITY_DEPOSIT_LABELS } from '../../lib/paymentCheckout';
 import { formatMoney } from '../../lib/currency';
@@ -23,6 +24,7 @@ import { formatMoney } from '../../lib/currency';
 export default function LeaseScreen() {
   const { user } = useAuth();
   const { selectedLeaseId, isLoadingLeases } = useLease();
+  const router = useRouter();
   const [isDownloading, setIsDownloading] = useState(false);
   const generation = useRef(session.current()).current;
   const mounted = useRef(true);
@@ -94,21 +96,21 @@ export default function LeaseScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-gray-50 justify-center items-center">
-        <LoadingSpinner size="large" />
-        <Text className="text-gray-600 mt-4">Loading lease information...</Text>
+      <View className="flex-1 bg-brand justify-center items-center">
+        <LoadingSpinner size="large" className="bg-transparent" />
+        <Text className="text-white/70 mt-2">Loading lease information...</Text>
       </View>
     );
   }
 
   if (error || !dashboardData || !dashboardData.lease) {
     return (
-      <View className="flex-1 bg-gray-50 justify-center items-center px-4">
+      <View className="flex-1 bg-brand justify-center items-center px-9">
         <MaterialIcons name="error-outline" size={48} color="#EF4444" />
-        <Text className="text-xl font-semibold text-gray-800 mt-4 text-center">
+        <Text className="text-[20px] font-semibold text-white mt-4 text-center">
           Unable to Load Lease Information
         </Text>
-        <Text className="text-gray-600 mt-2 text-center">
+        <Text className="text-[14px] text-white/70 mt-2 text-center">
           {error ? 'Failed to fetch lease data. Please try again later.' : 'No active lease information found. Contact your landlord if this seems incorrect.'}
         </Text>
       </View>
@@ -129,263 +131,238 @@ export default function LeaseScreen() {
 
   return (
     <SafeAreaWrapper>
-      <View className="flex-1 bg-gray-50">
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="px-4 pt-6 pb-4">
-            {/* Header */}
-            <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-2xl font-semibold text-gray-800">
-                Lease Information
-              </Text>
-              <LeaseSwitcher />
-            </View>
-
-            {/* Lease Status Card */}
-            <Card className="mb-4">
-              <View className="space-y-3">
-                <View className="flex-row justify-between items-center">
-                  <Text className="text-lg font-semibold text-gray-800">
-                    Lease Status
-                  </Text>
-                  <StatusBadge status={lease.status === 'active' ? 'success' : lease.status === 'expired' ? 'error' : 'warning'} text={lease.status.charAt(0).toUpperCase() + lease.status.slice(1)} />
-                </View>
-
-                <View className="space-y-2">
-                  <View className="flex-row justify-between">
-                    <Text className="text-gray-600">Lease Period:</Text>
-                    <Text className="font-medium text-gray-800">
-                      {isValidStartDate
-                        ? `${new Date(lease.startDate).toLocaleDateString()} - ${isValidEndDate ? endDate!.toLocaleDateString() : 'Ongoing'}`
-                        : 'Date information unavailable'
-                      }
-                    </Text>
-                  </View>
-                  {isValidEndDate && (
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-600">Days Remaining:</Text>
-                      <Text className={`font-bold ${daysUntilExpiry < 60 ? 'text-yellow-600' : daysUntilExpiry < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        {daysUntilExpiry < 0 ? 'Expired' : `${daysUntilExpiry} days`}
-                      </Text>
-                    </View>
-                  )}
-                  {quickStats && (
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-600">Progress:</Text>
-                      <Text className="font-medium text-gray-800">
-                        {Math.round(quickStats.leaseProgress)}% completed
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {isValidEndDate && daysUntilExpiry < 60 && daysUntilExpiry > 0 && (
-                  <View className="bg-yellow-50 p-3 rounded-md mt-2">
-                    <Text className="text-yellow-700 text-sm font-medium">
-                      Your lease expires soon. Contact your landlord about renewal options.
-                    </Text>
-                  </View>
-                )}
-                {isValidEndDate && daysUntilExpiry < 0 && (
-                  <View className="bg-red-50 p-3 rounded-md mt-2">
-                    <Text className="text-red-700 text-sm font-medium">
-                      Your lease has expired. Please contact your landlord immediately.
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </Card>
-
-            {management && (
-              <Card className="mb-4">
-                <View className="gap-2">
-                  <Text className="text-lg font-semibold text-gray-800">Contracting parties</Text>
-                  <Text className="text-gray-600">Legal owner: <Text className="font-medium text-gray-800">{management.ownerLegalName}</Text></Text>
-                  <Text className="text-gray-600">Property manager: <Text className="font-medium text-gray-800">{management.managingDisplayName}</Text></Text>
-                  {management.payeeDisplayName && (
-                    <Text className="text-gray-600">Mobile-money recipient: <Text className="font-medium text-gray-800">{management.payeeDisplayName}</Text></Text>
-                  )}
-                </View>
-              </Card>
-            )}
-
-            {/* Property Information */}
-            {property && (
-              <Card className="mb-4">
-                <View className="space-y-3">
-                  <Text className="text-lg font-semibold text-gray-800">
-                    Property Information
-                  </Text>
-
-                  <View className="space-y-2">
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-600">Property:</Text>
-                      <Text className="font-medium text-gray-800 text-right flex-1 ml-2">
-                        {property.name}
-                      </Text>
-                    </View>
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-600">Address:</Text>
-                      <Text className="font-medium text-gray-800 text-right flex-1 ml-2">
-                        {property.address}
-                      </Text>
-                    </View>
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-600">City, State:</Text>
-                      <Text className="font-medium text-gray-800">
-                        {property.city}, {property.state} {property.postalCode || ''}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </Card>
-            )}
-
-            {/* Unit Details */}
-            {unit && (
-              <Card className="mb-4">
-                <View className="space-y-3">
-                  <Text className="text-lg font-semibold text-gray-800">
-                    Unit Details
-                  </Text>
-
-                  <View className="space-y-2">
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-600">Unit Number:</Text>
-                      <Text className="font-medium text-gray-800">
-                        {unit.unitNumber}
-                      </Text>
-                    </View>
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-600">Bedrooms:</Text>
-                      <Text className="font-medium text-gray-800">
-                        {unit.bedrooms}
-                      </Text>
-                    </View>
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-600">Bathrooms:</Text>
-                      <Text className="font-medium text-gray-800">
-                        {unit.bathrooms}
-                      </Text>
-                    </View>
-                    {unit.squareFeet && (
-                      <View className="flex-row justify-between">
-                        <Text className="text-gray-600">Square Feet:</Text>
-                        <Text className="font-medium text-gray-800">
-                          {unit.squareFeet} sq ft
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </Card>
-            )}
-
-            {/* Financial Terms */}
-            <Card className="mb-4">
-              <View className="space-y-3">
-                <Text className="text-lg font-semibold text-gray-800">
-                  Financial Terms
-                </Text>
-
-                <View className="space-y-2">
-                  <View className="flex-row justify-between">
-                    <Text className="text-gray-600">Monthly Rent:</Text>
-                    <Text className="text-lg font-bold text-brand">
-                      {formatMoney(lease.monthlyRent, lease.currency)}
-                    </Text>
-                  </View>
-                  <View className="flex-row justify-between">
-                    <Text className="text-gray-600">Advance rent:</Text>
-                    <Text className="font-medium text-gray-800">
-                      {formatMoney(lease.deposit, lease.depositCurrency)}
-                    </Text>
-                  </View>
-                  <View className="gap-2 mt-3">
-                    <Text className="font-semibold">Refundable security deposit</Text>
-                    <Text>{SECURITY_DEPOSIT_LABELS[lease.securityDepositStatus]}</Text>
-                    {lease.securityDeposit !== null && lease.securityDepositCurrency && <Text>{formatMoney(lease.securityDeposit, lease.securityDepositCurrency)}</Text>}
-                    <Text>Held separately from advance rent and rent payments.</Text>
-                  </View>
-                </View>
-              </View>
-            </Card>
-
-            {/* Landlord Contact */}
-            {landlord && (
-              <Card className="mb-4">
-                <View className="space-y-3">
-                  <Text className="text-lg font-semibold text-gray-800">
-                    Landlord Contact
-                  </Text>
-
-                  <View className="space-y-3">
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-600">Name:</Text>
-                      <Text className="font-medium text-gray-800">
-                        {landlord.name}
-                      </Text>
-                    </View>
-
-                    {landlord.email && (
-                      <TouchableOpacity
-                        className="flex-row justify-between items-center py-2 px-2 rounded-md active:bg-gray-100 -ml-2"
-                        onPress={() => handleEmailLandlord(landlord.email!)}
-                      >
-                        <Text className="text-gray-600">Email:</Text>
-                        <View className="flex-row items-center space-x-2">
-                          <Text className="font-medium text-brand">
-                            {landlord.email}
-                          </Text>
-                          <MaterialIcons name="email" size={16} color={BRAND_COLOR} />
-                        </View>
-                      </TouchableOpacity>
-                    )}
-
-                    {landlord.phone && (
-                      <TouchableOpacity
-                        className="flex-row justify-between items-center py-2 px-2 rounded-md active:bg-gray-100 -ml-2"
-                        onPress={() => handleCallLandlord(landlord.phone!)}
-                      >
-                        <Text className="text-gray-600">Phone:</Text>
-                        <View className="flex-row items-center gap-2">
-                          <MaterialIcons name="phone" size={16} color={BRAND_COLOR} />
-                          <Text className="font-medium text-brand">
-                            {landlord.phone}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              </Card>
-            )}
-
-            {/* Documents */}
-            <Card className="mb-6">
-              <View className="">
-                <Text className="text-lg font-semibold text-gray-800">
-                  Lease Documents
-                </Text>
-
-                <Text className="text-gray-600 text-sm">
-                  Download your full payment statement as a PDF.
-                </Text>
-
-                <TouchableOpacity
-                  onPress={handleDownloadStatement}
-                  disabled={isDownloading}
-                  className="bg-brand py-3 mt-4 rounded-md items-center flex-row justify-center"
-                >
-                  <MaterialIcons name="file-download" size={20} color="white" />
-                  <Text className="text-white font-semibold ml-2">
-                    {isDownloading ? 'Downloading...' : 'Download Statement'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </Card>
+      <FinWiseScreen
+        title="Lease Information"
+        onBack={() => router.back()}
+        header={
+          <View className="flex-row items-center justify-end mt-4">
+            <LeaseSwitcher />
           </View>
-        </ScrollView >
-      </View >
+        }
+        headerClassName="px-9 pt-6 pb-8"
+      >
+        <View className="space-y-9">
+          {/* Lease Status */}
+          <View>
+            <View className="flex-row items-center justify-between mb-2">
+              <Text className="text-[15px] font-medium text-finance-fence">
+                Lease Status
+              </Text>
+              <StatusBadge
+                status={lease.status === 'active' ? 'success' : lease.status === 'expired' ? 'error' : 'warning'}
+                text={lease.status.charAt(0).toUpperCase() + lease.status.slice(1)}
+                dot
+              />
+            </View>
+            <DetailRow
+              label="Lease Period"
+              value={
+                isValidStartDate
+                  ? `${new Date(lease.startDate).toLocaleDateString()} - ${isValidEndDate ? endDate!.toLocaleDateString() : 'Ongoing'}`
+                  : 'Date information unavailable'
+              }
+            />
+            {isValidEndDate && (
+              <DetailRow
+                label="Days Remaining"
+                value={
+                  daysUntilExpiry < 0
+                    ? 'Expired'
+                    : `${daysUntilExpiry} days`
+                }
+                valueClass={
+                  daysUntilExpiry < 60
+                    ? 'text-amber-600 font-semibold'
+                    : daysUntilExpiry < 0
+                      ? 'text-rose-600 font-semibold'
+                      : 'text-finance font-semibold'
+                }
+              />
+            )}
+            {quickStats && (
+              <DetailRow
+                label="Progress"
+                value={`${Math.round(quickStats.leaseProgress)}% completed`}
+              />
+            )}
+
+            {isValidEndDate && daysUntilExpiry < 60 && daysUntilExpiry > 0 && (
+              <View className="bg-amber-50 p-4 rounded-[18px] mt-3">
+                <Text className="text-amber-800 text-[13px] font-medium leading-relaxed">
+                  Your lease expires soon. Contact your landlord about renewal options.
+                </Text>
+              </View>
+            )}
+            {isValidEndDate && daysUntilExpiry < 0 && (
+              <View className="bg-rose-50 p-4 rounded-[18px] mt-3">
+                <Text className="text-rose-700 text-[13px] font-medium leading-relaxed">
+                  Your lease has expired. Please contact your landlord immediately.
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Contracting parties */}
+          {management && (
+            <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-1">
+                Contracting Parties
+              </Text>
+              <DetailRow label="Legal owner" value={management.ownerLegalName} />
+              <DetailRow label="Property manager" value={management.managingDisplayName} />
+              {management.payeeDisplayName && (
+                <DetailRow label="Mobile-money recipient" value={management.payeeDisplayName} />
+              )}
+            </View>
+          )}
+
+          {/* Property Information */}
+          {property && (
+            <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-1">
+                Property Information
+              </Text>
+              <DetailRow label="Property" value={property.name} />
+              <DetailRow label="Address" value={property.address} />
+              <DetailRow
+                label="City, State"
+                value={`${property.city}, ${property.state} ${property.postalCode || ''}`}
+              />
+            </View>
+          )}
+
+          {/* Unit Details */}
+          {unit && (
+            <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-1">
+                Unit Details
+              </Text>
+              <DetailRow label="Unit Number" value={unit.unitNumber} />
+              <DetailRow label="Bedrooms" value={String(unit.bedrooms)} />
+              <DetailRow label="Bathrooms" value={String(unit.bathrooms)} />
+              {unit.squareFeet && (
+                <DetailRow label="Square Feet" value={`${unit.squareFeet} sq ft`} />
+              )}
+            </View>
+          )}
+
+          {/* Financial Terms */}
+          <View>
+            <Text className="text-[15px] font-medium text-finance-fence mb-1">
+              Financial Terms
+            </Text>
+            <View className="flex-row justify-between items-center py-2">
+              <Text className="text-[13px] text-gray-500">Monthly Rent</Text>
+              <Text className="text-[24px] font-bold text-brand">
+                {formatMoney(lease.monthlyRent, lease.currency)}
+              </Text>
+            </View>
+            <DetailRow label="Advance rent" value={formatMoney(lease.deposit, lease.depositCurrency)} />
+            <View className="mt-3 bg-brand-light/60 rounded-[18px] p-4">
+              <Text className="text-[13px] font-medium text-finance-fence">
+                Refundable security deposit
+              </Text>
+              <Text className="text-[12px] text-gray-500 mt-0.5">
+                {SECURITY_DEPOSIT_LABELS[lease.securityDepositStatus]}
+              </Text>
+              {lease.securityDeposit !== null && lease.securityDepositCurrency && (
+                <Text className="text-[15px] font-semibold text-finance-fence mt-1">
+                  {formatMoney(lease.securityDeposit, lease.securityDepositCurrency)}
+                </Text>
+              )}
+              <Text className="text-[11px] text-gray-400 mt-1.5">
+                Held separately from advance rent and rent payments.
+              </Text>
+            </View>
+          </View>
+
+          {/* Landlord Contact */}
+          {landlord && (
+            <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-1">
+                Landlord Contact
+              </Text>
+              <DetailRow label="Name" value={landlord.name} />
+
+              {landlord.email && (
+                <TouchableOpacity
+                  className="flex-row justify-between items-center py-2"
+                  onPress={() => handleEmailLandlord(landlord.email!)}
+                >
+                  <Text className="text-[13px] text-gray-500">Email</Text>
+                  <View className="flex-row items-center gap-2">
+                    <Text className="text-[13px] font-medium text-brand">
+                      {landlord.email}
+                    </Text>
+                    <MaterialIcons name="email" size={16} color={BRAND_COLOR} />
+                  </View>
+                </TouchableOpacity>
+              )}
+
+              {landlord.phone && (
+                <TouchableOpacity
+                  className="flex-row justify-between items-center py-2"
+                  onPress={() => handleCallLandlord(landlord.phone!)}
+                >
+                  <Text className="text-[13px] text-gray-500">Phone</Text>
+                  <View className="flex-row items-center gap-2">
+                    <MaterialIcons name="phone" size={16} color={BRAND_COLOR} />
+                    <Text className="text-[13px] font-medium text-brand">
+                      {landlord.phone}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {/* Documents */}
+          <View>
+            <Text className="text-[15px] font-medium text-finance-fence mb-1">
+              Lease Documents
+            </Text>
+            <Text className="text-[13px] text-gray-500 mb-3">
+              Download your full payment statement as a PDF.
+            </Text>
+
+            <TouchableOpacity
+              onPress={handleDownloadStatement}
+              disabled={isDownloading}
+              className={`h-[45px] rounded-[30px] items-center justify-center flex-row gap-2 ${
+                isDownloading ? 'bg-brand-light' : 'bg-finance'
+              }`}
+            >
+              <MaterialIcons name="file-download" size={20} color={isDownloading ? '#9CA3AF' : '#052224'} />
+              <Text
+                className={`font-semibold text-[15px] ${
+                  isDownloading ? 'text-gray-400' : 'text-finance-fence'
+                }`}
+              >
+                {isDownloading ? 'Downloading...' : 'Download Statement'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </FinWiseScreen>
     </SafeAreaWrapper>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  valueClass = 'text-finance-fence',
+}: {
+  label: string;
+  value: string;
+  valueClass?: string;
+}) {
+  return (
+    <View className="flex-row justify-between py-2">
+      <Text className="text-[13px] text-gray-500">{label}</Text>
+      <Text className={`text-[13px] font-medium text-right flex-1 ml-3 ${valueClass}`}>
+        {value}
+      </Text>
+    </View>
   );
 }

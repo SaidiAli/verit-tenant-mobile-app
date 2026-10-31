@@ -1,11 +1,10 @@
 import { useAuth } from '../../hooks/useAuth';
 import { tenantKeys } from '../../lib/queryKeys';
 import React, { useCallback, useMemo, useState } from 'react';
-import { ScrollView, View, Text, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, RefreshControl, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router/react-navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Card } from '../../components/ui/Card';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ErrorView } from '../../components/ui/ErrorView';
 import { useLease } from '../../hooks/LeaseContext';
@@ -13,6 +12,8 @@ import { paymentApi } from '../../lib/api';
 import { Currency, PaymentScheduleItem } from '../../types';
 import { formatMoney } from '../../lib/currency';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
+import { FinWiseScreen } from '../../components/ui/FinWiseScreen';
+import { useRouter } from 'expo-router';
 import { formatDateShort } from '@/lib/utils';
 
 type ScheduleStatus = PaymentScheduleItem['status'];
@@ -47,6 +48,7 @@ const StatusBadge = ({ status }: { status: ScheduleStatus }) => {
 
 export default function PaymentScheduleScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const { selectedLeaseId } = useLease();
   const [showHistorical, setShowHistorical] = useState(false);
 
@@ -178,20 +180,20 @@ export default function PaymentScheduleScreen() {
       <View key={item.id} className="py-4">
         <View className="space-y-2">
           <View className="flex-row justify-between items-center">
-            <Text className="font-medium text-gray-800">
+            <Text className="font-medium text-[15px] text-finance-fence">
               Payment #{item.paymentNumber}
             </Text>
             <StatusBadge status={item.status} />
           </View>
           <View className="flex-row items-center gap-2">
             <MaterialIcons name="event" size={16} color="#6B7280" />
-            <Text className="text-sm text-gray-600">
+            <Text className="text-[13px] text-gray-500">
               Due: {formatDateShort(item.dueDate)}
             </Text>
           </View>
           <View className="flex-row justify-between items-center">
-            <Text className="text-gray-600">Amount</Text>
-            <Text className="text-lg font-bold text-gray-800">
+            <Text className="text-[13px] text-gray-500">Amount</Text>
+            <Text className="text-[20px] font-bold text-finance-fence">
               {formatMoney(
                 item.paidAmount < item.amount ? item.amount - item.paidAmount : item.amount,
                 item.currency,
@@ -200,7 +202,7 @@ export default function PaymentScheduleScreen() {
           </View>
           <View className="flex-row items-center gap-2">
             <MaterialIcons name="date-range" size={16} color="#6B7280" />
-            <Text className="text-sm text-gray-600">
+            <Text className="text-[13px] text-gray-500">
               Period: {formatDateShort(item.periodStart)} - {formatDateShort(item.periodEnd)}
             </Text>
           </View>
@@ -214,7 +216,7 @@ export default function PaymentScheduleScreen() {
                   {Math.round(progressPercent)}%
                 </Text>
               </View>
-              <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <View
                   className="h-full bg-yellow-500 rounded-full"
                   style={{ width: `${progressPercent}%` }}
@@ -224,7 +226,7 @@ export default function PaymentScheduleScreen() {
           )}
         </View>
         {index < arr.length - 1 && (
-          <View className="border-t border-gray-200 mt-4" />
+          <View className="h-px bg-gray-100 mt-4" />
         )}
       </View>
     );
@@ -232,25 +234,22 @@ export default function PaymentScheduleScreen() {
 
   return (
     <SafeAreaWrapper>
-      <View className="flex-1 bg-gray-50">
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={() => { void refetch(); }} />
-          }
-        >
-          <View className="px-4 pt-6 pb-4">
-            {/* Header */}
-            <Text className="text-2xl font-semibold text-gray-800 mb-6">
-              Payment Schedule
-            </Text>
-
-            {/* Arrears vs Current Due Split */}
-            <Card className="mb-4">
-              <View className="space-y-3">
-                <Text className="text-lg font-semibold text-gray-800 mb-2">
-                  Balance Breakdown
-                </Text>
+      <FinWiseScreen
+        title="Payment Schedule"
+        onBack={() => router.back()}
+        header={<View />}
+        headerClassName="px-9 pt-6 pb-8"
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={() => { void refetch(); }} tintColor="#FFFFFF" />
+        }
+      >
+        <View className="space-y-9">
+          {/* Arrears vs Current Due Split */}
+          <View>
+            <View className="space-y-2">
+              <Text className="text-[15px] font-medium text-finance-fence mb-3">
+                Balance Breakdown
+              </Text>
                 {arrearsTotals.map(({ currency, amount }) => (
                   <View key={`arrears-${currency}`} className="flex-row justify-between items-center">
                     <View className="flex-row items-center gap-2">
@@ -292,16 +291,16 @@ export default function PaymentScheduleScreen() {
                   </View>
                 )}
                 {arrearsTotals.length === 0 && currentDueTotals.length === 0 && (
-                  <Text className="text-green-600 text-center py-2">
+                  <Text className="text-finance font-semibold text-center py-2 text-[13px]">
                     All payments are up to date
                   </Text>
                 )}
-              </View>
-            </Card>
+            </View>
+          </View>
 
-            {/* Backdated Lease Warning */}
-            {hasBackdatedLease && (
-              <View className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mb-4">
+          {/* Backdated Lease Warning */}
+          {hasBackdatedLease && (
+            <View className="bg-amber-50 p-4 rounded-[18px] border border-amber-200">
                 <View className="flex-row items-start gap-2">
                   <MaterialIcons name="warning" size={20} color="#F59E0B" />
                   <View className="flex-1">
@@ -314,19 +313,19 @@ export default function PaymentScheduleScreen() {
               </View>
             )}
 
-            {/* Historical Periods - Grouped by Year */}
-            {historicalSchedules.length > 0 && (
-              <Card className="mb-4">
-                <View className="space-y-3">
+          {/* Historical Periods - Grouped by Year */}
+          {historicalSchedules.length > 0 && (
+            <View>
+              <View className="space-y-3">
                   <TouchableOpacity
                     onPress={() => setShowHistorical(!showHistorical)}
                     className="flex-row justify-between items-center"
                   >
                     <View>
-                      <Text className="text-lg font-semibold text-gray-800">
+                      <Text className="text-[15px] font-medium text-finance-fence">
                         Historical Periods
                       </Text>
-                      <Text className="text-sm text-gray-500">
+                      <Text className="text-[12px] text-gray-400">
                         {historicalSchedules.length} period{historicalSchedules.length > 1 ? 's' : ''} before {currentMonthStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
                       </Text>
                     </View>
@@ -340,24 +339,24 @@ export default function PaymentScheduleScreen() {
                     <View className="space-y-0">
                       {historicalByYear.map(([year, yearItems]) => (
                         <View key={year} className="mt-2">
-                          <View className="bg-gray-100 px-3 py-2 rounded-md mb-2">
-                            <Text className="font-semibold text-gray-700">{year}</Text>
+                          <View className="bg-brand-light/60 px-3 py-2 rounded-[10px] mb-2 self-start">
+                            <Text className="font-semibold text-finance-fence text-[13px]">{year}</Text>
                           </View>
                           {yearItems.map((item, idx) => renderScheduleItem(item, idx, yearItems))}
                         </View>
                       ))}
                     </View>
-                  )}
-                </View>
-              </Card>
-            )}
+                )}
+              </View>
+            </View>
+          )}
 
-            {/* Current and Future Schedule List */}
-            <Card className="mb-6">
-              <View className="space-y-3">
-                <Text className="text-lg font-semibold text-gray-800 mb-2">
-                  Current and Upcoming Payments
-                </Text>
+          {/* Current and Future Schedule List */}
+          <View>
+            <View className="space-y-3">
+              <Text className="text-[15px] font-medium text-finance-fence mb-3">
+                Current and Upcoming Payments
+              </Text>
                 {currentAndFutureSchedules.length === 0 ? (
                   <View className="items-center py-8">
                     <MaterialIcons name="event-note" size={48} color="#9CA3AF" />
@@ -369,12 +368,11 @@ export default function PaymentScheduleScreen() {
                       renderScheduleItem(item, index, currentAndFutureSchedules)
                     )}
                   </View>
-                )}
-              </View>
-            </Card>
+              )}
+            </View>
           </View>
-        </ScrollView>
-      </View>
+        </View>
+      </FinWiseScreen>
     </SafeAreaWrapper>
   );
 }

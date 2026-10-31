@@ -1,14 +1,9 @@
-import { BRAND_COLOR } from "@/constants/theme";
-import {
-  ScrollView,
-  View,
-  Text,
-  TouchableOpacity,
-  Linking,
-} from "react-native";
+import { View, Text, TouchableOpacity, Linking } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Card } from "../../components/ui/Card";
+import { useRouter } from "expo-router";
 import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
+import { FinWiseScreen } from "../../components/ui/FinWiseScreen";
+import { SettingsRow } from "../../components/ui/SettingsRow";
 
 // Mock help topics and resources for tenants
 const helpTopics = [
@@ -47,25 +42,30 @@ const quickActions = [
     title: "Emergency Contact",
     description: "Get emergency contact information",
     icon: "emergency",
-    color: "#EF4444",
+    iconBgClass: "bg-rose-100",
+    iconColor: "#EF4444",
   },
   {
     id: "2",
     title: "Office Hours",
     description: "View property management hours",
     icon: "schedule",
-    color: BRAND_COLOR,
+    iconBgClass: "bg-brand-light",
+    iconColor: "#524768",
   },
   {
     id: "3",
     title: "Pay Rent",
     description: "Make your monthly payment",
     icon: "payment",
-    color: "#10B981",
+    iconBgClass: "bg-finance/15",
+    iconColor: "#00D09E",
   },
 ];
 
 export default function HelpScreen() {
+  const router = useRouter();
+
   const handleTopicPress = (topicId: string) => {
     // TODO: Navigate to help topic detail or open relevant screen
   };
@@ -84,147 +84,103 @@ export default function HelpScreen() {
 
   return (
     <SafeAreaWrapper>
-      <View className="flex-1 bg-gray-50">
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="px-4 pt-6 pb-4">
-            {/* Header */}
-            <Text className="text-2xl font-semibold text-gray-800 mb-6">
-              Help & Resources
+      <FinWiseScreen
+        title="Help"
+        onBack={() => router.back()}
+        header={<View />}
+        headerClassName="px-9 pt-6 pb-8"
+      >
+        <View className="space-y-9">
+          {/* Quick Actions */}
+          <View>
+            <Text className="text-[15px] font-medium text-finance-fence mb-3">
+              Quick Actions
+            </Text>
+            <View className="flex-row gap-3">
+              {quickActions.map((action) => (
+                <TouchableOpacity
+                  key={action.id}
+                  className="flex-1 bg-brand-light/60 rounded-[22px] py-4 items-center"
+                  onPress={() => handleQuickAction(action.id)}
+                >
+                  <View className={`w-[57px] h-[53px] rounded-[22px] items-center justify-center mb-2 ${action.iconBgClass}`}>
+                    <MaterialIcons name={action.icon as any} size={24} color={action.iconColor} />
+                  </View>
+                  <Text className="text-[13px] font-medium text-finance-fence text-center">
+                    {action.title}
+                  </Text>
+                  <Text className="text-[11px] text-gray-400 text-center mt-0.5 px-1">
+                    {action.description}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Help Topics */}
+          <View>
+            <Text className="text-[15px] font-medium text-finance-fence mb-2">
+              Help Topics
+            </Text>
+            {helpTopics.map((topic) => (
+              <SettingsRow
+                key={topic.id}
+                icon={topic.icon as any}
+                iconBgClass="bg-brand-light"
+                iconColor="#524768"
+                label={topic.title}
+                description={topic.description}
+                onPress={() => handleTopicPress(topic.id)}
+              />
+            ))}
+          </View>
+
+          {/* Contact Support */}
+          <View className="bg-brand-light/60 rounded-[22px] p-6 items-center">
+            <View className="w-16 h-16 rounded-full bg-ocean/10 items-center justify-center mb-3">
+              <MaterialIcons name="support-agent" size={28} color="#0068FF" />
+            </View>
+
+            <Text className="text-[15px] font-medium text-finance-fence">
+              Need More Help?
+            </Text>
+            <Text className="text-[13px] text-gray-500 text-center mt-1 leading-relaxed">
+              Can&apos;t find what you&apos;re looking for? Contact our
+              support team.
             </Text>
 
-            {/* Quick Actions */}
-            <View className="mb-6">
-              <Text className="text-lg font-semibold text-gray-800 mb-4">
-                Quick Actions
+            <TouchableOpacity
+              className="h-[45px] px-8 rounded-[30px] bg-finance items-center justify-center mt-4"
+              onPress={handleContactSupport}
+            >
+              <Text className="text-finance-fence font-semibold text-[15px]">
+                Contact Support
               </Text>
-              <View className="flex-row flex-wrap gap-3">
-                {quickActions.map((action) => (
-                  <TouchableOpacity
-                    key={action.id}
-                    className="flex-1 min-w-[100px] items-center py-4 bg-white rounded-lg shadow-sm border border-gray-200 active:bg-gray-50"
-                    onPress={() => handleQuickAction(action.id)}
-                  >
-                    <MaterialIcons
-                      name={action.icon as any}
-                      size={28}
-                      color={action.color}
-                    />
-                    <Text className="text-sm font-medium text-gray-800 mt-2 text-center">
-                      {action.title}
-                    </Text>
-                    <Text className="text-xs text-gray-500 mt-1 text-center px-2">
-                      {action.description}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Help Topics */}
-            <View className="mb-6">
-              <Text className="text-lg font-semibold text-gray-800 mb-4">
-                Help Topics
-              </Text>
-              <View className="gap-3">
-                {helpTopics.map((topic) => (
-                  <Card key={topic.id}>
-                    <TouchableOpacity
-                      className="flex-row items-center gap-3"
-                      onPress={() => handleTopicPress(topic.id)}
-                    >
-                      <View className="w-10 h-10 bg-brand/10 rounded-full items-center justify-center">
-                        <MaterialIcons
-                          name={topic.icon as any}
-                          size={20}
-                          color={BRAND_COLOR}
-                        />
-                      </View>
-                      <View className="flex-1">
-                        <Text className="font-medium text-gray-800">
-                          {topic.title}
-                        </Text>
-                        <Text className="text-sm text-gray-600 mt-1">
-                          {topic.description}
-                        </Text>
-                      </View>
-                      <MaterialIcons
-                        name="chevron-right"
-                        size={20}
-                        color="#6B7280"
-                      />
-                    </TouchableOpacity>
-                  </Card>
-                ))}
-              </View>
-            </View>
-
-            {/* Contact Support */}
-            <Card className="mb-4">
-              <View className="gap-4 items-center">
-                <View className="w-16 h-16 bg-blue-100 rounded-full items-center justify-center">
-                  <MaterialIcons
-                    name="help-outline"
-                    size={28}
-                    color="#3B82F6"
-                  />
-                </View>
-
-                <View className="items-center">
-                  <Text className="text-lg font-semibold text-gray-800">
-                    Need More Help?
-                  </Text>
-                  <Text className="text-gray-600 text-center mt-1">
-                    Can&apos;t find what you&apos;re looking for? Contact our
-                    support team.
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  className="bg-brand px-6 py-3 rounded-md"
-                  onPress={handleContactSupport}
-                >
-                  <Text className="text-white font-medium">
-                    Contact Support
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </Card>
-
-            {/* Property Management Info */}
-            <Card className="mb-6">
-              <View className="space-y-3">
-                <Text className="text-lg font-semibold text-gray-800">
-                  Property Management
-                </Text>
-
-                <View className="space-y-2">
-                  <Text className="text-gray-700">
-                    Verit Property Management
-                  </Text>
-                  <Text className="text-gray-600 text-sm">
-                    Your trusted property management team is here to help make
-                    your rental experience as smooth as possible.
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  className="flex-row items-center space-x-2 mt-3"
-                  onPress={openWebsite}
-                >
-                  <MaterialIcons
-                    name="language"
-                    size={16}
-                    color={BRAND_COLOR}
-                  />
-                  <Text className="text-brand text-sm font-medium">
-                    Visit Our Website
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </Card>
+            </TouchableOpacity>
           </View>
-        </ScrollView>
-      </View>
+
+          {/* Property Management Info */}
+          <View>
+            <Text className="text-[15px] font-medium text-finance-fence mb-2">
+              Property Management
+            </Text>
+            <Text className="text-[13px] text-gray-500 leading-relaxed">
+              Verit Property Management — your trusted property management team is here to help make
+              your rental experience as smooth as possible.
+            </Text>
+
+            <TouchableOpacity
+              className="flex-row items-center gap-2 mt-3"
+              onPress={openWebsite}
+            >
+              <MaterialIcons name="language" size={16} color="#524768" />
+              <Text className="text-brand text-[13px] font-semibold">
+                Visit Our Website
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </FinWiseScreen>
     </SafeAreaWrapper>
   );
 }

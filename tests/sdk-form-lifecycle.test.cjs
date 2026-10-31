@@ -22,6 +22,8 @@ async function fixture(file, initialProps = {}, initialSettings = {}) {
       updateNotifications: { mutate: value => saved.push(value) }, updatePaymentPrefs: { mutate: value => saved.push(value) }, updatePreferences: { mutate: value => saved.push(value) } }) },
     'lib/api.ts': {},
     'components/ui/Card.tsx': { Card: host('Card') },
+    'components/ui/FinWiseScreen.tsx': { FinWiseScreen: host('FinWiseScreen') },
+    'components/ui/SettingsRow.tsx': { SettingsRow: host('SettingsRow') },
     'components/ui/LoadingSpinner.tsx': { LoadingSpinner: host('Spinner') },
     'components/ui/SafeAreaWrapper.tsx': { SafeAreaWrapper: host('SafeArea') },
   });

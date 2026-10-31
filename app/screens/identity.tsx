@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { AppState, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { BRAND_COLOR } from '@/constants/theme';
-import { Card } from '../../components/ui/Card';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { IdentityImagePreview } from '../../components/identity/IdentityImagePreview';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
+import { FinWiseScreen } from '../../components/ui/FinWiseScreen';
 import { useAuth } from '../../hooks/useAuth';
 import { tenantIdentityApi, type TenantIdentity, type IdentitySide, type IdentityPicture } from '../../lib/tenant-identity';
 import { identityValues, validateIdentityImage } from '../../lib/tenant-identity-validation';
@@ -109,296 +109,284 @@ function IdentityEditor({ enabled }: { enabled: boolean }) {
 
   return (
     <SafeAreaWrapper>
-      <View className="flex-1 bg-gray-50">
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="px-4 pt-6 pb-6">
-            {/* Header */}
-            <View className="flex-row items-center mb-6">
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className="flex-row items-center gap-2 p-2 -ml-2 rounded-md active:bg-gray-200"
-                accessibilityRole="button"
-                accessibilityLabel="Back"
-              >
-                <MaterialIcons name="arrow-back" size={24} color="#374151" />
-              </TouchableOpacity>
-              <Text className="text-xl font-semibold text-gray-800 ml-2">Identity</Text>
+      <FinWiseScreen
+        title="Identity"
+        onBack={() => router.back()}
+        header={<View />}
+        headerClassName="px-9 pt-6 pb-8"
+      >
+        <View className="space-y-8">
+          {/* Info panel */}
+          <View className="bg-brand-light/60 rounded-[22px] p-5 flex-row items-start gap-3">
+            <View className="w-[31px] h-[31px] rounded-[10px] bg-finance/15 items-center justify-center">
+              <MaterialIcons name="badge" size={17} color="#00D09E" />
             </View>
+            <View className="flex-1">
+              <Text className="text-[15px] font-medium text-finance-fence mb-1">Tenant Identity</Text>
+              <Text className="text-[13px] text-gray-500 leading-relaxed">
+                Shared with your authorized landlords and staff. Changes update your shared tenant profile.
+              </Text>
+            </View>
+          </View>
 
-            {/* Info Card */}
-            <Card className="mb-4">
-              <View className="flex-row items-start gap-3">
-                <MaterialIcons name="badge" size={24} color={BRAND_COLOR} />
-                <View className="flex-1">
-                  <Text className="font-semibold text-gray-800 mb-1">Tenant Identity</Text>
-                  <Text className="text-sm text-gray-600">
-                    Shared with your authorized landlords and staff. Changes update your shared tenant profile.
-                  </Text>
-                </View>
-              </View>
-            </Card>
+          {/* Status alerts */}
+          {saved && (
+            <View className="flex-row items-center gap-2 rounded-[18px] bg-finance-honeydew p-4 border border-finance-light">
+              <MaterialIcons name="check-circle" size={20} color="#16A34A" />
+              <Text className="text-finance-dark font-medium text-[13px] flex-1">Identity updated</Text>
+            </View>
+          )}
 
-            {/* Status alerts */}
-            {saved && (
-              <View className="mb-4 flex-row items-center gap-2 rounded-md bg-green-50 p-3 border border-green-200">
-                <MaterialIcons name="check-circle" size={20} color="#16A34A" />
-                <Text className="text-green-800 font-medium text-sm flex-1">Identity updated</Text>
-              </View>
-            )}
+          {!!error && (
+            <View className="flex-row items-center gap-2 rounded-[18px] bg-red-50 p-4 border border-red-100">
+              <MaterialIcons name="error-outline" size={20} color="#DC2626" />
+              <Text accessibilityRole="alert" className="text-red-700 text-[13px] flex-1">{error}</Text>
+            </View>
+          )}
 
-            {!!error && (
-              <View className="mb-4 flex-row items-center gap-2 rounded-md bg-red-50 p-3 border border-red-200">
-                <MaterialIcons name="error-outline" size={20} color="#DC2626" />
-                <Text accessibilityRole="alert" className="text-red-700 text-sm flex-1">{error}</Text>
+          {progress !== null && (
+            <View className="rounded-[18px] bg-brand-light/60 p-4">
+              <View className="flex-row justify-between mb-1.5">
+                <Text accessibilityRole="progressbar" className="text-finance-fence font-medium text-[13px]">
+                  Uploading: {Math.min(progress, 100)}%
+                </Text>
               </View>
-            )}
+              <View className="h-2 w-full bg-white rounded-full overflow-hidden">
+                <View className="h-full bg-finance rounded-full" style={{ width: `${Math.min(progress, 100)}%` }} />
+              </View>
+            </View>
+          )}
 
-            {progress !== null && (
-              <View className="mb-4 rounded-md bg-blue-50 p-3 border border-blue-200">
-                <View className="flex-row justify-between mb-1">
-                  <Text accessibilityRole="progressbar" className="text-blue-900 font-medium text-sm">
-                    Uploading: {Math.min(progress, 100)}%
-                  </Text>
-                </View>
-                <View className="h-2 w-full bg-blue-200 rounded-full overflow-hidden">
-                  <View className="h-full bg-brand rounded-full" style={{ width: `${Math.min(progress, 100)}%` }} />
-                </View>
-              </View>
-            )}
+          {!enabled ? (
+            <View className="bg-brand-light/60 rounded-[22px] py-8 items-center">
+              <MaterialIcons name="lock-outline" size={36} color="#9CA3AF" />
+              <Text className="text-finance-fence font-semibold text-[15px] mt-2">Tenant Access Required</Text>
+              <Text className="text-gray-500 text-center text-[13px] mt-1">
+                Sign in with your tenant account.
+              </Text>
+            </View>
+          ) : loading && !identity ? (
+            <View className="py-12">
+              <LoadingSpinner message="Loading identity details..." />
+            </View>
+          ) : !identity ? (
+            <View className="bg-brand-light/60 rounded-[22px] py-8 items-center gap-2">
+              <MaterialIcons name="error-outline" size={36} color="#EF4444" />
+              <Text className="text-finance-fence font-semibold text-[15px]">Unable to load identity</Text>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading identity"
+                onPress={() => void refresh()}
+                className="h-[45px] px-8 rounded-[30px] bg-finance items-center justify-center mt-2"
+              >
+                <Text className="text-finance-fence font-semibold text-[15px]">Retry loading identity</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              {/* Tax & National ID */}
+              <View>
+                <Text className="text-[15px] font-medium text-finance-fence mb-1">Identification Numbers</Text>
+                <Text className="text-[13px] text-gray-500 mb-4">
+                  Optional tax and national identification details.
+                </Text>
 
-            {!enabled ? (
-              <Card className="mb-4">
-                <View className="py-4 items-center">
-                  <MaterialIcons name="lock-outline" size={36} color="#9CA3AF" />
-                  <Text className="text-gray-800 font-semibold text-base mt-2">Tenant Access Required</Text>
-                  <Text className="text-gray-500 text-center text-sm mt-1">
-                    Sign in with your tenant account.
-                  </Text>
-                </View>
-              </Card>
-            ) : loading && !identity ? (
-              <View className="py-12">
-                <LoadingSpinner message="Loading identity details..." />
-              </View>
-            ) : !identity ? (
-              <Card className="mb-4">
-                <View className="py-4 items-center gap-2">
-                  <MaterialIcons name="error-outline" size={36} color="#EF4444" />
-                  <Text className="text-gray-800 font-semibold text-base">Unable to load identity</Text>
+                <View className="gap-6">
+                  <View>
+                    <Text className="text-[15px] font-medium text-finance-fence mb-2">TIN (Optional)</Text>
+                    <TextInput
+                      accessibilityLabel="TIN"
+                      editable={!busy}
+                      value={values.tin}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="number-pad"
+                      placeholder="Enter 10-digit TIN"
+                      placeholderTextColor="#9CA3AF"
+                      className="h-[41px] rounded-[18px] px-4 bg-brand-light text-[16px] text-finance-fence"
+                      onChangeText={value => {
+                        setSaved(false);
+                        setDraft({ ...values, tin: value });
+                      }}
+                    />
+                  </View>
+
+                  <View>
+                    <Text className="text-[15px] font-medium text-finance-fence mb-2">NIN (Optional)</Text>
+                    <TextInput
+                      accessibilityLabel="NIN"
+                      editable={!busy}
+                      value={values.nin}
+                      autoCapitalize="characters"
+                      autoCorrect={false}
+                      keyboardType="default"
+                      placeholder="Enter 14-character NIN"
+                      placeholderTextColor="#9CA3AF"
+                      className="h-[41px] rounded-[18px] px-4 bg-brand-light text-[16px] text-finance-fence"
+                      onChangeText={value => {
+                        setSaved(false);
+                        setDraft({ ...values, nin: value });
+                      }}
+                    />
+                  </View>
+
                   <TouchableOpacity
                     accessibilityRole="button"
-                    accessibilityLabel="Retry loading identity"
-                    onPress={() => void refresh()}
-                    className="bg-brand px-5 py-2.5 rounded-md mt-2"
+                    accessibilityLabel="Save identity details"
+                    onPress={() => void change(async () => {
+                      const data = await tenantIdentityApi.update(identityValues(values.tin, values.nin));
+                      setDraft(null);
+                      return data;
+                    })}
+                    disabled={busy}
+                    className={`h-[45px] rounded-[30px] items-center justify-center ${busy ? 'bg-brand-light' : 'bg-finance'}`}
                   >
-                    <Text className="text-white font-semibold text-sm">Retry loading identity</Text>
+                    <Text className={`font-semibold text-center text-[15px] ${busy ? 'text-gray-400' : 'text-finance-fence'}`}>
+                      Save identity details
+                    </Text>
                   </TouchableOpacity>
                 </View>
-              </Card>
-            ) : (
-              <>
-                {/* Tax & National ID Card */}
-                <Card className="mb-4">
-                  <Text className="text-lg font-semibold text-gray-800 mb-1">Identification Numbers</Text>
-                  <Text className="text-sm text-gray-500 mb-4">
-                    Optional tax and national identification details.
-                  </Text>
+              </View>
 
-                  <View className="gap-4">
-                    <View>
-                      <Text className="text-sm font-medium text-gray-700 mb-1">TIN (Optional)</Text>
-                      <TextInput
-                        accessibilityLabel="TIN"
-                        editable={!busy}
-                        value={values.tin}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        keyboardType="number-pad"
-                        placeholder="Enter 10-digit TIN"
-                        className="border border-gray-300 rounded-md px-3 py-3 bg-white text-gray-800"
-                        onChangeText={value => {
-                          setSaved(false);
-                          setDraft({ ...values, tin: value });
-                        }}
-                      />
-                    </View>
+              {/* National ID Front & Back */}
+              {sides.map(side => {
+                const isUploaded = Boolean(identity.images[side]);
+                const staged = pictures[side];
+                const sideTitle = side === 'front' ? 'Front Side' : 'Back Side';
 
-                    <View>
-                      <Text className="text-sm font-medium text-gray-700 mb-1">NIN (Optional)</Text>
-                      <TextInput
-                        accessibilityLabel="NIN"
-                        editable={!busy}
-                        value={values.nin}
-                        autoCapitalize="characters"
-                        autoCorrect={false}
-                        keyboardType="default"
-                        placeholder="Enter 14-character NIN"
-                        className="border border-gray-300 rounded-md px-3 py-3 bg-white text-gray-800"
-                        onChangeText={value => {
-                          setSaved(false);
-                          setDraft({ ...values, nin: value });
-                        }}
-                      />
-                    </View>
-
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      accessibilityLabel="Save identity details"
-                      onPress={() => void change(async () => {
-                        const data = await tenantIdentityApi.update(identityValues(values.tin, values.nin));
-                        setDraft(null);
-                        return data;
-                      })}
-                      disabled={busy}
-                      className={`py-3.5 rounded-md mt-1 ${busy ? 'bg-gray-300' : 'bg-brand'}`}
-                    >
-                      <Text className="text-white font-semibold text-center text-base">
-                        Save identity details
+                return (
+                  <View key={side}>
+                    <View className="flex-row items-center justify-between mb-1">
+                      <Text className="text-[15px] font-medium text-finance-fence">
+                        National ID {side}
                       </Text>
-                    </TouchableOpacity>
-                  </View>
-                </Card>
-
-                {/* National ID Front & Back Cards */}
-                {sides.map(side => {
-                  const isUploaded = Boolean(identity.images[side]);
-                  const staged = pictures[side];
-                  const sideTitle = side === 'front' ? 'Front Side' : 'Back Side';
-
-                  return (
-                    <Card key={side} className="mb-4">
-                      <View className="flex-row items-center justify-between mb-1">
-                        <Text className="text-lg font-semibold text-gray-800">
-                          National ID {side}
+                      <View className={`flex-row items-center gap-1 px-2.5 py-1 rounded-full ${
+                        isUploaded ? 'bg-finance-honeydew border border-finance-light' : 'bg-gray-100 border border-gray-200'
+                      }`}>
+                        <MaterialIcons
+                          name={isUploaded ? 'check-circle' : 'help-outline'}
+                          size={14}
+                          color={isUploaded ? '#16A34A' : '#6B7280'}
+                        />
+                        <Text className={`text-[12px] font-medium ${isUploaded ? 'text-finance-dark' : 'text-gray-600'}`}>
+                          {isUploaded ? 'Uploaded' : 'Not provided'}
                         </Text>
-                        <View className={`flex-row items-center gap-1 px-2.5 py-1 rounded-full ${
-                          isUploaded ? 'bg-green-50 border border-green-200' : 'bg-gray-100 border border-gray-200'
-                        }`}>
-                          <MaterialIcons
-                            name={isUploaded ? 'check-circle' : 'help-outline'}
-                            size={14}
-                            color={isUploaded ? '#16A34A' : '#6B7280'}
-                          />
-                          <Text className={`text-xs font-medium ${isUploaded ? 'text-green-700' : 'text-gray-600'}`}>
-                            {isUploaded ? 'Uploaded' : 'Not provided'}
+                      </View>
+                    </View>
+                    <Text className="text-[13px] text-gray-500 mb-4">
+                      Photo of the {side} of your national ID card ({sideTitle.toLowerCase()}).
+                    </Text>
+
+                    {/* View & Remove actions for uploaded ID */}
+                    {isUploaded && (
+                      <View className="flex-row gap-2 mb-3">
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityLabel={`View ${side}`}
+                          onPress={() => void view(side)}
+                          disabled={busy}
+                          className={`flex-1 h-[41px] flex-row items-center justify-center gap-2 px-3 rounded-[18px] bg-brand-light ${busy ? 'opacity-50' : ''}`}
+                        >
+                          <MaterialIcons name="visibility" size={18} color="#524768" />
+                          <Text className="font-medium text-finance-fence text-[13px]">View {side}</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove ${side}`}
+                          onPress={() => Alert.alert('Remove ID picture?', 'This removes the picture from your shared profile.', [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Remove', style: 'destructive', onPress: () => void change(() => tenantIdentityApi.remove(side)) },
+                          ])}
+                          disabled={busy}
+                          className={`flex-1 h-[41px] flex-row items-center justify-center gap-2 px-3 rounded-[18px] bg-red-50 ${busy ? 'opacity-50' : ''}`}
+                        >
+                          <MaterialIcons name="delete-outline" size={18} color="#DC2626" />
+                          <Text className="font-medium text-red-600 text-[13px]">Remove {side}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {/* Photo selection buttons - hidden when already uploaded or staged */}
+                    {!isUploaded && !staged && (
+                      <View className="flex-row gap-2">
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityLabel={`Take ${side} picture`}
+                          onPress={() => void pick(side, true)}
+                          disabled={busy}
+                          className={`flex-1 h-[41px] flex-row items-center justify-center gap-2 px-3 rounded-[18px] bg-brand-light ${busy ? 'opacity-50' : ''}`}
+                        >
+                          <MaterialIcons name="photo-camera" size={18} color={BRAND_COLOR} />
+                          <Text className="font-medium text-finance-fence text-[13px]">Take picture</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          accessibilityLabel={`Choose ${side} picture`}
+                          onPress={() => void pick(side, false)}
+                          disabled={busy}
+                          className={`flex-1 h-[41px] flex-row items-center justify-center gap-2 px-3 rounded-[18px] bg-brand-light ${busy ? 'opacity-50' : ''}`}
+                        >
+                          <MaterialIcons name="photo-library" size={18} color={BRAND_COLOR} />
+                          <Text className="font-medium text-finance-fence text-[13px]">Choose picture</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {/* Staged upload preview & confirm */}
+                    {staged && (
+                      <View className="mt-3 p-4 bg-brand-light/60 rounded-[18px] gap-3">
+                        <View className="flex-row items-center gap-2">
+                          <MaterialIcons name="image" size={20} color={BRAND_COLOR} />
+                          <Text className="text-[13px] text-finance-fence font-medium flex-1" numberOfLines={1}>
+                            {staged.name}
                           </Text>
                         </View>
-                      </View>
-                      <Text className="text-sm text-gray-500 mb-4">
-                        Photo of the {side} of your national ID card ({sideTitle.toLowerCase()}).
-                      </Text>
-
-                      {/* View & Remove actions for uploaded ID */}
-                      {isUploaded && (
-                        <View className="flex-row gap-2 mb-3">
-                          <TouchableOpacity
-                            accessibilityRole="button"
-                            accessibilityLabel={`View ${side}`}
-                            onPress={() => void view(side)}
-                            disabled={busy}
-                            className={`flex-1 flex-row items-center justify-center gap-2 py-2.5 px-3 rounded-md border border-gray-300 bg-white ${busy ? 'opacity-50' : ''}`}
-                          >
-                            <MaterialIcons name="visibility" size={18} color="#374151" />
-                            <Text className="font-medium text-gray-700 text-sm">View {side}</Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            accessibilityRole="button"
-                            accessibilityLabel={`Remove ${side}`}
-                            onPress={() => Alert.alert('Remove ID picture?', 'This removes the picture from your shared profile.', [
-                              { text: 'Cancel', style: 'cancel' },
-                              { text: 'Remove', style: 'destructive', onPress: () => void change(() => tenantIdentityApi.remove(side)) },
-                            ])}
-                            disabled={busy}
-                            className={`flex-1 flex-row items-center justify-center gap-2 py-2.5 px-3 rounded-md border border-red-200 bg-red-50 ${busy ? 'opacity-50' : ''}`}
-                          >
-                            <MaterialIcons name="delete-outline" size={18} color="#DC2626" />
-                            <Text className="font-medium text-red-600 text-sm">Remove {side}</Text>
-                          </TouchableOpacity>
-                        </View>
-                      )}
-
-                      {/* Photo selection buttons - hidden when already uploaded or staged */}
-                      {!isUploaded && !staged && (
                         <View className="flex-row gap-2">
                           <TouchableOpacity
                             accessibilityRole="button"
-                            accessibilityLabel={`Take ${side} picture`}
-                            onPress={() => void pick(side, true)}
+                            accessibilityLabel={`Preview selected ${side}`}
+                            onPress={() => setPreview({ side, url: staged.uri, expiresAt: null, selected: true })}
                             disabled={busy}
-                            className={`flex-1 flex-row items-center justify-center gap-2 py-2.5 px-3 rounded-md border border-gray-300 bg-white ${busy ? 'opacity-50' : ''}`}
+                            className={`flex-1 h-[41px] rounded-[18px] bg-white border border-gray-100 items-center justify-center ${busy ? 'opacity-50' : ''}`}
                           >
-                            <MaterialIcons name="photo-camera" size={18} color={BRAND_COLOR} />
-                            <Text className="font-medium text-gray-700 text-sm">Take picture</Text>
+                            <Text className="font-medium text-finance-fence text-[13px]">Preview</Text>
                           </TouchableOpacity>
 
                           <TouchableOpacity
                             accessibilityRole="button"
-                            accessibilityLabel={`Choose ${side} picture`}
-                            onPress={() => void pick(side, false)}
+                            accessibilityLabel={`Cancel selected ${side}`}
+                            onPress={() => setPictures(previous => ({ ...previous, [side]: undefined }))}
                             disabled={busy}
-                            className={`flex-1 flex-row items-center justify-center gap-2 py-2.5 px-3 rounded-md border border-gray-300 bg-white ${busy ? 'opacity-50' : ''}`}
+                            className={`h-[41px] px-4 rounded-[18px] bg-white border border-gray-100 items-center justify-center ${busy ? 'opacity-50' : ''}`}
                           >
-                            <MaterialIcons name="photo-library" size={18} color={BRAND_COLOR} />
-                            <Text className="font-medium text-gray-700 text-sm">Choose picture</Text>
+                            <Text className="font-medium text-finance-fence text-[13px]">Cancel</Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            accessibilityRole="button"
+                            accessibilityLabel={`Upload ${side}`}
+                            onPress={() => void change(async () => {
+                              const data = await tenantIdentityApi.upload(side, staged, setProgress);
+                              setPictures(previous => ({ ...previous, [side]: undefined }));
+                              return data;
+                            })}
+                            disabled={busy}
+                            className={`flex-1 h-[41px] rounded-[18px] bg-finance items-center justify-center ${busy ? 'opacity-50' : ''}`}
+                          >
+                            <Text className="font-semibold text-finance-fence text-[13px]">Upload {side}</Text>
                           </TouchableOpacity>
                         </View>
-                      )}
-
-                      {/* Staged upload preview & confirm */}
-                      {staged && (
-                        <View className="mt-3 p-3 bg-brand/5 border border-brand/20 rounded-md gap-3">
-                          <View className="flex-row items-center gap-2">
-                            <MaterialIcons name="image" size={20} color={BRAND_COLOR} />
-                            <Text className="text-sm text-gray-800 font-medium flex-1" numberOfLines={1}>
-                              {staged.name}
-                            </Text>
-                          </View>
-                          <View className="flex-row gap-2">
-                            <TouchableOpacity
-                              accessibilityRole="button"
-                              accessibilityLabel={`Preview selected ${side}`}
-                              onPress={() => setPreview({ side, url: staged.uri, expiresAt: null, selected: true })}
-                              disabled={busy}
-                              className={`flex-1 py-2 rounded-md border border-gray-300 bg-white items-center ${busy ? 'opacity-50' : ''}`}
-                            >
-                              <Text className="font-medium text-gray-700 text-sm">Preview</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                              accessibilityRole="button"
-                              accessibilityLabel={`Cancel selected ${side}`}
-                              onPress={() => setPictures(previous => ({ ...previous, [side]: undefined }))}
-                              disabled={busy}
-                              className={`py-2 px-3 rounded-md border border-gray-300 bg-white items-center ${busy ? 'opacity-50' : ''}`}
-                            >
-                              <Text className="font-medium text-gray-700 text-sm">Cancel</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                              accessibilityRole="button"
-                              accessibilityLabel={`Upload ${side}`}
-                              onPress={() => void change(async () => {
-                                const data = await tenantIdentityApi.upload(side, staged, setProgress);
-                                setPictures(previous => ({ ...previous, [side]: undefined }));
-                                return data;
-                              })}
-                              disabled={busy}
-                              className={`flex-1 py-2 rounded-md bg-brand items-center ${busy ? 'opacity-50' : ''}`}
-                            >
-                              <Text className="font-semibold text-white text-sm">Upload {side}</Text>
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      )}
-                    </Card>
-                  );
-                })}
-              </>
-            )}
-          </View>
-        </ScrollView>
-      </View>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </>
+          )}
+        </View>
+      </FinWiseScreen>
 
       <IdentityImagePreview
         uri={preview?.url ?? null}

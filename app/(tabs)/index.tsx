@@ -2,7 +2,7 @@ import { tenantKeys } from '../../lib/queryKeys';
 import { BRAND_COLOR } from '@/constants/theme';
 import { View, Text, TouchableOpacity, RefreshControl } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
@@ -28,7 +28,7 @@ type PaymentFilter = "all" | "rent" | "security_deposit";
 
 export default function DashboardScreen() {
   const { user } = useAuth();
-  const { selectedLeaseId, isLoadingLeases } = useLease();
+  const { selectedLeaseId, isLoadingLeases, refreshLeases } = useLease();
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
 
   const {
@@ -48,6 +48,15 @@ export default function DashboardScreen() {
       refetch();
     }, [refetch]),
   );
+
+  // If the dashboard rejects the selected lease (e.g. it was ended or
+  // deactivated server-side and the server returns 403), refresh the lease
+  // list so LeaseContext can re-validate the selection and switch leases
+  // automatically when the selected one disappears.
+  useEffect(() => {
+    if (error) void refreshLeases();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
 
   // `currentBalance` is scoped to the payable currency. Any further bucket is another
   // currency owed on the lease (old-currency arrears after a rent-currency transition) —

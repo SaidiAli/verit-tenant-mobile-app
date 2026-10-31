@@ -14,7 +14,6 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Sharing from "expo-sharing";
 import { useQuery } from "@tanstack/react-query";
-import { Card } from "./Card";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { paymentApi, API_BASE_URL } from "../../lib/api";
 import { secureStorage } from "../../lib/storage";
@@ -117,50 +116,51 @@ Thank you for your payment!
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-gray-50">
+      <View className="flex-1 bg-brand">
         {/* Header */}
-        <View className="bg-white px-4 pt-12 pb-4 border-b border-gray-200">
+        <View className="px-9 pt-12 pb-6">
           <View className="flex-row items-center justify-between">
-            <TouchableOpacity onPress={onClose}>
-              <MaterialIcons name="close" size={24} color="#6B7280" />
+            <TouchableOpacity onPress={onClose} className="w-[30px] h-[30px] rounded-full bg-white/10 items-center justify-center">
+              <MaterialIcons name="close" size={18} color="#FFFFFF" />
             </TouchableOpacity>
-            <Text className="text-lg font-semibold text-gray-800">
+            <Text className="text-[20px] leading-[22px] font-semibold text-white">
               Payment Receipt
             </Text>
             {receipt && (
-              <TouchableOpacity onPress={handleShare}>
-                <MaterialIcons name="share" size={24} color="#6B7280" />
+              <TouchableOpacity onPress={handleShare} className="w-[30px] h-[30px] rounded-full bg-white/10 items-center justify-center">
+                <MaterialIcons name="share" size={16} color="#FFFFFF" />
               </TouchableOpacity>
             )}
-            {!receipt && <View className="w-6" />}
+            {!receipt && <View className="w-[30px]" />}
           </View>
         </View>
 
         {/* Content */}
-        <ScrollView className="flex-1 px-4 pt-6">
+        <ScrollView className="flex-1">
+          <View className="bg-white rounded-t-[40px] px-9 pt-8 pb-16">
           {isLoading && <LoadingSpinner message="Loading receipt..." />}
 
           {!!error && (
-            <Card className="items-center py-8">
+            <View className="items-center py-8">
               <MaterialIcons name="error" size={48} color="#EF4444" />
-              <Text className="text-lg font-semibold text-gray-800 mt-4">
+              <Text className="text-[15px] font-medium text-finance-fence mt-4">
                 Unable to Load Receipt
               </Text>
-              <Text className="text-gray-600 mt-2 text-center">
+              <Text className="text-gray-500 text-[13px] mt-2 text-center">
                 {(error as any).message || "Failed to load receipt"}
               </Text>
               <TouchableOpacity
                 onPress={() => refetch()}
-                className="bg-brand px-6 py-3 rounded-md mt-4"
+                className="h-[45px] px-8 rounded-[30px] bg-finance items-center justify-center mt-4"
               >
-                <Text className="text-white font-semibold">Retry</Text>
+                <Text className="text-finance-fence font-semibold text-[15px]">Retry</Text>
               </TouchableOpacity>
-            </Card>
+            </View>
           )}
 
           {receipt && (
-            <Card className="mb-6 bg-white">
-              <View className="space-y-6 p-2">
+            <View className="mb-6">
+              <View className="space-y-6">
                 {/* Company Header */}
                 <View className="items-center py-4 border-b border-gray-200">
                   <Text className="text-2xl font-bold text-brand">
@@ -331,8 +331,9 @@ Thank you for your payment!
                   </View>
                 </View>
               </View>
-            </Card>
+            </View>
           )}
+          </View>
         </ScrollView>
 
         {/* Actions */}

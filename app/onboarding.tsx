@@ -8,6 +8,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { BRAND_COLOR } from '@/constants/theme';
@@ -21,15 +22,21 @@ interface Slide {
   title: string;
   subtitle: string;
   iconName: keyof typeof MaterialIcons.glyphMap;
+  /** Optional 3D illustration (static require) rendered instead of the icon circle. */
+  image?: number;
+  /** When true, the image is clipped into a circle (e.g. the square app icon). */
+  circular?: boolean;
 }
 
 const SLIDES: Slide[] = [
   {
     id: '1',
-    title: 'Manage Your Tenancy with Confidence',
+    title: 'Welcome to Verit',
     subtitle:
       'View your lease agreements, active units, and tenancy history all from a single modern hub.',
     iconName: 'home-work',
+    image: require('../assets/images/icon.png'),
+    circular: true,
   },
   {
     id: '2',
@@ -37,6 +44,7 @@ const SLIDES: Slide[] = [
     subtitle:
       'Pay rent and deposits directly via Mobile Money or Card. Receive instant automated receipts.',
     iconName: 'account-balance-wallet',
+    image: require('../assets/images/onboarding-payments.png'),
   },
   {
     id: '3',
@@ -44,6 +52,7 @@ const SLIDES: Slide[] = [
     subtitle:
       'Report repairs, attach photos, and track resolution status in real-time with property managers.',
     iconName: 'build-circle',
+    image: require('../assets/images/onboarding-maintenance.png'),
   },
 ];
 
@@ -82,12 +91,6 @@ export default function OnboardingScreen() {
       <View className="flex-1 bg-brand">
         {/* Top Header with Skip */}
         <View className="flex-row justify-between items-center px-9 pt-6 pb-2">
-          <View className="flex-row items-center gap-1.5">
-            <View className="w-2.5 h-2.5 rounded-full bg-finance" />
-            <Text className="text-[13px] font-semibold tracking-widest text-white uppercase">
-              Verit
-            </Text>
-          </View>
           {currentIndex < SLIDES.length - 1 ? (
             <TouchableOpacity
               onPress={handleFinish}
@@ -122,22 +125,37 @@ export default function OnboardingScreen() {
               style={{ width }}
               className="items-center justify-center px-8"
             >
-              <View className="w-56 h-56 rounded-full bg-white/10 items-center justify-center relative">
-                <View className="w-44 h-44 rounded-full bg-white items-center justify-center">
-                  <MaterialIcons name={slide.iconName} size={80} color={BRAND_COLOR} />
+              {slide.image ? (
+                /* Image on a subtle light brand-shade circle */
+                <View className="w-[232px] h-[232px] rounded-full bg-white/10 items-center justify-center">
+                  <Image
+                    source={slide.image}
+                    style={{
+                      width: 200,
+                      height: 200,
+                      borderRadius: slide.circular ? 100 : 0,
+                    }}
+                    contentFit={slide.circular ? 'cover' : 'contain'}
+                  />
                 </View>
-                {/* Floating financial accent bubble */}
-                <View className="absolute top-4 right-4 w-10 h-10 rounded-full bg-finance items-center justify-center">
-                  <MaterialIcons name="check" size={22} color="white" />
+              ) : (
+                <View className="w-56 h-56 rounded-full bg-white/10 items-center justify-center relative">
+                  <View className="w-44 h-44 rounded-full bg-white items-center justify-center">
+                    <MaterialIcons name={slide.iconName} size={80} color={BRAND_COLOR} />
+                  </View>
+                  {/* Floating financial accent bubble */}
+                  <View className="absolute top-4 right-4 w-10 h-10 rounded-full bg-finance items-center justify-center">
+                    <MaterialIcons name="check" size={22} color="white" />
+                  </View>
                 </View>
-              </View>
+              )}
             </View>
           ))}
         </ScrollView>
 
         {/* FinWise bottom sheet with subtitle, dots and text-style Next */}
         <View className="flex-1 bg-white rounded-t-[40px] px-9 pt-8 pb-10 justify-end">
-          <Text className="text-[14px] leading-relaxed text-gray-500 text-center min-h-[48px]">
+          <Text className="text-[20px] leading-relaxed text-gray-500 font-semibold text-center min-h-[48px]">
             {SLIDES[currentIndex].subtitle}
           </Text>
 
@@ -159,7 +177,7 @@ export default function OnboardingScreen() {
 
             {/* Text-style Next action (Figma 7038:283) */}
             <TouchableOpacity onPress={handleNext} activeOpacity={0.6}>
-              <Text className="text-[30px] leading-[22px] font-semibold text-brand">
+              <Text className="text-[20px] leading-[22px] font-semibold text-brand">
                 {currentIndex === SLIDES.length - 1 ? 'Get Started' : 'Next'}
               </Text>
             </TouchableOpacity>

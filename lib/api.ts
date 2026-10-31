@@ -105,10 +105,18 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && error.config?.headers.Authorization) {
       onUnauthorized?.();
     }
-    if (error.config?.url?.startsWith('/tenant/identity')) {
-      Sentry.captureException(new Error(`Tenant identity request failed (HTTP ${error.response?.status ?? 'unavailable'})`));
-    } else {
-      Sentry.captureException(error);
+    // Only report unexpected failures to Sentry. 401/403/404 responses are
+    // handled client-side with friendly messages (session expiry, no active
+    // lease, not found), so capturing them floods Sentry — and the dev LogBox
+    // toast — without signaling a real crash. Cancellations are skipped above.
+    const status = error.response?.status;
+    const isHandledClientError = status === 401 || status === 403 || status === 404;
+    if (!isHandledClientError) {
+      if (error.config?.url?.startsWith('/tenant/identity')) {
+        Sentry.captureException(new Error(`Tenant identity request failed (HTTP ${status ?? 'unavailable'})`));
+      } else {
+        Sentry.captureException(error);
+      }
     }
     return Promise.reject(error);
   }
@@ -375,7 +383,9 @@ export const paymentApi = {
       return response.data.data;
     } catch (error: any) {
       if (isCancel(error)) throw error;
-      if (error.response?.status === 404) {
+      if (error.response?.status === 403) {
+        throw new Error('This lease is no longer active. Please contact your landlord.');
+      } else if (error.response?.status === 404) {
         throw new Error('Lease not found. Please contact support.');
       } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
         throw new Error('Unable to connect to server. Please check your connection.');
@@ -545,7 +555,14 @@ export const tenantApi = {
     } catch (error: any) {
       if (isCancel(error)) throw error;
       if (error.response?.status === 403) {
-        throw new Error('No active lease found. Please contact your landlord.');
+        // The server forbids the dashboard when the tenant has no usable lease.
+        // Without an id the account has none at all; with one, the lease was
+        // likely ended or deactivated server-side.
+        throw new Error(
+          leaseId
+            ? 'This lease is no longer active. Please contact your landlord.'
+            : 'No active lease found. Please contact your landlord.'
+        );
       } else if (error.response?.status === 404) {
         throw new Error('Tenant data not found. Please contact support.');
       } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {

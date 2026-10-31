@@ -1,10 +1,9 @@
-import { BRAND_COLOR } from '@/constants/theme';
-import { ScrollView, View, Text, TouchableOpacity, Switch, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Switch, TextInput, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Card } from '../../components/ui/Card';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
+import { FinWiseScreen } from '../../components/ui/FinWiseScreen';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useServerSettings } from '../../hooks/useServerSettings';
 import { useAuth } from '../../hooks/useAuth';
@@ -15,28 +14,31 @@ const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 interface ChannelRowProps {
   icon: keyof typeof MaterialIcons.glyphMap;
+  iconBgClass: string;
+  iconColor: string;
   label: string;
   description?: string;
   value: boolean;
   onValueChange: (v: boolean) => void;
-  disabled?: boolean;
 }
 
-function ChannelRow({ icon, label, description, value, onValueChange, disabled }: ChannelRowProps) {
+/** FinWise settings row (31px icon tile, 15px label) with an inline Switch. */
+function ChannelRow({ icon, iconBgClass, iconColor, label, description, value, onValueChange }: ChannelRowProps) {
   return (
-    <View className="flex-row justify-between items-center py-3">
-      <View className="flex-row items-center gap-3 flex-1 pr-3">
-        <MaterialIcons name={icon} size={20} color="#6B7280" />
-        <View className="flex-1">
-          <Text className="font-medium text-gray-800">{label}</Text>
-          {description ? <Text className="text-sm text-gray-500">{description}</Text> : null}
-        </View>
+    <View className="flex-row items-center gap-[23px] py-[13px]">
+      <View className={`w-[31px] h-[31px] rounded-[10px] items-center justify-center ${iconBgClass}`}>
+        <MaterialIcons name={icon} size={17} color={iconColor} />
+      </View>
+      <View className="flex-1">
+        <Text className="text-[15px] font-medium text-finance-fence">{label}</Text>
+        {description ? (
+          <Text className="text-[12px] text-gray-400 mt-0.5">{description}</Text>
+        ) : null}
       </View>
       <Switch
         value={value}
-        disabled={disabled}
         onValueChange={onValueChange}
-        trackColor={{ false: '#E5E7EB', true: BRAND_COLOR }}
+        trackColor={{ false: '#E5E7EB', true: '#00D09E' }}
         thumbColor={value ? '#ffffff' : '#9CA3AF'}
       />
     </View>
@@ -138,134 +140,147 @@ export default function NotificationsSettingsScreen() {
 
   return (
     <SafeAreaWrapper>
-      <View className="flex-1 bg-gray-50">
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="px-4 pt-6 pb-4">
-            {/* Header */}
-            <View className="flex-row items-center mb-6">
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className="flex-row items-center gap-2 p-2 -ml-2 rounded-md active:bg-gray-200"
-              >
-                <MaterialIcons name="arrow-back" size={24} color="#374151" />
-              </TouchableOpacity>
-              <Text className="text-xl font-semibold text-gray-800 ml-2">Notifications</Text>
-            </View>
-
-            {/* Channels */}
-            <Card className="mb-4">
-              <Text className="text-lg font-semibold text-gray-800 mb-1">Channels</Text>
-              <Text className="text-sm text-gray-500 mb-2">
-                Notifications are on by default. Turn off any channel you don&apos;t want.
-              </Text>
-              <ChannelRow
-                icon="email"
-                label="Email"
-                value={notifyEmail}
-                onValueChange={value => { setIsDirty(true); setNotifyEmail(value); }}
-              />
-              <ChannelRow
-                icon="sms"
-                label="SMS"
-                value={notifySms}
-                onValueChange={value => { setIsDirty(true); setNotifySms(value); }}
-              />
-              <ChannelRow
-                icon="chat"
-                label="WhatsApp"
-                value={notifyWhatsapp}
-                onValueChange={value => { setIsDirty(true); setNotifyWhatsapp(value); }}
-              />
-              <ChannelRow
-                icon="notifications-active"
-                label="Push"
-                description="Coming soon — saved but not yet delivered"
-                value={notifyPush}
-                onValueChange={value => { setIsDirty(true); setNotifyPush(value); }}
-              />
-            </Card>
-
-            {/* Quiet hours */}
-            <Card className="mb-4">
-              <Text className="text-lg font-semibold text-gray-800 mb-1">Quiet Hours</Text>
-              <Text className="text-sm text-gray-500 mb-3">
-                Reminders (rent, lease expiry) are held during these hours. Payment confirmations and
-                other transactional messages still arrive.
-              </Text>
-
-              <View className="flex-row gap-3">
-                <View className="flex-1">
-                  <Text className="text-sm font-medium text-gray-700 mb-1">Start</Text>
-                  <TextInput
-                    value={quietStart}
-                    onChangeText={(t) => {
-                      setIsDirty(true);
-                      setQuietStart(t);
-                      if (errors.quiet || errors.quietStart) setErrors({});
-                    }}
-                    placeholder="22:00"
-                    keyboardType="numbers-and-punctuation"
-                    maxLength={5}
-                    className={`border rounded-md px-3 py-3 bg-white ${errors.quietStart ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                  />
-                  {errors.quietStart ? (
-                    <Text className="text-red-500 text-sm mt-1">{errors.quietStart}</Text>
-                  ) : null}
-                </View>
-                <View className="flex-1">
-                  <Text className="text-sm font-medium text-gray-700 mb-1">End</Text>
-                  <TextInput
-                    value={quietEnd}
-                    onChangeText={(t) => {
-                      setIsDirty(true);
-                      setQuietEnd(t);
-                      if (errors.quiet || errors.quietEnd) setErrors({});
-                    }}
-                    editable={quietStart.trim().length > 0}
-                    placeholder="07:00"
-                    keyboardType="numbers-and-punctuation"
-                    maxLength={5}
-                    className={`border rounded-md px-3 py-3 ${quietStart.trim().length > 0 ? 'bg-white' : 'bg-gray-100'
-                      } ${errors.quietEnd ? 'border-red-500' : 'border-gray-300'}`}
-                  />
-                  {errors.quietEnd ? (
-                    <Text className="text-red-500 text-sm mt-1">{errors.quietEnd}</Text>
-                  ) : null}
-                </View>
-              </View>
-              {errors.quiet ? (
-                <Text className="text-red-500 text-sm mt-2">{errors.quiet}</Text>
-              ) : null}
-              {(quietStart.trim().length > 0 || quietEnd.trim().length > 0) ? (
-                <TouchableOpacity
-                  className="mt-3 self-start"
-                  onPress={() => {
-                    setIsDirty(true);
-                    setQuietStart('');
-                    setQuietEnd('');
-                    setErrors({});
-                  }}
-                >
-                  <Text className="text-brand font-medium text-sm">Clear quiet hours</Text>
-                </TouchableOpacity>
-              ) : null}
-            </Card>
-
-            {/* Save */}
-            <TouchableOpacity
-              onPress={handleSave}
-              disabled={updateNotifications.isPending}
-              className={`py-4 rounded-md mt-2 ${updateNotifications.isPending ? 'bg-gray-300' : 'bg-brand'
-                }`}
-            >
-              <Text className="text-white font-semibold text-center text-lg">
-                {updateNotifications.isPending ? 'Saving...' : 'Save Changes'}
-              </Text>
-            </TouchableOpacity>
+      <FinWiseScreen
+        title="Notifications"
+        onBack={() => router.back()}
+        header={<View />}
+        headerClassName="px-9 pt-6 pb-8"
+      >
+        <View className="space-y-9">
+          {/* Channels */}
+          <View>
+            <Text className="text-[15px] font-medium text-finance-fence mb-1">
+              Channels
+            </Text>
+            <Text className="text-[13px] text-gray-500 mb-1">
+              Notifications are on by default. Turn off any channel you don&apos;t want.
+            </Text>
+            <ChannelRow
+              icon="email"
+              iconBgClass="bg-ocean/10"
+              iconColor="#0068FF"
+              label="Email"
+              value={notifyEmail}
+              onValueChange={value => { setIsDirty(true); setNotifyEmail(value); }}
+            />
+            <ChannelRow
+              icon="sms"
+              iconBgClass="bg-finance/15"
+              iconColor="#00D09E"
+              label="SMS"
+              value={notifySms}
+              onValueChange={value => { setIsDirty(true); setNotifySms(value); }}
+            />
+            <ChannelRow
+              icon="chat"
+              iconBgClass="bg-finance/15"
+              iconColor="#00D09E"
+              label="WhatsApp"
+              value={notifyWhatsapp}
+              onValueChange={value => { setIsDirty(true); setNotifyWhatsapp(value); }}
+            />
+            <ChannelRow
+              icon="notifications-active"
+              iconBgClass="bg-brand-light"
+              iconColor="#524768"
+              label="Push"
+              description="Coming soon — saved but not yet delivered"
+              value={notifyPush}
+              onValueChange={value => { setIsDirty(true); setNotifyPush(value); }}
+            />
           </View>
-        </ScrollView>
-      </View>
+
+          {/* Quiet hours */}
+          <View>
+            <Text className="text-[15px] font-medium text-finance-fence mb-1">
+              Quiet Hours
+            </Text>
+            <Text className="text-[13px] text-gray-500 mb-3 leading-relaxed">
+              Reminders (rent, lease expiry) are held during these hours. Payment confirmations and
+              other transactional messages still arrive.
+            </Text>
+
+            <View className="flex-row gap-3">
+              <View className="flex-1">
+                <Text className="text-[15px] font-medium text-finance-fence mb-2">Start</Text>
+                <TextInput
+                  value={quietStart}
+                  onChangeText={(t) => {
+                    setIsDirty(true);
+                    setQuietStart(t);
+                    if (errors.quiet || errors.quietStart) setErrors({});
+                  }}
+                  placeholder="22:00"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="numbers-and-punctuation"
+                  maxLength={5}
+                  className={`h-[41px] rounded-[18px] px-4 text-[16px] text-finance-fence ${
+                    errors.quietStart ? 'bg-red-50' : 'bg-brand-light'
+                  }`}
+                />
+                {errors.quietStart ? (
+                  <Text className="text-red-500 text-[12px] mt-1.5">{errors.quietStart}</Text>
+                ) : null}
+              </View>
+              <View className="flex-1">
+                <Text className="text-[15px] font-medium text-finance-fence mb-2">End</Text>
+                <TextInput
+                  value={quietEnd}
+                  onChangeText={(t) => {
+                    setIsDirty(true);
+                    setQuietEnd(t);
+                    if (errors.quiet || errors.quietEnd) setErrors({});
+                  }}
+                  editable={quietStart.trim().length > 0}
+                  placeholder="07:00"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="numbers-and-punctuation"
+                  maxLength={5}
+                  className={`h-[41px] rounded-[18px] px-4 text-[16px] text-finance-fence ${
+                    quietStart.trim().length > 0 ? 'bg-brand-light' : 'bg-gray-100'
+                  } ${errors.quietEnd ? 'bg-red-50' : ''}`}
+                />
+                {errors.quietEnd ? (
+                  <Text className="text-red-500 text-[12px] mt-1.5">{errors.quietEnd}</Text>
+                ) : null}
+              </View>
+            </View>
+            {errors.quiet ? (
+              <Text className="text-red-500 text-[12px] mt-2">{errors.quiet}</Text>
+            ) : null}
+            {(quietStart.trim().length > 0 || quietEnd.trim().length > 0) ? (
+              <TouchableOpacity
+                className="mt-3 self-start"
+                onPress={() => {
+                  setIsDirty(true);
+                  setQuietStart('');
+                  setQuietEnd('');
+                  setErrors({});
+                }}
+              >
+                <Text className="text-brand font-semibold text-[13px]">Clear quiet hours</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
+          {/* Save */}
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={updateNotifications.isPending}
+            className={`h-[45px] rounded-[30px] items-center justify-center ${
+              updateNotifications.isPending ? 'bg-brand-light' : 'bg-finance'
+            }`}
+          >
+            <Text
+              className={`font-semibold text-[15px] ${
+                updateNotifications.isPending ? 'text-gray-400' : 'text-finance-fence'
+              }`}
+            >
+              {updateNotifications.isPending ? 'Saving...' : 'Save Changes'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </FinWiseScreen>
     </SafeAreaWrapper>
   );
 }

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
 import { authApi } from "../../lib/api";
@@ -142,6 +143,13 @@ export default function ForgotPasswordScreen() {
         >
           {/* Top Branded Curve Header */}
           <View className="pt-8 pb-10 px-6 items-center">
+            <View className="w-40 h-14 mb-4 items-center justify-center">
+              <Image
+                source={require('../../assets/logos/logos-09.svg')}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="contain"
+              />
+            </View>
             <View className="flex-row items-center justify-between w-full mb-4">
               <TouchableOpacity
                 onPress={() => {

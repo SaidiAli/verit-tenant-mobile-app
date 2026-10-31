@@ -2,11 +2,10 @@ import { BRAND_COLOR } from '@/constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { tenantKeys } from '../../lib/queryKeys';
 import React, { useState, useCallback, useMemo } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, RefreshControl } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router/react-navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Card } from '../../components/ui/Card';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { PaymentReceiptModal } from '../../components/ui/PaymentReceiptModal';
 import { ErrorView } from '../../components/ui/ErrorView';
@@ -14,6 +13,8 @@ import { useLease } from '../../hooks/LeaseContext';
 import { paymentApi } from '../../lib/api';
 import { formatMoney } from '../../lib/currency';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
+import { FinWiseScreen } from '../../components/ui/FinWiseScreen';
+import { useRouter } from 'expo-router';
 import { formatDateShort } from '@/lib/utils';
 import { Currency, Payment, PAYMENT_TYPE_LABELS, PaymentWithDetails } from '../../types';
 
@@ -48,6 +49,7 @@ const StatusBadge = ({ status }: { status: PaymentStatus }) => {
 
 export default function PaymentHistoryScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const { selectedLeaseId } = useLease();
   const [selectedReceiptPaymentId, setSelectedReceiptPaymentId] = useState<string | null>(null);
   const [showHistorical, setShowHistorical] = useState(false);
@@ -164,7 +166,7 @@ export default function PaymentHistoryScreen() {
       <View className="space-y-2">
         <View className="flex-row justify-between items-center">
           <View className="flex-row items-center gap-2 flex-1 pr-2">
-            <Text className="font-medium text-gray-800" numberOfLines={1}>
+            <Text className="font-medium text-[15px] text-finance-fence" numberOfLines={1}>
               {PAYMENT_TYPE_LABELS[payment.paymentType ?? 'rent']} {payment.dueDate ? `(${formatDateShort(payment.dueDate)})` : ''}
             </Text>
             {payment.paymentType && payment.paymentType !== 'rent' && (
@@ -181,7 +183,7 @@ export default function PaymentHistoryScreen() {
         {payment.paidDate ? (
           <View className="flex-row items-center gap-2">
             <MaterialIcons name="event" size={16} color="#6B7280" />
-            <Text className="text-sm text-gray-600">
+            <Text className="text-[13px] text-gray-500">
               Paid: {formatDateShort(payment.paidDate)}
             </Text>
             {isLate && (
@@ -193,15 +195,15 @@ export default function PaymentHistoryScreen() {
         ) : payment.dueDate ? (
           <View className="flex-row items-center gap-2">
             <MaterialIcons name="event" size={16} color="#6B7280" />
-            <Text className="text-sm text-gray-600">
+            <Text className="text-[13px] text-gray-500">
               Due: {formatDateShort(payment.dueDate)}
             </Text>
           </View>
         ) : null}
 
         <View className="flex-row justify-between items-center">
-          <Text className="text-gray-600">Amount</Text>
-          <Text className="text-lg font-bold text-gray-800">
+          <Text className="text-[13px] text-gray-500">Amount</Text>
+          <Text className="text-[20px] font-bold text-finance-fence">
             {formatMoney(amountVal, payment.currency)}
           </Text>
         </View>
@@ -209,7 +211,7 @@ export default function PaymentHistoryScreen() {
         {(payment.periodCovered || payment.dueDate) && (
           <View className="flex-row items-center gap-2">
             <MaterialIcons name="date-range" size={16} color="#6B7280" />
-            <Text className="text-sm text-gray-600">
+            <Text className="text-[13px] text-gray-500">
               Period: {payment.periodCovered || (payment.dueDate ? formatDateShort(payment.dueDate) : '')}
             </Text>
           </View>
@@ -256,23 +258,20 @@ export default function PaymentHistoryScreen() {
 
   return (
     <SafeAreaWrapper>
-      <View className="flex-1 bg-gray-50">
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={() => { void refetch(); }} />
-          }
-        >
-          <View className="px-4 pt-6 pb-4">
-            {/* Header */}
-            <Text className="text-2xl font-semibold text-gray-800 mb-6">
-              Payment History
-            </Text>
-
-            {/* Payment Summary */}
-            <Card className="mb-4">
-              <View className="space-y-3">
-                <Text className="text-lg font-semibold text-gray-800 mb-2">
+      <FinWiseScreen
+        title="Payment History"
+        onBack={() => router.back()}
+        header={<View />}
+        headerClassName="px-9 pt-6 pb-8"
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={() => { void refetch(); }} tintColor="#FFFFFF" />
+        }
+      >
+        <View className="space-y-9">
+          {/* Payment Summary */}
+          <View>
+            <View className="space-y-2">
+                <Text className="text-[15px] font-medium text-finance-fence mb-3">
                   Payment Summary
                 </Text>
                 {totalPaidByCurrency.map(({ currency, amount }) => (
@@ -316,26 +315,26 @@ export default function PaymentHistoryScreen() {
                   </View>
                 )}
                 {payments.length === 0 && (
-                  <Text className="text-gray-500 text-center py-2">
+                  <Text className="text-gray-400 text-center py-2 text-[13px]">
                     No payments recorded yet
                   </Text>
                 )}
               </View>
-            </Card>
+          </View>
 
-            {/* Historical Payments - Grouped by Year */}
-            {historicalPayments.length > 0 && (
-              <Card className="mb-4">
-                <View className="space-y-3">
+          {/* Historical Payments - Grouped by Year */}
+          {historicalPayments.length > 0 && (
+            <View>
+              <View className="space-y-3">
                   <TouchableOpacity
                     onPress={() => setShowHistorical(!showHistorical)}
                     className="flex-row justify-between items-center"
                   >
                     <View>
-                      <Text className="text-lg font-semibold text-gray-800">
+                      <Text className="text-[15px] font-medium text-finance-fence">
                         Historical Payments
                       </Text>
-                      <Text className="text-sm text-gray-500">
+                      <Text className="text-[12px] text-gray-400">
                         {historicalPayments.length} payment{historicalPayments.length > 1 ? 's' : ''} from previous years
                       </Text>
                     </View>
@@ -357,14 +356,14 @@ export default function PaymentHistoryScreen() {
                       ))}
                     </View>
                   )}
-                </View>
-              </Card>
-            )}
+              </View>
+            </View>
+          )}
 
-            {/* Current Payments List */}
-            <Card className="mb-6">
-              <View className="space-y-3">
-                <Text className="text-lg font-semibold text-gray-800 mb-2">
+          {/* Current Payments List */}
+          <View>
+            <View className="space-y-3">
+                <Text className="text-[15px] font-medium text-finance-fence mb-2">
                   {historicalPayments.length > 0 ? `Payments (${currentYear})` : 'All Payments'}
                 </Text>
                 {currentYearPayments.length === 0 ? (
@@ -382,12 +381,12 @@ export default function PaymentHistoryScreen() {
                     )}
                   </View>
                 )}
-              </View>
-            </Card>
+            </View>
           </View>
-        </ScrollView>
+        </View>
+      </FinWiseScreen>
 
-        {/* Payment Receipt Modal */}
+      {/* Payment Receipt Modal */}
         {selectedReceiptPaymentId && (
           <PaymentReceiptModal
             visible={!!selectedReceiptPaymentId}
@@ -395,7 +394,6 @@ export default function PaymentHistoryScreen() {
             paymentId={selectedReceiptPaymentId}
           />
         )}
-      </View>
     </SafeAreaWrapper>
   );
 }

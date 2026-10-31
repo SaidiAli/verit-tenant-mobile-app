@@ -9,7 +9,6 @@ import {
   TextInput,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Card } from "./Card";
 import { LoadingSpinner } from "./LoadingSpinner";
 import {
   formatMoney,
@@ -83,23 +82,24 @@ export function PaymentConfirmationModal({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
-        <View className="flex-1 bg-gray-50">
+        <View className="flex-1 bg-brand">
           {/* Header */}
-          <View className="bg-white px-4 pt-12 pb-4 border-b border-gray-200">
+          <View className="px-9 pt-12 pb-6">
             <View className="flex-row items-center justify-between">
-              <TouchableOpacity onPress={onClose} disabled={isLoading}>
-                <MaterialIcons name="arrow-back" size={24} color="#6B7280" />
+              <TouchableOpacity onPress={onClose} disabled={isLoading} className="w-[30px] h-[30px] rounded-full bg-white/10 items-center justify-center">
+                <MaterialIcons name="arrow-back" size={18} color="#FFFFFF" />
               </TouchableOpacity>
-              <Text className="text-lg font-semibold text-gray-800">
+              <Text className="text-[20px] leading-[22px] font-semibold text-white text-center flex-1 mx-3">
                 {paymentType === 'security_deposit' ? 'Confirm Security Deposit' : 'Confirm Rent Payment'}
               </Text>
-              <View className="w-6" />
+              <View className="w-[30px]" />
             </View>
           </View>
 
-          <View className="flex-1 px-4 pt-8">
+          <View className="flex-1">
+            <View className="bg-white rounded-t-[40px] px-9 pt-8 pb-16">
             {/* Provider and Amount Info */}
-            <Card className="mb-8">
+            <View className="mb-8">
               <View className="items-center space-y-4">
                 <View
                   className={`w-16 h-16 rounded-full items-center justify-center ${
@@ -114,14 +114,14 @@ export function PaymentConfirmationModal({
                 </View>
 
                 <View className="items-center gap-2 w-full">
-                  <Text className="text-xl font-bold text-gray-800">
+                  <Text className="text-[24px] font-bold text-finance-fence">
                     {formatMoney(amount, currency)}
                   </Text>
-                  <Text className="text-gray-600">via {derivedProvider}</Text>
-                  {paymentType === 'security_deposit' && <Text>Exact refundable security amount. This payment does not reduce rent owed.</Text>}
+                  <Text className="text-[13px] text-gray-500">via {derivedProvider}</Text>
+                  {paymentType === 'security_deposit' && <Text className="text-[12px] text-gray-400 text-center">Exact refundable security amount. This payment does not reduce rent owed.</Text>}
 
                   {isEditing ? (
-                    <View className="flex-row items-center bg-gray-100 rounded-full px-3 py-1 border border-gray-300 w-full max-w-[240px]">
+                    <View className="flex-row items-center bg-brand-light rounded-full px-3 py-1 w-full max-w-[260px]">
                       <TextInput
                         value={currentPhoneNumber}
                         onChangeText={handlePhoneChange}
@@ -140,9 +140,9 @@ export function PaymentConfirmationModal({
                   ) : (
                     <TouchableOpacity
                       onPress={() => setIsEditing(true)}
-                      className="flex-row items-center gap-2 bg-gray-100 border border-dashed border-gray-400 px-4 py-2 rounded-full"
+                      className="flex-row items-center gap-2 bg-brand-light px-4 py-2 rounded-full"
                     >
-                      <Text className="text-gray-900 font-semibold text-lg">
+                      <Text className="text-finance-fence font-semibold text-[15px]">
                         {formatPhoneNumber(currentPhoneNumber)}
                       </Text>
                       <View className="w-5 h-5 rounded-full bg-gray-400 items-center justify-center">
@@ -152,11 +152,11 @@ export function PaymentConfirmationModal({
                   )}
                 </View>
               </View>
-            </Card>
+            </View>
 
             {/* Instructions */}
             <View className="items-center space-y-6">
-              <View className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 w-full">
+              <View className="bg-amber-50 p-4 rounded-[18px] border border-amber-200 w-full">
                 <View className="flex-row items-start gap-2">
                   <MaterialIcons
                     name="info"
@@ -165,10 +165,10 @@ export function PaymentConfirmationModal({
                     className="mt-1"
                   />
                   <View className="flex-1 space-y-1">
-                    <Text className="font-semibold text-yellow-900">
+                    <Text className="font-semibold text-amber-900 text-[13px]">
                       Next Step
                     </Text>
-                    <Text className="text-yellow-800 leading-5">
+                    <Text className="text-amber-800 text-[13px] leading-relaxed">
                       When you tap &quot;Pay Now&quot;, you will receive a
                       prompt on your phone (
                       {formatPhoneNumber(currentPhoneNumber)}) to enter your
@@ -180,9 +180,9 @@ export function PaymentConfirmationModal({
 
               {/* Error Message */}
               {error && (
-                <View className="flex-row items-center space-x-2 bg-red-50 px-4 py-3 rounded-md w-full">
+                <View className="flex-row items-center gap-2 bg-red-50 px-4 py-3 rounded-[18px] w-full">
                   <MaterialIcons name="error" size={20} color="#EF4444" />
-                  <Text className="text-red-600 flex-1">{error}</Text>
+                  <Text className="text-red-600 text-[13px] flex-1">{error}</Text>
                 </View>
               )}
 
@@ -190,27 +190,34 @@ export function PaymentConfirmationModal({
               {isLoading && (
                 <View className="items-center space-y-3 mt-4">
                   <LoadingSpinner size="large" message="" className="my-0" />
-                  <Text className="text-gray-600 text-center">
+                  <Text className="text-gray-500 text-center text-[13px]">
                     Initiating payment request...
                   </Text>
                 </View>
               )}
             </View>
+            </View>
           </View>
 
           {/* Footer */}
-          <View className="bg-white px-4 pb-6 pt-4 border-t border-gray-200">
+          <View className="absolute bottom-0 left-0 right-0 bg-white px-9 pb-6 pt-4 border-t border-gray-100">
             <View className="space-y-3">
               <TouchableOpacity
                 onPress={handleConfirm}
                 disabled={isLoading || derivedProvider === "Unknown Provider"}
-                className={`py-3 rounded-md items-center ${
+                className={`h-[45px] rounded-[30px] items-center justify-center ${
                   isLoading || derivedProvider === "Unknown Provider"
-                    ? "bg-gray-300"
-                    : "bg-brand"
+                    ? "bg-brand-light"
+                    : "bg-finance"
                 }`}
               >
-                <Text className="text-white font-semibold text-lg">
+                <Text
+                  className={`font-semibold text-[15px] ${
+                    isLoading || derivedProvider === "Unknown Provider"
+                      ? "text-gray-400"
+                      : "text-finance-fence"
+                  }`}
+                >
                   {isLoading ? "Processing..." : "Pay Now"}
                 </Text>
               </TouchableOpacity>

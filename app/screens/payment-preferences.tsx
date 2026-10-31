@@ -1,9 +1,9 @@
-import { ScrollView, View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Card } from '../../components/ui/Card';
 import { SafeAreaWrapper } from '../../components/ui/SafeAreaWrapper';
+import { FinWiseScreen } from '../../components/ui/FinWiseScreen';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useServerSettings } from '../../hooks/useServerSettings';
 import { useAuth } from '../../hooks/useAuth';
@@ -84,122 +84,121 @@ export default function PaymentPreferencesScreen() {
 
   return (
     <SafeAreaWrapper>
-      <View className="flex-1 bg-gray-50">
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="px-4 pt-6 pb-4">
-            {/* Header */}
-            <View className="flex-row items-center mb-6">
-              <TouchableOpacity
-                onPress={() => router.back()}
-                className="flex-row items-center gap-2 p-2 -ml-2 rounded-md active:bg-gray-200"
-              >
-                <MaterialIcons name="arrow-back" size={24} color="#374151" />
-              </TouchableOpacity>
-              <Text className="text-xl font-semibold text-gray-800 ml-2">Payment Preferences</Text>
+      <FinWiseScreen
+        title="Payment Preferences"
+        onBack={() => router.back()}
+        header={<View />}
+        headerClassName="px-9 pt-6 pb-8"
+      >
+        <View className="space-y-9">
+          {/* Mobile money account */}
+          <View>
+            <Text className="text-[15px] font-medium text-finance-fence mb-1">Mobile Money</Text>
+            <Text className="text-[13px] text-gray-500 mb-3 leading-relaxed">
+              Used to pre-fill your rent payments. Leave blank to use your profile phone number.
+            </Text>
+
+            <View className="mb-5">
+              <Text className="text-[15px] font-medium text-finance-fence mb-2">Mobile Money Number</Text>
+              <TextInput
+                value={phone}
+                onChangeText={(t) => {
+                  setIsDirty(true);
+                  setPhone(t);
+                  if (errors.phone) setErrors((p) => ({ ...p, phone: '' }));
+                }}
+                placeholder="0XXXXXXXXX"
+                placeholderTextColor="#9CA3AF"
+                keyboardType="phone-pad"
+                className={`h-[41px] rounded-[18px] px-4 text-[16px] text-finance-fence ${
+                  errors.phone ? 'bg-red-50' : 'bg-brand-light'
+                }`}
+              />
+              {errors.phone ? (
+                <Text className="text-red-500 text-[12px] mt-1.5">{errors.phone}</Text>
+              ) : null}
             </View>
 
-            {/* Mobile money account */}
-            <Card className="mb-4">
-              <Text className="text-lg font-semibold text-gray-800 mb-1">Mobile Money</Text>
-              <Text className="text-sm text-gray-500 mb-3">
-                Used to pre-fill your rent payments. Leave blank to use your profile phone number.
-              </Text>
-
-              <View className="mb-4">
-                <Text className="text-sm font-medium text-gray-700 mb-1">Mobile Money Number</Text>
-                <TextInput
-                  value={phone}
-                  onChangeText={(t) => {
-                    setIsDirty(true);
-                    setPhone(t);
-                    if (errors.phone) setErrors((p) => ({ ...p, phone: '' }));
-                  }}
-                  placeholder="0XXXXXXXXX"
-                  keyboardType="phone-pad"
-                  className={`border rounded-md px-3 py-3 bg-white ${errors.phone ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                />
-                {errors.phone ? (
-                  <Text className="text-red-500 text-sm mt-1">{errors.phone}</Text>
-                ) : null}
-              </View>
-
-              <Text className="text-sm font-medium text-gray-700 mb-2">Provider</Text>
-              <View className="flex-row gap-2">
-                {PROVIDERS.map((p) => {
-                  const selected = provider === p.value;
-                  return (
-                    <TouchableOpacity
-                      key={p.value}
-                      onPress={() => {
-                        setIsDirty(true);
-                        setProvider(p.value);
-                        if (errors.provider) setErrors((e) => ({ ...e, provider: '' }));
-                      }}
-                      className={`flex-1 py-3 rounded-md border items-center ${selected ? 'border-brand bg-brand/5' : 'border-gray-300 bg-white'
-                        }`}
-                    >
-                      <Text className={`font-medium ${selected ? 'text-brand' : 'text-gray-700'}`}>
-                        {p.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-              {errors.provider ? (
-                <Text className="text-red-500 text-sm mt-1">{errors.provider}</Text>
-              ) : null}
-            </Card>
-
-            {/* Reminder lead time */}
-            <Card className="mb-4">
-              <Text className="text-lg font-semibold text-gray-800 mb-1">Rent Reminders</Text>
-              <Text className="text-sm text-gray-500 mb-3">
-                How many days before rent is due you&apos;d like to be reminded (0–30).
-              </Text>
-
-              <View className="flex-row items-center justify-between">
-                <TouchableOpacity
-                  onPress={() => adjustReminder(-1)}
-                  disabled={reminderDays <= REMINDER_MIN}
-                  className={`w-12 h-12 rounded-md items-center justify-center ${reminderDays <= REMINDER_MIN ? 'bg-gray-200' : 'bg-brand'
-                    }`}
-                >
-                  <MaterialIcons name="remove" size={24} color="#ffffff" />
-                </TouchableOpacity>
-
-                <View className="items-center">
-                  <Text className="text-3xl font-bold text-gray-800">{reminderDays}</Text>
-                  <Text className="text-sm text-gray-500">
-                    {reminderDays === 0 ? 'On due date' : `day${reminderDays === 1 ? '' : 's'} before`}
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  onPress={() => adjustReminder(1)}
-                  disabled={reminderDays >= REMINDER_MAX}
-                  className={`w-12 h-12 rounded-md items-center justify-center ${reminderDays >= REMINDER_MAX ? 'bg-gray-200' : 'bg-brand'
-                    }`}
-                >
-                  <MaterialIcons name="add" size={24} color="#ffffff" />
-                </TouchableOpacity>
-              </View>
-            </Card>
-
-            {/* Save */}
-            <TouchableOpacity
-              onPress={save}
-              disabled={updatePaymentPrefs.isPending}
-              className={`py-4 rounded-md mt-2 ${updatePaymentPrefs.isPending ? 'bg-gray-300' : 'bg-brand'
-                }`}
-            >
-              <Text className="text-white font-semibold text-center text-lg">
-                {updatePaymentPrefs.isPending ? 'Saving...' : 'Save Changes'}
-              </Text>
-            </TouchableOpacity>
+            <Text className="text-[15px] font-medium text-finance-fence mb-2">Provider</Text>
+            <View className="flex-row gap-3">
+              {PROVIDERS.map((p) => {
+                const selected = provider === p.value;
+                return (
+                  <TouchableOpacity
+                    key={p.value}
+                    onPress={() => {
+                      setIsDirty(true);
+                      setProvider(p.value);
+                      if (errors.provider) setErrors((e) => ({ ...e, provider: '' }));
+                    }}
+                    className={`flex-1 h-[45px] rounded-[18px] items-center justify-center ${selected ? 'bg-brand-light' : 'bg-white border border-gray-100'
+                      }`}
+                  >
+                    <Text className={`text-[15px] font-medium ${selected ? 'text-brand' : 'text-finance-fence'}`}>
+                      {p.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {errors.provider ? (
+              <Text className="text-red-500 text-[12px] mt-1.5">{errors.provider}</Text>
+            ) : null}
           </View>
-        </ScrollView>
-      </View>
+
+          {/* Reminder lead time */}
+          <View>
+            <Text className="text-[15px] font-medium text-finance-fence mb-1">Rent Reminders</Text>
+            <Text className="text-[13px] text-gray-500 mb-3 leading-relaxed">
+              How many days before rent is due you&apos;d like to be reminded (0–30).
+            </Text>
+
+            <View className="flex-row items-center justify-between">
+              <TouchableOpacity
+                onPress={() => adjustReminder(-1)}
+                disabled={reminderDays <= REMINDER_MIN}
+                className={`w-12 h-12 rounded-full items-center justify-center ${reminderDays <= REMINDER_MIN ? 'bg-gray-100' : 'bg-finance'
+                  }`}
+              >
+                <MaterialIcons name="remove" size={24} color={reminderDays <= REMINDER_MIN ? '#9CA3AF' : '#052224'} />
+              </TouchableOpacity>
+
+              <View className="items-center">
+                <Text className="text-[24px] font-bold text-finance-fence">{reminderDays}</Text>
+                <Text className="text-[12px] text-gray-500">
+                  {reminderDays === 0 ? 'On due date' : `day${reminderDays === 1 ? '' : 's'} before`}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => adjustReminder(1)}
+                disabled={reminderDays >= REMINDER_MAX}
+                className={`w-12 h-12 rounded-full items-center justify-center ${reminderDays >= REMINDER_MAX ? 'bg-gray-100' : 'bg-finance'
+                  }`}
+              >
+                <MaterialIcons name="add" size={24} color={reminderDays >= REMINDER_MAX ? '#9CA3AF' : '#052224'} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Save */}
+          <TouchableOpacity
+            onPress={save}
+            disabled={updatePaymentPrefs.isPending}
+            className={`h-[45px] rounded-[30px] items-center justify-center ${
+              updatePaymentPrefs.isPending ? 'bg-brand-light' : 'bg-finance'
+            }`}
+          >
+            <Text
+              className={`font-semibold text-[15px] ${
+                updatePaymentPrefs.isPending ? 'text-gray-400' : 'text-finance-fence'
+              }`}
+            >
+              {updatePaymentPrefs.isPending ? 'Saving...' : 'Save Changes'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </FinWiseScreen>
     </SafeAreaWrapper>
   );
 }

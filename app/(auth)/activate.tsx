@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
 import { authApi } from "../../lib/api";
@@ -182,6 +183,13 @@ export default function ActivateAccountScreen() {
         >
           {/* Top Branded Curve Header */}
           <View className="pt-8 pb-10 px-6 items-center">
+            <View className="w-40 h-14 mb-4 items-center justify-center">
+              <Image
+                source={require('../../assets/logos/logos-09.svg')}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="contain"
+              />
+            </View>
             <View className="flex-row items-center justify-between w-full mb-4">
               <TouchableOpacity
                 onPress={() => {
@@ -236,7 +244,7 @@ export default function ActivateAccountScreen() {
             <View className="w-full max-w-sm mx-auto">
               {/* STEP 1: Phone */}
               {step === "phone" && (
-                <View className="space-y-4">
+                <View className="gap-4">
                   <View>
                     <Text className="text-[15px] font-medium text-finance-fence mb-2">
                       Mobile Phone Number
@@ -293,7 +301,7 @@ export default function ActivateAccountScreen() {
 
               {/* STEP 2: OTP */}
               {step === "otp" && (
-                <View className="space-y-4 items-center">
+                <View className="gap-4 items-center">
                   <Text className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
                     Enter 6-Digit PIN
                   </Text>
@@ -371,7 +379,7 @@ export default function ActivateAccountScreen() {
 
               {/* STEP 3: Choose Account */}
               {step === "choose-account" && (
-                <View className="space-y-3">
+                <View className="gap-3">
                   <Text className="text-lg font-semibold text-gray-800 mb-1">
                     Choose your account
                   </Text>
@@ -420,7 +428,7 @@ export default function ActivateAccountScreen() {
 
               {/* STEP 4: Credentials */}
               {step === "credentials" && (
-                <View className="space-y-4">
+                <View className="gap-4">
                   <View>
                     <Text className="text-[15px] font-medium text-finance-fence mb-2">
                       Choose Username

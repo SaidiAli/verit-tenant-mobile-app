@@ -3,7 +3,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { tenantKeys } from '../../lib/queryKeys';
 import { BRAND_COLOR } from "@/constants/theme";
 import {
-  ScrollView,
   View,
   Text,
   TouchableOpacity,
@@ -11,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Card } from "../../components/ui/Card";
+import { useRouter } from "expo-router";
 
 import { useQuery } from "@tanstack/react-query";
 import { tenantApi } from "../../lib/api";
@@ -19,10 +18,12 @@ import { useLease } from "../../hooks/LeaseContext";
 import { LeaseSwitcher } from "../../components/ui/LeaseSwitcher";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
+import { FinWiseScreen } from "../../components/ui/FinWiseScreen";
 
 export default function PropertyScreen() {
   const { user } = useAuth();
   const { selectedLeaseId, isLoadingLeases } = useLease();
+  const router = useRouter();
 
   // Fetch property information
   const {
@@ -62,29 +63,25 @@ export default function PropertyScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-gray-50 justify-center items-center">
-        <LoadingSpinner size="large" />
-        <Text className="text-gray-600 mt-4">Loading property details...</Text>
+      <View className="flex-1 bg-brand justify-center items-center">
+        <LoadingSpinner size="large" className="bg-transparent" />
+        <Text className="text-white/70 mt-2">Loading property details...</Text>
       </View>
     );
   }
 
   if (propertyError || !propertyInfo) {
     return (
-      <View className="flex-1 bg-gray-50 justify-center items-center px-4">
+      <View className="flex-1 bg-brand justify-center items-center px-9">
         <MaterialIcons name="error-outline" size={48} color="#EF4444" />
-        <Text className="text-xl font-semibold text-gray-800 mt-4 text-center">
+        <Text className="text-[20px] font-semibold text-white mt-4 text-center">
           Unable to Load Property Information
         </Text>
-        <Text className="text-gray-600 mt-2 text-center">
+        <Text className="text-[14px] text-white/70 mt-2 text-center">
           {propertyError
             ? "Failed to fetch property data."
             : "No property information found for this lease."}
         </Text>
-        <LoadingSpinner className="mt-4" />
-        {/* Helper to allow easy retry by switching lease if needed, though LeaseSwitcher is in header usually.
-            Here we might need a go back or retry button if it persists.
-        */}
       </View>
     );
   }
@@ -93,147 +90,138 @@ export default function PropertyScreen() {
 
   return (
     <SafeAreaWrapper>
-      <View className="flex-1 bg-gray-50">
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="px-4 pt-6 pb-4">
-            {/* Header */}
-            <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-2xl font-semibold text-gray-800">
-                Property Information
+      <FinWiseScreen
+        title="Property & Unit"
+        onBack={() => router.back()}
+        header={
+          <View className="flex-row items-center justify-end mt-4">
+            <LeaseSwitcher />
+          </View>
+        }
+        headerClassName="px-9 pt-6 pb-8"
+      >
+        <View className="space-y-9">
+          {/* Property Overview */}
+          <View>
+            <Text className="text-[20px] leading-[22px] font-semibold text-finance-fence">
+              {property.name}
+            </Text>
+
+            <View className="flex-row items-start gap-2 mt-2">
+              <MaterialIcons name="location-on" size={16} color="#9CA3AF" />
+              <Text className="text-[13px] text-gray-500 flex-1 leading-relaxed">
+                {property.address}, {property.city}, {property.state}{" "}
+                {property.zipCode}
               </Text>
-              <LeaseSwitcher />
             </View>
 
-            {/* Property Overview */}
-            <Card className="mb-4">
-              <View className="space-y-3">
-                <Text className="text-lg font-semibold text-gray-800">
-                  {property.name}
-                </Text>
-
-                <View className="flex-row items-start space-x-2">
-                  <MaterialIcons
-                    name="location-on"
-                    size={16}
-                    color="#6B7280"
-                    style={{ marginTop: 2 }}
-                  />
-                  <Text className="text-gray-600 text-sm flex-1">
-                    {property.address}, {property.city}, {property.state}{" "}
-                    {property.zipCode}
-                  </Text>
-                </View>
-
-                {property.description && (
-                  <Text className="text-gray-700 text-sm leading-5">
-                    {property.description}
-                  </Text>
-                )}
-              </View>
-            </Card>
-
-            {management && (
-              <Card className="mb-4">
-                <View className="gap-2">
-                  <Text className="text-lg font-semibold text-gray-800">Managed by</Text>
-                  <Text className="text-gray-800 font-medium">{management.managingDisplayName}</Text>
-                  <Text className="text-gray-600 text-sm">Contact this organization for maintenance and day-to-day property service.</Text>
-                  {management.managingContactPhone && <TouchableOpacity onPress={() => handleEmergencyCall(management.managingContactPhone!)}><Text className="text-brand font-medium">Call {management.managingContactPhone}</Text></TouchableOpacity>}
-                </View>
-              </Card>
+            {property.description && (
+              <Text className="text-[13px] text-gray-600 leading-relaxed mt-3">
+                {property.description}
+              </Text>
             )}
+          </View>
 
-            {/* Emergency Contact */}
-            {emergencyContacts && emergencyContacts.length > 0 && (
-              <Card className="mb-4">
-                <View className="gap-3">
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-lg font-semibold text-gray-800">
-                      Emergency Contact
-                    </Text>
-                    <MaterialIcons name="emergency" size={20} color="#EF4444" />
-                  </View>
-
-                  <View className="space-y-3">
-                    {emergencyContacts.map((contact, index) => (
-                      <View key={index} className="mb-2">
-                        <Text className="font-medium text-gray-800">
-                          {contact.name} ({contact.type})
-                        </Text>
-
-                        <TouchableOpacity
-                          className="bg-red-500 py-3 rounded-md flex-row items-center justify-center space-x-2 mt-2"
-                          onPress={() => handleEmergencyCall(contact.phone)}
-                        >
-                          <MaterialIcons name="phone" size={20} color="white" />
-                          <Text className="text-white font-medium">
-                            Call: {contact.phone}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-
-                    <Text className="text-sm text-gray-600 text-center">
-                      For emergencies only
-                    </Text>
-                  </View>
-                </View>
-              </Card>
-            )}
-
-            {/* Rules */}
-            {rules && (
-              <Card className="mb-4">
-                <View className="space-y-3">
-                  <Text className="text-lg font-semibold text-gray-800">
-                    House Rules
-                  </Text>
-                  <Text className="text-gray-700 text-sm leading-5">
-                    {rules}
-                  </Text>
-                </View>
-              </Card>
-            )}
-
-            {/* Maintenance Request Form */}
-            <Card className="mb-4">
-              <View className="gap-3">
-                <Text className="text-lg font-semibold text-gray-800">
-                  Submit Maintenance Request
-                </Text>
-
-                <Text className="text-gray-600 text-sm">
-                  Need something fixed? Submit a maintenance request and
-                  we&apos;ll get it taken care of.
-                </Text>
-
-                <TouchableOpacity
-                  className="border border-brand py-3 rounded-md flex-row items-center justify-center space-x-2 active:bg-brand/10"
-                  onPress={handleSubmitMaintenance}
-                >
-                  <MaterialIcons name="build" size={20} color={BRAND_COLOR} />
-                  <Text className="text-brand font-medium">
-                    Submit New Request
+          {/* Managed by */}
+          {management && (
+            <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-1">
+                Managed by
+              </Text>
+              <Text className="text-[13px] font-medium text-finance-fence">
+                {management.managingDisplayName}
+              </Text>
+              <Text className="text-[13px] text-gray-500 leading-relaxed mt-1">
+                Contact this organization for maintenance and day-to-day property service.
+              </Text>
+              {management.managingContactPhone && (
+                <TouchableOpacity onPress={() => handleEmergencyCall(management.managingContactPhone!)}>
+                  <Text className="text-brand font-semibold text-[13px] mt-2">
+                    Call {management.managingContactPhone}
                   </Text>
                 </TouchableOpacity>
-              </View>
-            </Card>
+              )}
+            </View>
+          )}
 
-            {/* Recent Maintenance Requests */}
-            <Card className="mb-6">
-              <View className="space-y-3">
-                <Text className="text-lg font-semibold text-gray-800">
-                  Your Maintenance Requests
+          {/* Emergency Contact */}
+          {emergencyContacts && emergencyContacts.length > 0 && (
+            <View>
+              <View className="flex-row items-center gap-2 mb-2">
+                <Text className="text-[15px] font-medium text-finance-fence">
+                  Emergency Contact
                 </Text>
-
-                <Text className="text-gray-500 text-sm text-center py-4">
-                  No maintenance requests submitted yet
-                </Text>
+                <MaterialIcons name="emergency" size={18} color="#EF4444" />
               </View>
-            </Card>
+
+              {emergencyContacts.map((contact, index) => (
+                <View key={index} className="mb-3">
+                  <Text className="text-[13px] font-medium text-finance-fence">
+                    {contact.name} ({contact.type})
+                  </Text>
+
+                  <TouchableOpacity
+                    className="h-[45px] rounded-[30px] bg-rose-600 flex-row items-center justify-center gap-2 mt-2"
+                    onPress={() => handleEmergencyCall(contact.phone)}
+                  >
+                    <MaterialIcons name="phone" size={18} color="white" />
+                    <Text className="text-white font-semibold text-[15px]">
+                      Call: {contact.phone}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+
+              <Text className="text-[12px] text-gray-400 text-center">
+                For emergencies only
+              </Text>
+            </View>
+          )}
+
+          {/* Rules */}
+          {rules && (
+            <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-1">
+                House Rules
+              </Text>
+              <Text className="text-[13px] text-gray-600 leading-relaxed">
+                {rules}
+              </Text>
+            </View>
+          )}
+
+          {/* Maintenance Request */}
+          <View>
+            <Text className="text-[15px] font-medium text-finance-fence mb-1">
+              Submit Maintenance Request
+            </Text>
+            <Text className="text-[13px] text-gray-500 leading-relaxed mb-3">
+              Need something fixed? Submit a maintenance request and
+              we&apos;ll get it taken care of.
+            </Text>
+
+            <TouchableOpacity
+              className="h-[45px] rounded-[30px] bg-brand-light flex-row items-center justify-center gap-2"
+              onPress={handleSubmitMaintenance}
+            >
+              <MaterialIcons name="build" size={20} color={BRAND_COLOR} />
+              <Text className="text-brand font-semibold text-[15px]">
+                Submit New Request
+              </Text>
+            </TouchableOpacity>
           </View>
-        </ScrollView>
-      </View>
+
+          {/* Recent Maintenance Requests */}
+          <View>
+            <Text className="text-[15px] font-medium text-finance-fence mb-2">
+              Your Maintenance Requests
+            </Text>
+            <Text className="text-[13px] text-gray-400 text-center py-4">
+              No maintenance requests submitted yet
+            </Text>
+          </View>
+        </View>
+      </FinWiseScreen>
     </SafeAreaWrapper>
   );
 }

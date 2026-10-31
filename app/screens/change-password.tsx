@@ -1,7 +1,5 @@
 import { session } from '../../lib/session';
-import { BRAND_COLOR } from "@/constants/theme";
 import {
-  ScrollView,
   View,
   Text,
   TouchableOpacity,
@@ -13,8 +11,8 @@ import { useState, useRef } from "react";
 import { useRouter } from "expo-router";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "../../hooks/useAuth";
-import { Card } from "../../components/ui/Card";
 import { SafeAreaWrapper } from "../../components/ui/SafeAreaWrapper";
+import { FinWiseScreen } from "../../components/ui/FinWiseScreen";
 
 export default function ChangePasswordScreen() {
   const { changePassword } = useAuth();
@@ -122,258 +120,239 @@ export default function ChangePasswordScreen() {
 
   return (
     <SafeAreaWrapper>
-      <View className="flex-1 bg-gray-50">
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="px-4 pt-6 pb-4">
-            {/* Header */}
-            <View className="flex-row items-center mb-6">
-              <TouchableOpacity
-                onPress={handleCancel}
-                className="flex-row items-center gap-2 p-2 -ml-2 rounded-md active:bg-gray-200"
-              >
-                <MaterialIcons name="arrow-back" size={24} color="#374151" />
-              </TouchableOpacity>
-
-              <Text className="text-xl font-semibold text-gray-800 ml-2">
-                Change Password
+      <FinWiseScreen
+        title="Change Password"
+        onBack={handleCancel}
+        header={<View />}
+        headerClassName="px-9 pt-6 pb-8"
+      >
+        <View className="space-y-8">
+          {/* Security Notice */}
+          <View className="bg-brand-light/60 rounded-[22px] p-5 flex-row items-start gap-3">
+            <View className="w-[31px] h-[31px] rounded-[10px] bg-finance/15 items-center justify-center">
+              <MaterialIcons name="security" size={17} color="#00D09E" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-[15px] font-medium text-finance-fence mb-1">
+                Security Notice
+              </Text>
+              <Text className="text-[13px] text-gray-500 leading-relaxed">
+                Choose a strong password that you haven&apos;t used before.
+                Your password should be at least 8 characters long.
               </Text>
             </View>
+          </View>
 
-            {/* Security Notice */}
-            <Card className="mb-4">
-              <View className="flex-row items-start gap-3">
-                <MaterialIcons name="security" size={24} color={BRAND_COLOR} />
-                <View className="flex-1">
-                  <Text className="font-semibold text-gray-800 mb-1">
-                    Security Notice
-                  </Text>
-                  <Text className="text-sm text-gray-600">
-                    Choose a strong password that you haven&apos;t used before.
-                    Your password should be at least 8 characters long.
-                  </Text>
-                </View>
+          {/* Form Fields */}
+          <View className="gap-7">
+            {/* Current Password */}
+            <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-2">
+                Current Password
+              </Text>
+              <View className="relative">
+                <TextInput
+                  value={formData.currentPassword}
+                  onChangeText={(text) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      currentPassword: text,
+                    }));
+                    if (errors.currentPassword) {
+                      setErrors((prev) => ({
+                        ...prev,
+                        currentPassword: "",
+                      }));
+                    }
+                  }}
+                  className={`h-[41px] rounded-[18px] px-4 pr-12 text-[16px] text-finance-fence ${
+                    errors.currentPassword ? "bg-red-50" : "bg-brand-light"
+                  }`}
+                  placeholder="Enter your current password"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry={!showPasswords.current}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  onPress={() => togglePasswordVisibility("current")}
+                  className="absolute right-4 top-[10px]"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <MaterialIcons
+                    name={showPasswords.current ? "visibility-off" : "visibility"}
+                    size={20}
+                    color="#6B7280"
+                  />
+                </TouchableOpacity>
               </View>
-            </Card>
+              {errors.currentPassword && (
+                <Text className="text-red-500 text-[12px] mt-1.5">
+                  {errors.currentPassword}
+                </Text>
+              )}
+            </View>
 
-            {/* Form Fields */}
-            <Card className="mb-4">
-              <View className="gap-4">
-                {/* Current Password */}
-                <View>
-                  <Text className="text-sm font-medium text-gray-700 mb-1">
-                    Current Password
-                  </Text>
-                  <View className="relative">
-                    <TextInput
-                      value={formData.currentPassword}
-                      onChangeText={(text) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          currentPassword: text,
-                        }));
-                        if (errors.currentPassword) {
-                          setErrors((prev) => ({
-                            ...prev,
-                            currentPassword: "",
-                          }));
-                        }
-                      }}
-                      className={`border rounded-md px-3 py-3 pr-12 bg-white ${
-                        errors.currentPassword
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }`}
-                      placeholder="Enter your current password"
-                      secureTextEntry={!showPasswords.current}
-                      autoCapitalize="none"
-                    />
-                    <TouchableOpacity
-                      onPress={() => togglePasswordVisibility("current")}
-                      className="absolute right-3 top-3"
-                    >
-                      <MaterialIcons
-                        name={
-                          showPasswords.current
-                            ? "visibility-off"
-                            : "visibility"
-                        }
-                        size={20}
-                        color="#6B7280"
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  {errors.currentPassword && (
-                    <Text className="text-red-500 text-sm mt-1">
-                      {errors.currentPassword}
-                    </Text>
-                  )}
-                </View>
-
-                {/* New Password */}
-                <View>
-                  <Text className="text-sm font-medium text-gray-700 mb-1">
-                    New Password
-                  </Text>
-                  <View className="relative">
-                    <TextInput
-                      value={formData.newPassword}
-                      onChangeText={(text) => {
-                        setFormData((prev) => ({ ...prev, newPassword: text }));
-                        if (errors.newPassword) {
-                          setErrors((prev) => ({ ...prev, newPassword: "" }));
-                        }
-                      }}
-                      className={`border rounded-md px-3 py-3 pr-12 bg-white ${
-                        errors.newPassword
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }`}
-                      placeholder="Enter your new password"
-                      secureTextEntry={!showPasswords.new}
-                      autoCapitalize="none"
-                    />
-                    <TouchableOpacity
-                      onPress={() => togglePasswordVisibility("new")}
-                      className="absolute right-3 top-3"
-                    >
-                      <MaterialIcons
-                        name={
-                          showPasswords.new ? "visibility-off" : "visibility"
-                        }
-                        size={20}
-                        color="#6B7280"
-                      />
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Password Strength Indicator */}
-                  {formData.newPassword.length > 0 && (
-                    <View className="mt-2">
-                      <View className="flex-row items-center gap-2 mb-1">
-                        <Text className="text-xs text-gray-600">
-                          Password strength:
-                        </Text>
-                        <Text
-                          className={`text-xs font-medium ${
-                            passwordStrength.strength === 1
-                              ? "text-red-500"
-                              : passwordStrength.strength === 2
-                                ? "text-yellow-500"
-                                : passwordStrength.strength === 3
-                                  ? "text-blue-500"
-                                  : "text-green-500"
-                          }`}
-                        >
-                          {passwordStrength.label}
-                        </Text>
-                      </View>
-                      <View className="flex-row gap-1">
-                        {[1, 2, 3, 4].map((level) => (
-                          <View
-                            key={level}
-                            className={`h-1 flex-1 rounded ${
-                              level <= passwordStrength.strength
-                                ? level === 1
-                                  ? "bg-red-500"
-                                  : level === 2
-                                    ? "bg-yellow-500"
-                                    : level === 3
-                                      ? "bg-blue-500"
-                                      : "bg-green-500"
-                                : "bg-gray-200"
-                            }`}
-                          />
-                        ))}
-                      </View>
-                    </View>
-                  )}
-
-                  {errors.newPassword && (
-                    <Text className="text-red-500 text-sm mt-1">
-                      {errors.newPassword}
-                    </Text>
-                  )}
-                </View>
-
-                {/* Confirm Password */}
-                <View>
-                  <Text className="text-sm font-medium text-gray-700 mb-1">
-                    Confirm New Password
-                  </Text>
-                  <View className="relative">
-                    <TextInput
-                      value={formData.confirmPassword}
-                      onChangeText={(text) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          confirmPassword: text,
-                        }));
-                        if (errors.confirmPassword) {
-                          setErrors((prev) => ({
-                            ...prev,
-                            confirmPassword: "",
-                          }));
-                        }
-                      }}
-                      className={`border rounded-md px-3 py-3 pr-12 bg-white ${
-                        errors.confirmPassword
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }`}
-                      placeholder="Confirm your new password"
-                      secureTextEntry={!showPasswords.confirm}
-                      autoCapitalize="none"
-                    />
-                    <TouchableOpacity
-                      onPress={() => togglePasswordVisibility("confirm")}
-                      className="absolute right-3 top-3"
-                    >
-                      <MaterialIcons
-                        name={
-                          showPasswords.confirm
-                            ? "visibility-off"
-                            : "visibility"
-                        }
-                        size={20}
-                        color="#6B7280"
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  {errors.confirmPassword && (
-                    <Text className="text-red-500 text-sm mt-1">
-                      {errors.confirmPassword}
-                    </Text>
-                  )}
-                </View>
+            {/* New Password */}
+            <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-2">
+                New Password
+              </Text>
+              <View className="relative">
+                <TextInput
+                  value={formData.newPassword}
+                  onChangeText={(text) => {
+                    setFormData((prev) => ({ ...prev, newPassword: text }));
+                    if (errors.newPassword) {
+                      setErrors((prev) => ({ ...prev, newPassword: "" }));
+                    }
+                  }}
+                  className={`h-[41px] rounded-[18px] px-4 pr-12 text-[16px] text-finance-fence ${
+                    errors.newPassword ? "bg-red-50" : "bg-brand-light"
+                  }`}
+                  placeholder="Enter your new password"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry={!showPasswords.new}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  onPress={() => togglePasswordVisibility("new")}
+                  className="absolute right-4 top-[10px]"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <MaterialIcons
+                    name={showPasswords.new ? "visibility-off" : "visibility"}
+                    size={20}
+                    color="#6B7280"
+                  />
+                </TouchableOpacity>
               </View>
-            </Card>
 
-            {/* Action Buttons */}
-            <View className="gap-2">
-              <TouchableOpacity
-                onPress={handleChangePassword}
-                disabled={isPending}
-                className={`py-4 rounded-md ${
-                  isPending ? "bg-gray-300" : "bg-brand"
-                }`}
-              >
-                <Text className="text-white font-semibold text-center text-lg">
-                  {isPending ? "Changing Password..." : "Change Password"}
-                </Text>
-              </TouchableOpacity>
+              {/* Password Strength Indicator */}
+              {formData.newPassword.length > 0 && (
+                <View className="mt-3">
+                  <View className="flex-row items-center gap-2 mb-1.5">
+                    <Text className="text-[12px] text-gray-500">
+                      Password strength:
+                    </Text>
+                    <Text
+                      className={`text-[12px] font-medium ${
+                        passwordStrength.strength === 1
+                          ? "text-red-500"
+                          : passwordStrength.strength === 2
+                            ? "text-yellow-600"
+                            : passwordStrength.strength === 3
+                              ? "text-ocean"
+                              : "text-finance"
+                      }`}
+                    >
+                      {passwordStrength.label}
+                    </Text>
+                  </View>
+                  <View className="flex-row gap-1.5">
+                    {[1, 2, 3, 4].map((level) => (
+                      <View
+                        key={level}
+                        className={`h-[6px] flex-1 rounded-[3px] ${
+                          level <= passwordStrength.strength
+                            ? level === 1
+                              ? "bg-red-400"
+                              : level === 2
+                                ? "bg-amber-400"
+                                : level === 3
+                                  ? "bg-ocean-light"
+                                  : "bg-finance"
+                            : "bg-gray-200"
+                        }`}
+                      />
+                    ))}
+                  </View>
+                </View>
+              )}
 
-              <TouchableOpacity
-                onPress={handleCancel}
-                className="py-4 rounded-md border border-gray-300 bg-white"
-              >
-                <Text className="text-gray-700 font-semibold text-center text-lg">
-                  Cancel
+              {errors.newPassword && (
+                <Text className="text-red-500 text-[12px] mt-1.5">
+                  {errors.newPassword}
                 </Text>
-              </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Confirm Password */}
+            <View>
+              <Text className="text-[15px] font-medium text-finance-fence mb-2">
+                Confirm New Password
+              </Text>
+              <View className="relative">
+                <TextInput
+                  value={formData.confirmPassword}
+                  onChangeText={(text) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      confirmPassword: text,
+                    }));
+                    if (errors.confirmPassword) {
+                      setErrors((prev) => ({
+                        ...prev,
+                        confirmPassword: "",
+                      }));
+                    }
+                  }}
+                  className={`h-[41px] rounded-[18px] px-4 pr-12 text-[16px] text-finance-fence ${
+                    errors.confirmPassword ? "bg-red-50" : "bg-brand-light"
+                  }`}
+                  placeholder="Confirm your new password"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry={!showPasswords.confirm}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  onPress={() => togglePasswordVisibility("confirm")}
+                  className="absolute right-4 top-[10px]"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <MaterialIcons
+                    name={showPasswords.confirm ? "visibility-off" : "visibility"}
+                    size={20}
+                    color="#6B7280"
+                  />
+                </TouchableOpacity>
+              </View>
+              {errors.confirmPassword && (
+                <Text className="text-red-500 text-[12px] mt-1.5">
+                  {errors.confirmPassword}
+                </Text>
+              )}
             </View>
           </View>
-        </ScrollView>
-      </View>
+
+          {/* Action Buttons */}
+          <View className="gap-2.5">
+            <TouchableOpacity
+              onPress={handleChangePassword}
+              disabled={isPending}
+              className={`h-[45px] rounded-[30px] items-center justify-center ${
+                isPending ? "bg-brand-light" : "bg-finance"
+              }`}
+            >
+              <Text
+                className={`font-semibold text-[15px] ${
+                  isPending ? "text-gray-400" : "text-finance-fence"
+                }`}
+              >
+                {isPending ? "Changing Password..." : "Change Password"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleCancel}
+              className="h-[45px] rounded-[30px] bg-brand-light items-center justify-center"
+            >
+              <Text className="text-finance-fence font-medium text-[15px]">
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </FinWiseScreen>
     </SafeAreaWrapper>
   );
 }
