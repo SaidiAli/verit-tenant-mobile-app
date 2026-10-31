@@ -204,7 +204,7 @@ export default function ForgotPasswordScreen() {
             <View className="w-full max-w-sm mx-auto">
               {/* STEP 1: Email */}
               {step === "email" && (
-                <View className="space-y-4">
+                <View className="gap-4">
                   <View>
                     <Text className="text-[15px] font-medium text-finance-fence mb-2">
                       Email Address
@@ -261,7 +261,7 @@ export default function ForgotPasswordScreen() {
 
               {/* STEP 2: OTP */}
               {step === "otp" && (
-                <View className="space-y-4 items-center">
+                <View className="gap-4 items-center">
                   <Text className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
                     Enter 6-Digit PIN
                   </Text>
@@ -337,7 +337,7 @@ export default function ForgotPasswordScreen() {
 
               {/* STEP 3: Password */}
               {step === "password" && (
-                <View className="space-y-4">
+                <View className="gap-4">
                   <View>
                     <Text className="text-[15px] font-medium text-finance-fence mb-2">
                       New Password

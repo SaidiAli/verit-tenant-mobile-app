@@ -165,7 +165,7 @@ export function PaymentStatusTracker({
       className={`${className}`}
     >
       <Card>
-        <View className="items-center space-y-6 py-4">
+        <View className="items-center gap-6 py-4">
           {/* Status Icon */}
           <View className="relative">
             <View
@@ -188,7 +188,7 @@ export function PaymentStatusTracker({
           </View>
 
           {/* Status Text */}
-          <View className="items-center space-y-2">
+          <View className="items-center gap-2">
             <Text className="text-xl font-bold text-gray-800">
               {statusInfo.title}
             </Text>
@@ -206,7 +206,7 @@ export function PaymentStatusTracker({
 
           {/* Transaction Details */}
           {status && (
-            <View className="w-full space-y-2">
+            <View className="w-full gap-2">
               <View className="flex-row justify-between items-center py-1">
                 <Text className="text-gray-600 text-sm">Transaction ID:</Text>
                 <Text className="text-gray-800 text-sm font-mono">

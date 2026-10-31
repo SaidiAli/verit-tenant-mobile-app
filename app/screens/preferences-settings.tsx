@@ -61,7 +61,7 @@ export default function PreferencesSettingsScreen() {
         header={<View />}
         headerClassName="px-9 pt-6 pb-8"
       >
-        <View className="space-y-9">
+        <View className="gap-9">
           {/* Language */}
           <View>
             <Text className="text-[15px] font-medium text-finance-fence mb-3">Language</Text>

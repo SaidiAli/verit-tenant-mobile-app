@@ -162,8 +162,8 @@ export function CreateMaintenanceRequestModal({
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <View className="bg-white rounded-t-[40px] px-9 pt-8 pb-16 space-y-8">
-              <View className="space-y-6">
+            <View className="bg-white rounded-t-[40px] px-9 pt-8 pb-16 gap-8">
+              <View className="gap-6">
                 {/* Title */}
                 <View>
                   <Text className="text-sm font-medium text-gray-700 mb-1">Title</Text>

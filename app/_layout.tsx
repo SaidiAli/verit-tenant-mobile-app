@@ -112,7 +112,7 @@ export default Sentry.wrap(function RootLayout() {
                   <Stack.Screen
                     name="screens/lease"
                     options={{
-                      headerShown: true,
+                      headerShown: false,
                       title: 'Lease Information',
                       headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
@@ -122,7 +122,7 @@ export default Sentry.wrap(function RootLayout() {
                   <Stack.Screen
                     name="screens/property"
                     options={{
-                      headerShown: true,
+                      headerShown: false,
                       title: 'Property Information',
                       headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
@@ -132,7 +132,7 @@ export default Sentry.wrap(function RootLayout() {
                   <Stack.Screen
                     name="screens/help"
                     options={{
-                      headerShown: true,
+                      headerShown: false,
                       title: 'Help & Resources',
                       headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
@@ -142,7 +142,7 @@ export default Sentry.wrap(function RootLayout() {
                   <Stack.Screen
                     name="screens/settings"
                     options={{
-                      headerShown: true,
+                      headerShown: false,
                       title: 'Settings',
                       headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
@@ -173,7 +173,7 @@ export default Sentry.wrap(function RootLayout() {
                   <Stack.Screen
                     name="screens/terms-of-service"
                     options={{
-                      headerShown: true,
+                      headerShown: false,
                       title: 'Terms of Service',
                       headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
@@ -183,7 +183,7 @@ export default Sentry.wrap(function RootLayout() {
                   <Stack.Screen
                     name="screens/privacy-policy"
                     options={{
-                      headerShown: true,
+                      headerShown: false,
                       title: 'Privacy Policy',
                       headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
@@ -193,7 +193,7 @@ export default Sentry.wrap(function RootLayout() {
                   <Stack.Screen
                     name="screens/payment-history"
                     options={{
-                      headerShown: true,
+                      headerShown: false,
                       title: 'Payment History',
                       headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
@@ -203,7 +203,7 @@ export default Sentry.wrap(function RootLayout() {
                   <Stack.Screen
                     name="screens/payment-schedule"
                     options={{
-                      headerShown: true,
+                      headerShown: false,
                       title: 'Payment Schedule',
                       headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',
@@ -213,7 +213,7 @@ export default Sentry.wrap(function RootLayout() {
                   <Stack.Screen
                     name="screens/maintenance-requests"
                     options={{
-                      headerShown: true,
+                      headerShown: false,
                       title: 'Maintenance Requests',
                       headerStyle: { backgroundColor: BRAND_COLOR },
                       headerTintColor: 'white',

@@ -82,7 +82,7 @@ export default function MaintenanceRequestsScreen() {
           />
         }
       >
-        <View className="space-y-4">
+        <View className="gap-4">
           {/* New request button */}
           <TouchableOpacity
             className="h-[45px] rounded-[30px] bg-finance items-center flex-row justify-center gap-2"

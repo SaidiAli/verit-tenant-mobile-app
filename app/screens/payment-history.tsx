@@ -163,7 +163,7 @@ export default function PaymentHistoryScreen() {
     const isClickable = payment.status === 'completed';
 
     const content = (
-      <View className="space-y-2">
+      <View className="gap-2">
         <View className="flex-row justify-between items-center">
           <View className="flex-row items-center gap-2 flex-1 pr-2">
             <Text className="font-medium text-[15px] text-finance-fence" numberOfLines={1}>
@@ -267,10 +267,10 @@ export default function PaymentHistoryScreen() {
           <RefreshControl refreshing={isRefetching} onRefresh={() => { void refetch(); }} tintColor="#FFFFFF" />
         }
       >
-        <View className="space-y-9">
+        <View className="gap-9">
           {/* Payment Summary */}
           <View>
-            <View className="space-y-2">
+            <View className="gap-2">
                 <Text className="text-[15px] font-medium text-finance-fence mb-3">
                   Payment Summary
                 </Text>
@@ -325,7 +325,7 @@ export default function PaymentHistoryScreen() {
           {/* Historical Payments - Grouped by Year */}
           {historicalPayments.length > 0 && (
             <View>
-              <View className="space-y-3">
+              <View className="gap-3">
                   <TouchableOpacity
                     onPress={() => setShowHistorical(!showHistorical)}
                     className="flex-row justify-between items-center"
@@ -345,7 +345,7 @@ export default function PaymentHistoryScreen() {
                     />
                   </TouchableOpacity>
                   {showHistorical && (
-                    <View className="space-y-0">
+                    <View className="gap-0">
                       {historicalByYear.map(([year, yearItems]) => (
                         <View key={year} className="mt-2">
                           <View className="bg-gray-100 px-3 py-2 rounded-md mb-2">
@@ -362,7 +362,7 @@ export default function PaymentHistoryScreen() {
 
           {/* Current Payments List */}
           <View>
-            <View className="space-y-3">
+            <View className="gap-3">
                 <Text className="text-[15px] font-medium text-finance-fence mb-2">
                   {historicalPayments.length > 0 ? `Payments (${currentYear})` : 'All Payments'}
                 </Text>
@@ -375,7 +375,7 @@ export default function PaymentHistoryScreen() {
                     </Text>
                   </View>
                 ) : (
-                  <View className="space-y-0">
+                  <View className="gap-0">
                     {currentYearPayments.map((paymentData, index) =>
                       renderPaymentItem(paymentData, index, currentYearPayments)
                     )}

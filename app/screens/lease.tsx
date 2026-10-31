@@ -141,7 +141,7 @@ export default function LeaseScreen() {
         }
         headerClassName="px-9 pt-6 pb-8"
       >
-        <View className="space-y-9">
+        <View className="gap-9">
           {/* Lease Status */}
           <View>
             <View className="flex-row items-center justify-between mb-2">

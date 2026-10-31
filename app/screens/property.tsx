@@ -100,7 +100,7 @@ export default function PropertyScreen() {
         }
         headerClassName="px-9 pt-6 pb-8"
       >
-        <View className="space-y-9">
+        <View className="gap-9">
           {/* Property Overview */}
           <View>
             <Text className="text-[20px] leading-[22px] font-semibold text-finance-fence">

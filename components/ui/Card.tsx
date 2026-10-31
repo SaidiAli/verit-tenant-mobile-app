@@ -108,9 +108,9 @@ export function MetricCard({
 
   return (
     <View style={elevation.cardSm} className={`${containerClasses} ${className}`}>
-      <View className="space-y-1">
+      <View className="gap-1">
         <View className="flex-row justify-between items-start">
-          <View className="flex-1 space-y-1">
+          <View className="flex-1 gap-1">
             <Text className={`text-xs font-medium uppercase tracking-wider ${titleColor}`}>
               {title}
             </Text>

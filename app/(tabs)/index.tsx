@@ -241,7 +241,7 @@ export default function DashboardScreen() {
           </>
         }
       >
-        <View className="space-y-9">
+        <View className="gap-9">
           {/* Filter segmented control (Figma Switch2) */}
           <PillSwitch
             options={[

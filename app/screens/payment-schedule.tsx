@@ -178,7 +178,7 @@ export default function PaymentScheduleScreen() {
 
     return (
       <View key={item.id} className="py-4">
-        <View className="space-y-2">
+        <View className="gap-2">
           <View className="flex-row justify-between items-center">
             <Text className="font-medium text-[15px] text-finance-fence">
               Payment #{item.paymentNumber}
@@ -243,10 +243,10 @@ export default function PaymentScheduleScreen() {
           <RefreshControl refreshing={isRefetching} onRefresh={() => { void refetch(); }} tintColor="#FFFFFF" />
         }
       >
-        <View className="space-y-9">
+        <View className="gap-9">
           {/* Arrears vs Current Due Split */}
           <View>
-            <View className="space-y-2">
+            <View className="gap-2">
               <Text className="text-[15px] font-medium text-finance-fence mb-3">
                 Balance Breakdown
               </Text>
@@ -316,7 +316,7 @@ export default function PaymentScheduleScreen() {
           {/* Historical Periods - Grouped by Year */}
           {historicalSchedules.length > 0 && (
             <View>
-              <View className="space-y-3">
+              <View className="gap-3">
                   <TouchableOpacity
                     onPress={() => setShowHistorical(!showHistorical)}
                     className="flex-row justify-between items-center"
@@ -336,7 +336,7 @@ export default function PaymentScheduleScreen() {
                     />
                   </TouchableOpacity>
                   {showHistorical && (
-                    <View className="space-y-0">
+                    <View className="gap-0">
                       {historicalByYear.map(([year, yearItems]) => (
                         <View key={year} className="mt-2">
                           <View className="bg-brand-light/60 px-3 py-2 rounded-[10px] mb-2 self-start">
@@ -353,7 +353,7 @@ export default function PaymentScheduleScreen() {
 
           {/* Current and Future Schedule List */}
           <View>
-            <View className="space-y-3">
+            <View className="gap-3">
               <Text className="text-[15px] font-medium text-finance-fence mb-3">
                 Current and Upcoming Payments
               </Text>
@@ -363,7 +363,7 @@ export default function PaymentScheduleScreen() {
                     <Text className="text-gray-500 mt-2">No upcoming payments</Text>
                   </View>
                 ) : (
-                  <View className="space-y-0">
+                  <View className="gap-0">
                     {currentAndFutureSchedules.map((item, index) =>
                       renderScheduleItem(item, index, currentAndFutureSchedules)
                     )}

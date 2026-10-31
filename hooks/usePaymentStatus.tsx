@@ -49,8 +49,13 @@ export function usePaymentStatus({
     queryFn: ({ signal }) => paymentApi.getStatus(transactionId, signal),
     enabled: isPolling && !!transactionId,
     // In TanStack Query v4 the refetchInterval callback receives (data, query)
-    refetchInterval: (data: PaymentStatusResponse | undefined) => {
+    refetchInterval: (data: PaymentStatusResponse | undefined, query) => {
       if (data?.paymentStatus === 'completed' || data?.paymentStatus === 'failed' || !isPolling) return false;
+      // A persistent server error must not spin the 5s loop (e.g. a backend
+      // 500). Pause until the payment socket nudge or a manual retry re-checks;
+      // the maxPollingDuration timeout still bounds the overall wait, and a
+      // successful re-check resumes the interval.
+      if (query.state.error) return false;
       return pollingInterval;
     },
     retry: false,

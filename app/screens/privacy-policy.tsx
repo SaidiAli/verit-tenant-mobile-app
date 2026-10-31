@@ -61,7 +61,7 @@ export default function PrivacyPolicyScreen() {
         header={<View />}
         headerClassName="px-9 pt-6 pb-8"
       >
-        <View className="space-y-7">
+        <View className="gap-7">
           {SECTIONS.map(section => (
             <View key={section.title}>
               <Text className="text-[15px] font-medium text-finance-fence mb-1.5">

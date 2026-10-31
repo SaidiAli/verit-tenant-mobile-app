@@ -257,7 +257,7 @@ function LeasePayments({ leaseId }: { leaseId: string }) {
           </>
         }
       >
-        <View className="space-y-4">
+        <View className="gap-4">
           {step === 'processing' && currentPayment && (
             <PaymentStatusTracker
               key={currentPayment.transactionId}

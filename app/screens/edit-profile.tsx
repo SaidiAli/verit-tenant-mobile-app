@@ -76,7 +76,7 @@ export default function EditProfileScreen() {
           </View>
         }
       >
-        <View className="space-y-9">
+        <View className="gap-9">
           {/* Account settings (Figma 9.5.1-A: 20px heading, 61px field gaps) */}
           <Text className="text-[20px] leading-[22px] font-semibold text-finance-fence">
             Account Settings

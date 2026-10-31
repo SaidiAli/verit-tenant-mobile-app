@@ -115,7 +115,7 @@ function IdentityEditor({ enabled }: { enabled: boolean }) {
         header={<View />}
         headerClassName="px-9 pt-6 pb-8"
       >
-        <View className="space-y-8">
+        <View className="gap-8">
           {/* Info panel */}
           <View className="bg-brand-light/60 rounded-[22px] p-5 flex-row items-start gap-3">
             <View className="w-[31px] h-[31px] rounded-[10px] bg-finance/15 items-center justify-center">

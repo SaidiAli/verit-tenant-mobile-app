@@ -160,7 +160,7 @@ Thank you for your payment!
 
           {receipt && (
             <View className="mb-6">
-              <View className="space-y-6">
+              <View className="gap-6">
                 {/* Company Header */}
                 <View className="items-center py-4 border-b border-gray-200">
                   <Text className="text-2xl font-bold text-brand">
@@ -175,7 +175,7 @@ Thank you for your payment!
                 </View>
 
                 {/* Receipt Details */}
-                <View className="space-y-4">
+                <View className="gap-4">
                   <View className="items-center">
                     <Text className="text-xl font-bold text-gray-800">
                       PAYMENT RECEIPT
@@ -186,7 +186,7 @@ Thank you for your payment!
                   </View>
 
                   {/* Payment Information */}
-                  <View className="space-y-3 border-t border-b border-gray-200 py-4">
+                  <View className="gap-3 border-t border-b border-gray-200 py-4">
                     <View className="flex-row justify-between">
                       <Text className="text-gray-600">Amount Paid:</Text>
                       <Text className="font-bold text-lg text-gray-800">
@@ -215,7 +215,7 @@ Thank you for your payment!
                     {(receipt.paymentType ?? "rent") === "rent" &&
                     receipt.appliedSchedules &&
                     receipt.appliedSchedules.length > 0 ? (
-                      <View className="space-y-2">
+                      <View className="gap-2">
                         <Text className="text-gray-600">Periods Cleared:</Text>
                         {receipt.appliedSchedules.map((schedule, index) => (
                           <View
@@ -267,11 +267,11 @@ Thank you for your payment!
 
                   {/* Tenant Information */}
                   {receipt.tenant && (
-                    <View className="space-y-3">
+                    <View className="gap-3">
                       <Text className="font-semibold text-gray-800">
                         Tenant Information
                       </Text>
-                      <View className="bg-gray-50 p-3 rounded-md space-y-2">
+                      <View className="bg-gray-50 p-3 rounded-md gap-2">
                         <View className="flex-row justify-between">
                           <Text className="text-gray-600">Name:</Text>
                           <Text className="font-medium text-gray-800">
@@ -296,11 +296,11 @@ Thank you for your payment!
 
                   {/* Lease Information */}
                   {receipt.lease && (
-                    <View className="space-y-3">
+                    <View className="gap-3">
                       <Text className="font-semibold text-gray-800">
                         Lease Information
                       </Text>
-                      <View className="bg-gray-50 p-3 rounded-md space-y-2">
+                      <View className="bg-gray-50 p-3 rounded-md gap-2">
                         <View className="flex-row justify-between">
                           <Text className="text-gray-600">Monthly Rent:</Text>
                           <Text className="font-medium text-gray-800">

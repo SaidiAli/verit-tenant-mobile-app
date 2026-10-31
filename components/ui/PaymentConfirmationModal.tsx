@@ -100,7 +100,7 @@ export function PaymentConfirmationModal({
             <View className="bg-white rounded-t-[40px] px-9 pt-8 pb-16">
             {/* Provider and Amount Info */}
             <View className="mb-8">
-              <View className="items-center space-y-4">
+              <View className="items-center gap-4">
                 <View
                   className={`w-16 h-16 rounded-full items-center justify-center ${
                     derivedProvider === "MTN MoMo"
@@ -155,7 +155,7 @@ export function PaymentConfirmationModal({
             </View>
 
             {/* Instructions */}
-            <View className="items-center space-y-6">
+            <View className="items-center gap-6">
               <View className="bg-amber-50 p-4 rounded-[18px] border border-amber-200 w-full">
                 <View className="flex-row items-start gap-2">
                   <MaterialIcons
@@ -164,7 +164,7 @@ export function PaymentConfirmationModal({
                     color="#F59E0B"
                     className="mt-1"
                   />
-                  <View className="flex-1 space-y-1">
+                  <View className="flex-1 gap-1">
                     <Text className="font-semibold text-amber-900 text-[13px]">
                       Next Step
                     </Text>
@@ -188,7 +188,7 @@ export function PaymentConfirmationModal({
 
               {/* Loading State */}
               {isLoading && (
-                <View className="items-center space-y-3 mt-4">
+                <View className="items-center gap-3 mt-4">
                   <LoadingSpinner size="large" message="" className="my-0" />
                   <Text className="text-gray-500 text-center text-[13px]">
                     Initiating payment request...
@@ -201,7 +201,7 @@ export function PaymentConfirmationModal({
 
           {/* Footer */}
           <View className="absolute bottom-0 left-0 right-0 bg-white px-9 pb-6 pt-4 border-t border-gray-100">
-            <View className="space-y-3">
+            <View className="gap-3">
               <TouchableOpacity
                 onPress={handleConfirm}
                 disabled={isLoading || derivedProvider === "Unknown Provider"}
