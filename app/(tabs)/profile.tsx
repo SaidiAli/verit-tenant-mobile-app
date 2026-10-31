@@ -184,7 +184,7 @@ export default function ProfileScreen() {
 
         <View className="items-center pt-10">
           <Text className="text-[12px] text-gray-400">
-            Verit Tenant Mobile • v{Constants.expoConfig?.version || '1.0.0'}
+            Verit Tenant Mobile • v{Constants.expoConfig?.version || '2.0.0'}
           </Text>
         </View>
       </FinWiseScreen>
