@@ -12,7 +12,8 @@ async function fixture(file, initialProps = {}, initialSettings = {}) {
   const host = name => function NativeHost(props) { return React.createElement(name, props, props.children); };
   const native = Object.fromEntries(['View', 'Text', 'Modal', 'TouchableOpacity', 'Pressable', 'TextInput', 'KeyboardAvoidingView', 'ScrollView', 'Switch', 'Image'].map(name => [name, host(name)]));
   const load = loader({
-    'react-native': { ...native, Platform: { OS: 'ios' }, Alert: { alert() {} } },
+    'react-native': { ...native, Platform: { OS: 'ios' }, Alert: { alert() {} }, useWindowDimensions: () => ({ height: 800, width: 400 }) },
+    'hooks/useKeyboardHeight.tsx': { useKeyboardHeight: () => 0 },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) },
     '@expo/vector-icons': { MaterialIcons: host('Icon') },
     'expo-router': { useRouter: () => ({ back() {} }) },

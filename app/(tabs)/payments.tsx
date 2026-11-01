@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { PaymentModal } from '../../components/ui/PaymentModal';
 import { PaymentConfirmationModal } from '../../components/ui/PaymentConfirmationModal';
-import { PaymentStatusTracker } from '../../components/ui/PaymentStatusTracker';
+import { PaymentStatusTracker, type TrackerOutcome } from '../../components/ui/PaymentStatusTracker';
 import { FinWiseScreen } from '../../components/ui/FinWiseScreen';
 import { FinWiseProgressBar } from '../../components/ui/FinWiseProgressBar';
 import { useAuth } from '../../hooks/useAuth';
@@ -23,7 +23,7 @@ import { rentCheckout, securityCheckout, depositError, validateCheckoutRequest, 
 import { formatDateShort } from '../../lib/utils';
 
 type Checkout = { paymentType: 'rent' | 'security_deposit'; paymentScope?: 'current' | 'arrears'; bucket?: CurrencyBalance; amount?: number };
-type Step = 'idle' | 'amount' | 'confirmation' | 'processing' | 'pending' | 'success' | 'failed';
+type Step = 'idle' | 'amount' | 'confirmation' | 'processing' | 'pending';
 
 export default function PaymentsScreen() {
   const { user } = useAuth();
@@ -46,6 +46,7 @@ function LeasePayments({ leaseId }: { leaseId: string }) {
   const [error, setError] = useState('');
   const [focused, setFocused] = useState(false);
   const [pollDeposit, setPollDeposit] = useState(false);
+  const [trackerBackgrounded, setTrackerBackgrounded] = useState(false);
   const mounted = useRef(true);
   const attempt = useRef(0);
   const submitting = useRef(false);
@@ -101,7 +102,9 @@ function LeasePayments({ leaseId }: { leaseId: string }) {
       if (!active() || variables.attemptId !== attempt.current) return;
       submitting.current = false;
       setCurrentPayment(payment);
-      setStep(payment.status === 'completed' ? 'success' : payment.status === 'failed' ? 'failed' : 'processing');
+      setTrackerBackgrounded(false);
+      // The tracker sheet follows the request all the way to a terminal status.
+      setStep('processing');
       setError('');
       void refresh();
     },
@@ -109,10 +112,13 @@ function LeasePayments({ leaseId }: { leaseId: string }) {
       if (!active() || variables.attemptId !== attempt.current) return;
       submitting.current = false;
       if (failure.confirmationPending) {
+        // Outcome unknown server-side and there is no transaction reference to
+        // track. Stay locked on the pending card until a history refresh
+        // resolves the payment (it then resumes as the tracker card).
         setStep('pending');
         setError('The outcome is unknown. Check payment history before starting another payment.');
       } else {
-        setStep('failed');
+        // Stay on the confirmation sheet; the error prop renders inline there.
         setError(depositError(failure.code) || failure.message || 'Payment failed. Refresh before trying again.');
       }
       void refresh();
@@ -128,6 +134,8 @@ function LeasePayments({ leaseId }: { leaseId: string }) {
       amount: Number(pending.amount), currency: pending.currency, leaseId, status: 'pending', confirmationPending: true });
     setCheckout({ paymentType: pending.paymentType === 'security_deposit' ? 'security_deposit' : 'rent' });
     setStep('processing');
+    // Resumed from history: show the compact card instead of popping the sheet.
+    setTrackerBackgrounded(true);
   }
 
   const balance = balanceQuery.data;
@@ -165,19 +173,16 @@ function LeasePayments({ leaseId }: { leaseId: string }) {
   };
   const close = () => {
     if (submitting.current || step === 'processing' || step === 'pending') return;
-    const transactionId = currentPayment?.transactionId;
-    if ((step === 'success' || step === 'failed') && transactionId) {
-      setHandledTransactionIds(previous => new Set([...previous, transactionId]));
-    }
     setStep('idle'); setCheckout(null); setCurrentPayment(null); setError('');
   };
-  const terminal = (next: 'success' | 'failed', message = '') => {
-    if (!active()) return;
-    setStep(next); setError(message); void refresh();
+  // Single exit path from the tracker: mark the transaction handled so it does
+  // not auto-resume, then return to idle with fresh balance/history.
+  const dismissTracker = (_outcome: TrackerOutcome) => {
+    const transactionId = currentPayment?.transactionId;
+    if (transactionId) setHandledTransactionIds(previous => new Set([...previous, transactionId]));
+    setStep('idle'); setCheckout(null); setCurrentPayment(null); setError('');
+    void refresh();
   };
-  const handlePaymentTimeout = useCallback(() => {
-    setStep('pending'); setError('Confirmation is still pending. Check this payment before starting another.');
-  }, []);
   if (balanceQuery.isLoading || contextQuery.isLoading) return <LoadingSpinner message="Loading payment information..." />;
   if (!balance || balanceQuery.isError || contextQuery.isError) return <ErrorView title="Unable to load payments"
     message={(balanceQuery.error as Error)?.message || (contextQuery.error as Error)?.message || 'Refresh and try again.'} onRetry={() => void refresh()} />;
@@ -265,9 +270,12 @@ function LeasePayments({ leaseId }: { leaseId: string }) {
               amount={currentPayment.amount}
               currency={currentPayment.currency}
               confirmationPending={currentPayment.confirmationPending}
-              onSuccess={() => terminal('success')}
-              onFailed={status => terminal('failed', status.message)}
-              onTimeout={handlePaymentTimeout}
+              backgrounded={trackerBackgrounded}
+              onBackground={() => setTrackerBackgrounded(true)}
+              onForeground={() => setTrackerBackgrounded(false)}
+              onDismiss={dismissTracker}
+              onSuccess={() => void refresh()}
+              onFailed={() => void refresh()}
             />
           )}
 
@@ -283,21 +291,6 @@ function LeasePayments({ leaseId }: { leaseId: string }) {
                 }}
                 disabled={false}
               />
-            </View>
-          )}
-
-          {(step === 'success' || step === 'failed') && (
-            <View className="bg-brand-light/60 rounded-[22px] p-5">
-              <Text className="text-[15px] font-semibold text-finance-fence">
-                {step === 'success' ? 'Payment successful' : 'Payment not completed'}
-              </Text>
-              {currentPayment && (
-                <Text className="text-[24px] font-bold text-finance-fence my-2">
-                  {formatMoney(currentPayment.amount, currentPayment.currency)}
-                </Text>
-              )}
-              {!!error && <Text className="text-[13px] text-gray-500 my-2">{error}</Text>}
-              <ActionButton label="Continue" onPress={close} disabled={false} />
             </View>
           )}
 

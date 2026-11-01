@@ -36,20 +36,3 @@ test('transport loss or unclassified server error is unresolved rather than retr
 test('a confirmed decline remains an ordinary failure', async () => {
   await assert.rejects(run(() => Promise.reject({ response: { status: 400, data: { error: 'Payment failed' } } })), error => error.message === 'Payment failed' && !error.confirmationPending);
 });
-
-test('polling timeout keeps the payment unresolved with the same reference', () => {
-  const file = path.join(__dirname, '../app/(tabs)/payments.tsx');
-  const text = fs.readFileSync(file, 'utf8');
-  const ast = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
-  let declaration;
-  function visit(node) {
-    if (ts.isVariableDeclaration(node) && node.name.getText(ast) === 'handlePaymentTimeout') declaration = node;
-    ts.forEachChild(node, visit);
-  }
-  visit(ast);
-  const code = ts.transpileModule(`(${declaration.initializer.arguments[0].getText(ast)});`, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
-  let state = 'processing'; let error = '';
-  vm.runInNewContext(code, { setStep: value => { state = value; }, setError: value => { error = value; } })();
-  assert.equal(state, 'pending');
-  assert.match(error, /pending/);
-});

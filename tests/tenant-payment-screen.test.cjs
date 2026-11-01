@@ -70,7 +70,13 @@ test('USD rent does not block an exact UGX security payment or permit double sub
     assert.equal(app.calls.length, 1); assert.equal(app.calls[0].amount, 5000); assert.equal(app.calls[0].paymentType, 'security_deposit');
     app.deposit.securityDepositStatus = 'paid';
     await renderer.act(async () => { resolve({ paymentId: 'p', transactionId: 't', amount: 5000, currency: 'UGX', status: 'completed' }); await delay(); });
-    assert.match(app.text(), /Payment successful/);
+    // The tracker sheet takes over from the confirmation sheet.
+    const tracker = app.root.root.findByType('StatusTracker');
+    assert.equal(tracker.props.transactionId, 't');
+    assert.equal(tracker.props.backgrounded, false);
+    await renderer.act(async () => { tracker.props.onDismiss('success'); await delay(); });
+    assert.equal(app.button('Pay security deposit'), undefined);
+    assert.equal(app.calls.length, 1);
   } finally { await app.close(); }
 });
 
@@ -89,11 +95,14 @@ for (const outcome of ['success', 'failed']) {
       } });
       try {
         refreshing = true;
+        const tracker = app.root.root.findByType('StatusTracker');
         await renderer.act(async () => {
-          app.root.root.findByType('StatusTracker').props[outcome === 'success' ? 'onSuccess' : 'onFailed']({ message: 'Declined' });
+          tracker.props[outcome === 'success' ? 'onSuccess' : 'onFailed']({ message: 'Declined' });
           await delay();
         });
-        await app.press('Continue');
+        // A terminal status refreshes but does not dismiss the tracker by itself.
+        assert.equal(app.root.root.findAllByType('StatusTracker').length, 1);
+        await renderer.act(async () => { tracker.props.onDismiss(outcome); await delay(); });
         assert.equal(app.root.root.findAllByType('StatusTracker').length, 0);
         assert.equal(app.button('Pay security deposit').props.disabled, true);
         assert.equal(app.calls.length, 0);
@@ -116,12 +125,15 @@ test('dismissing a completed tracker resumes a different unresolved payment behi
   const payment = id => ({ payment: { id, transactionId: id, status: 'pending', paymentMethod: 'mobile_money', amount: '5000', currency: 'UGX', paymentType: 'rent' } });
   const app = await fixture({ history: [payment('first'), payment('second')] });
   try {
-    await renderer.act(async () => app.root.root.findByType('StatusTracker').props.onSuccess());
-    await app.press('Continue');
-    assert.equal(app.root.root.findByType('StatusTracker').props.transactionId, 'second');
+    const first = app.root.root.findByType('StatusTracker');
+    await renderer.act(async () => { first.props.onSuccess(); await delay(); });
+    await renderer.act(async () => { first.props.onDismiss('success'); await delay(); });
+    const second = app.root.root.findByType('StatusTracker');
+    assert.equal(second.props.transactionId, 'second');
+    assert.equal(second.props.backgrounded, true);
     assert.equal(app.calls.length, 0);
-    await renderer.act(async () => app.root.root.findByType('StatusTracker').props.onFailed({ message: 'Declined' }));
-    await app.press('Continue');
+    await renderer.act(async () => { second.props.onFailed({ message: 'Declined' }); await delay(); });
+    await renderer.act(async () => { second.props.onDismiss('failed'); await delay(); });
     assert.equal(app.root.root.findAllByType('StatusTracker').length, 0);
     assert.equal(app.button('Pay security deposit').props.disabled, true);
   } finally { await app.close(); }
@@ -150,11 +162,14 @@ test('503 references resume status checks and confirmed failures allow refresh b
     await app.press('Pay security deposit');
     await renderer.act(async () => { app.root.root.findByType('ConfirmModal').props.onConfirm('0771234567'); await delay(); });
     const tracker = app.root.root.findByType('StatusTracker'); assert.equal(tracker.props.transactionId, 't');
-    await renderer.act(async () => { tracker.props.onTimeout(); await delay(); });
-    await app.press('Check payment status'); assert.equal(app.calls.length, 1);
-    await renderer.act(async () => { app.root.root.findByType('StatusTracker').props.onFailed({ message: 'Declined' }); await delay(); });
-    assert.match(app.text(), /Declined/); await app.press('Continue');
+    assert.equal(tracker.props.confirmationPending, true);
+    assert.equal(tracker.props.backgrounded, false);
+    // A confirmed failure refreshes but only the tracker's dismissal ends it.
+    await renderer.act(async () => { tracker.props.onFailed({ message: 'Declined' }); await delay(); });
+    assert.equal(app.root.root.findAllByType('StatusTracker').length, 1);
+    await renderer.act(async () => { tracker.props.onDismiss('failed'); await delay(); });
     assert.equal(app.button('Pay security deposit').props.disabled, false);
+    assert.equal(app.calls.length, 1);
   } finally { await app.close(); }
 });
 
@@ -208,6 +223,7 @@ test('a pending payment from history resumes its tracker without initiating anot
     const tracker = app.root.root.findByType('StatusTracker');
     assert.equal(tracker.props.transactionId, 'existing-txn');
     assert.equal(tracker.props.confirmationPending, true);
+    assert.equal(tracker.props.backgrounded, true);
     assert.equal(app.calls.length, 0);
     assert.equal(app.button('Pay security deposit').props.disabled, true);
   } finally { await app.close(); }

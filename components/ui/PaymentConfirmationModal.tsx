@@ -4,8 +4,7 @@ import {
   Text,
   Modal,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
+  useWindowDimensions,
   Pressable,
   ScrollView,
   TextInput,
@@ -14,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { BRAND_COLOR } from "../../constants/theme";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { useKeyboardHeight } from "../../hooks/useKeyboardHeight";
 import {
   formatMoney,
   formatPhoneNumber,
@@ -51,6 +51,8 @@ export function PaymentConfirmationModal({
   const [isEditing, setIsEditing] = useState(false);
   const [derivedProvider, setDerivedProvider] = useState(initialProviderName);
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
+  const { height: windowHeight } = useWindowDimensions();
 
   const [previous, setPrevious] = useState({ visible, phoneNumber, initialProviderName });
   if (visible !== previous.visible || phoneNumber !== previous.phoneNumber || initialProviderName !== previous.initialProviderName) {
@@ -84,18 +86,21 @@ export function PaymentConfirmationModal({
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      <View
         className="flex-1 justify-end"
         style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
       >
         {/* Backdrop — tap to dismiss */}
         <Pressable className="flex-1" onPress={() => { if (!isLoading) onClose(); }} />
 
-        {/* Bottom sheet */}
+        {/* Bottom sheet — lifted above the keyboard while typing */}
         <View
           className="bg-white rounded-t-[40px] px-9 pt-3"
-          style={{ paddingBottom: Math.max(insets.bottom, 20), maxHeight: "90%" }}
+          style={{
+            paddingBottom: Math.max(insets.bottom, 20),
+            marginBottom: keyboardHeight,
+            maxHeight: windowHeight * 0.9 - keyboardHeight,
+          }}
         >
           {/* Drag handle */}
           <View className="w-12 h-1.5 rounded-full bg-gray-200 self-center mt-3" />
@@ -116,6 +121,7 @@ export function PaymentConfirmationModal({
           </View>
 
           <ScrollView
+            automaticallyAdjustKeyboardInsets
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
@@ -242,7 +248,7 @@ export function PaymentConfirmationModal({
             </View>
           </ScrollView>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
