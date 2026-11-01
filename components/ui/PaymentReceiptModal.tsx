@@ -157,7 +157,7 @@ Thank you for your payment!
           </View>
 
           {/* Content */}
-          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+          <ScrollView showsVerticalScrollIndicator={false}>
           {isLoading && <LoadingSpinner message="Loading receipt..." />}
 
           {!!error && (

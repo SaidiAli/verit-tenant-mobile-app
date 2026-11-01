@@ -116,7 +116,6 @@ export function PaymentConfirmationModal({
           </View>
 
           <ScrollView
-            className="flex-1"
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
